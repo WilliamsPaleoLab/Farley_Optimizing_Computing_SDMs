@@ -21,7 +21,11 @@ conf['model']['n_folds'] = 10
 conf['file_system'] = {}
 conf['file_system']['base_path'] = "/Users/scottsfarley/documents/thesis-scripts/data/"
 conf['file_system']['pred_loc'] = "/Users/scottsfarley/documents/thesis-scripts/data/predictors.tif" ## location of multiband predictor variables
-conf['file_system']['occurrence_loc'] = "/Users/scottsfarley/documents/thesis-scripts/data/sequoia_bioclim.csv" ##location of pre-thresholded csv of occurrences
+conf['file_system']['Quercus'] = "/Users/scottsfarley/documents/thesis-scripts/data/sequoia_bioclim.csv" ##location of pre-thresholded csv of occurrences
+conf['file_system']['Betula'] = "/Users/scottsfarley/documents/thesis-scripts/data/sequoia_bioclim.csv" ##location of pre-thresholded csv of occurrences
+conf['file_system']['Picea'] = "/Users/scottsfarley/documents/thesis-scripts/data/sequoia_bioclim.csv" ##location of pre-thresholded csv of occurrences
+conf['file_system']['Tsuga'] = "/Users/scottsfarley/documents/thesis-scripts/data/sequoia_bioclim.csv" ##location of pre-thresholded csv of occurrences
+
 conf['file_system']['log_loc'] = "/Users/scottsfarley/documents/thesis-scripts/logs/sdm.log" ## for logging messages
 
 conf['logging'] = {}
