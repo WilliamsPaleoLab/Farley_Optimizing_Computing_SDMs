@@ -51,9 +51,9 @@ bv2100.01deg <- stack(c(bv2100.01deg[[2]],bv2100.01deg[[7]], bv2100.01deg[[8]], 
 writeRaster(bv2100.01deg, "C:/Users/willlab/Documents/Scott/thesis-scripts/data/predictors/standard_biovars/0_1_deg/standard_biovars_0_1_deg_2100.tif")
 
 ####################1 degree resolution ############################
-tmax2100.1deg = loadRasterStack("W:/Lab_Climate_Data/Working/Scott/CMIP5-HadGEM/2100/0_1_deg/", 'tmax', year=2100)
-tmin2100.1deg = loadRasterStack("W:/Lab_Climate_Data/Working/Scott/CMIP5-HadGEM/2100/0_1_deg/", 'tmin', year=2100)
-prcp2100.1deg = loadRasterStack("W:/Lab_Climate_Data/Working/Scott/CMIP5-HadGEM/2100/0_1_deg/", 'prcp', year=2100)
+tmax2100.1deg = loadRasterStack("W:/Lab_Climate_Data/Working/Scott/CMIP5-HadGEM/2100/1_deg/", 'tmax', year=2100)
+tmin2100.1deg = loadRasterStack("W:/Lab_Climate_Data/Working/Scott/CMIP5-HadGEM/2100/1_deg/", 'tmin', year=2100)
+prcp2100.1deg = loadRasterStack("W:/Lab_Climate_Data/Working/Scott/CMIP5-HadGEM/2100/1_deg/", 'prcp', year=2100)
 bv2100.1deg = biovars(prcp2100.1deg, tmin2100.1deg, tmax2100.1deg)
 bv2100.1deg <- stack(c(bv2100.1deg[[2]],bv2100.1deg[[7]], bv2100.1deg[[8]], bv2100.1deg[[15]], bv2100.1deg[[18]], bv2100.1deg[[19]]))
 writeRaster(bv2100.1deg, "C:/Users/willlab/Documents/Scott/thesis-scripts/data/predictors/standard_biovars/1_deg/standard_biovars_1_deg_2100.tif")
