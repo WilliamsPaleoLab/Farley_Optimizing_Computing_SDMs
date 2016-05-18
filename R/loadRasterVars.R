@@ -24,6 +24,7 @@ substrRight <- function(x, n){
   substr(x, nchar(x)-n+1, nchar(x))
 }
 
-tmax = loadRasterStack("W:/Lab_Climate_Data/ModelData/TraCE/CCSM3/22k_monthly_avg/1000_year_avg/", 'tmax')
-tmin = loadRasterStack("W:/Lab_Climate_Data/ModelData/TraCE/CCSM3/22k_monthly_avg/1000_year_avg/", 'tmin')
-prcp = loadRasterStack("W:/Lab_Climate_Data/ModelData/TraCE/CCSM3/22k_monthly_avg/1000_year_avg/", 'prcp')
+tmax2100 = loadRasterStack("W:/Lab_Climate_Data/ModelData/TraCE/CCSM3/22k_monthly_avg/1000_year_avg/", 'tmax')
+tmin2100 = loadRasterStack("W:/Lab_Climate_Data/ModelData/TraCE/CCSM3/22k_monthly_avg/1000_year_avg/", 'tmin')
+prcp2100 = loadRasterStack("W:/Lab_Climate_Data/ModelData/TraCE/CCSM3/22k_monthly_avg/1000_year_avg/", 'prcp')
+bv2100 = biovars(prcp2100, tmin2100, tmax2100)
