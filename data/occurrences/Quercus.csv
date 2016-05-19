@@ -1,0 +1,117 @@
+siteName,siteLatitude,siteLongitude,siteAltitude,siteID,depth,thickness,age,ageOld,ageYoung,chronologyType,chronologyID,taxonPercent,taxonSum,pollenSum,countedInLevel,totalInLevel,datasetID,datasetType,collectionUnitType,collectionUnitHandle,collectionUnitID
+15/1,55.091667,-75.25,244.0,1,0.0,,,,,,,0.1610305958132045,1.0,621.0,20,29,1,pollen surface sample,Modern,15-1,1
+15/2,55.833333,-75.016667,305.0,2,0.0,,,,,,,0.5176876617773942,3.0,579.5,18,28,2,pollen surface sample,Modern,15-2,2
+17/3,55.116667,-75.95,255.0,6,0.0,,,,,,,0.3418803418803419,2.0,585.0,19,26,6,pollen surface sample,Modern,17-3,6
+Three Pines Bog,47.0,-80.116667,294.0,7,1.0,,-26.0,,,Radiocarbon years BP,1,2.386117136659436,11.0,461.0,20,26,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,10.0,,10.0,,,Radiocarbon years BP,1,1.5113350125944585,6.0,397.0,18,22,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,20.0,,50.0,,,Radiocarbon years BP,1,0.7894736842105263,3.0,380.0,20,25,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,30.0,,90.0,,,Radiocarbon years BP,1,1.1135857461024499,5.0,449.0,22,27,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,40.0,,222.0,,,Radiocarbon years BP,1,1.6203703703703702,7.0,432.0,20,28,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,50.0,,447.0,,,Radiocarbon years BP,1,2.0460358056265986,8.0,391.0,21,26,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,60.0,,672.0,,,Radiocarbon years BP,1,1.8789144050104383,9.0,479.0,19,25,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,70.0,,897.0,,,Radiocarbon years BP,1,2.5380710659898478,10.0,394.0,20,24,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,80.0,,1122.0,,,Radiocarbon years BP,1,2.3060796645702304,11.0,477.0,20,26,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,90.0,,1347.0,,,Radiocarbon years BP,1,2.5380710659898478,10.0,394.0,21,25,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,100.0,,1572.0,,,Radiocarbon years BP,1,3.0172413793103448,14.0,464.0,20,24,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,110.0,,1797.0,,,Radiocarbon years BP,1,2.4456521739130435,9.0,368.0,22,24,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,120.0,,2022.0,,,Radiocarbon years BP,1,1.2254901960784315,5.0,408.0,15,20,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,130.0,,2247.0,,,Radiocarbon years BP,1,0.6864988558352403,3.0,437.0,18,23,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,140.0,,2472.0,,,Radiocarbon years BP,1,0.547945205479452,2.0,365.0,17,20,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,150.0,,2697.0,,,Radiocarbon years BP,1,2.8871391076115485,11.0,381.0,25,29,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,160.0,,2921.0,,,Radiocarbon years BP,1,2.1686746987951806,9.0,415.0,16,22,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,170.0,,3146.0,,,Radiocarbon years BP,1,3.5164835164835164,16.0,455.0,23,28,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,180.0,,3371.0,,,Radiocarbon years BP,1,2.211302211302211,9.0,407.0,17,22,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,190.0,,3575.0,,,Radiocarbon years BP,1,1.3605442176870748,6.0,441.0,15,20,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,200.0,,3717.0,,,Radiocarbon years BP,1,1.694915254237288,7.0,413.0,21,24,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,210.0,,3859.0,,,Radiocarbon years BP,1,1.2195121951219512,5.0,410.0,19,22,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,220.0,,4001.0,,,Radiocarbon years BP,1,1.4962593516209477,6.0,401.0,18,23,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,230.0,,4143.0,,,Radiocarbon years BP,1,0.2808988764044944,1.0,356.0,13,15,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,240.0,,4285.0,,,Radiocarbon years BP,1,0.8403361344537815,3.0,357.0,15,19,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,250.0,,4427.0,,,Radiocarbon years BP,1,0.84985835694051,3.0,353.0,21,26,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,260.0,,4569.0,,,Radiocarbon years BP,1,0.47393364928909953,2.0,422.0,17,21,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,270.0,,4711.0,,,Radiocarbon years BP,1,0.8287292817679558,3.0,362.0,22,27,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,280.0,,4853.0,,,Radiocarbon years BP,1,0.8982035928143712,3.0,334.0,15,20,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,290.0,,4995.0,,,Radiocarbon years BP,1,1.41643059490085,5.0,353.0,17,20,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,300.0,,5137.0,,,Radiocarbon years BP,1,0.7246376811594203,3.0,414.0,18,22,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,310.0,,5279.0,,,Radiocarbon years BP,1,0.5037783375314862,2.0,397.0,17,21,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,320.0,,5421.0,,,Radiocarbon years BP,1,1.4184397163120568,6.0,423.0,15,19,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,325.0,,5492.0,,,Radiocarbon years BP,1,0.7159904534606205,3.0,419.0,11,15,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,340.0,,5705.0,,,Radiocarbon years BP,1,0.7425742574257426,3.0,404.0,13,20,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,350.0,,5846.0,,,Radiocarbon years BP,1,0.7246376811594203,3.0,414.0,11,14,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,360.0,,5988.0,,,Radiocarbon years BP,1,0.9029345372460496,4.0,443.0,16,21,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,370.0,,6130.0,,,Radiocarbon years BP,1,0.5037783375314862,2.0,397.0,16,21,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,380.0,,6272.0,,,Radiocarbon years BP,1,0.8264462809917356,3.0,363.0,15,20,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,390.0,,6414.0,,,Radiocarbon years BP,1,0.0,0,368.0,13,18,7,pollen,Core,3PINES,7
+Three Pines Bog,47.0,-80.116667,294.0,7,395.0,,6485.0,,,Radiocarbon years BP,1,0.26246719160104987,1.0,381.0,13,20,7,pollen,Core,3PINES,7
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,0.0,,-40.0,,,Radiocarbon years BP,2,11.208406304728546,64.0,571.0,18,28,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,10.0,,-17.0,,,Radiocarbon years BP,2,10.588235294117647,63.0,595.0,18,28,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,20.0,,7.0,,,Radiocarbon years BP,2,7.017543859649122,24.0,342.0,19,29,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,30.0,,30.0,,,Radiocarbon years BP,2,11.57495256166983,61.0,527.0,20,30,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,40.0,,56.0,,,Radiocarbon years BP,2,2.6217228464419478,7.0,267.0,18,28,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,50.0,,71.0,,,Radiocarbon years BP,2,4.178272980501393,15.0,359.0,18,28,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,60.0,,81.0,,,Radiocarbon years BP,2,3.624733475479744,17.0,469.0,18,28,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,80.0,,100.0,,,Radiocarbon years BP,2,7.780979827089338,27.0,347.0,18,28,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,100.0,,124.0,,,Radiocarbon years BP,2,5.894736842105263,28.0,475.0,17,27,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,120.0,,285.0,,,Radiocarbon years BP,2,6.323185011709602,27.0,427.0,18,27,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,140.0,,472.0,,,Radiocarbon years BP,2,6.379310344827586,37.0,580.0,17,26,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,170.0,,1109.0,,,Radiocarbon years BP,2,5.021834061135371,23.0,458.0,18,28,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,183.0,,1385.0,,,Radiocarbon years BP,2,8.478802992518704,34.0,401.0,18,27,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,200.0,,1746.0,,,Radiocarbon years BP,2,6.326034063260341,26.0,411.0,18,27,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,218.0,,2018.0,,,Radiocarbon years BP,2,3.7344398340248963,18.0,482.0,18,27,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,240.0,,2324.0,,,Radiocarbon years BP,2,3.009259259259259,13.0,432.0,15,23,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,260.0,,2601.0,,,Radiocarbon years BP,2,6.282722513089005,24.0,382.0,17,26,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,280.0,,2867.0,,,Radiocarbon years BP,2,5.527638190954774,22.0,398.0,17,26,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,300.0,,3122.0,,,Radiocarbon years BP,2,7.888631090487238,34.0,431.0,17,26,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,320.0,,3376.0,,,Radiocarbon years BP,2,4.823151125401929,15.0,311.0,17,26,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,340.0,,3520.0,,,Radiocarbon years BP,2,5.3452115812917596,24.0,449.0,17,26,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,360.0,,3606.0,,,Radiocarbon years BP,2,4.967602591792657,23.0,463.0,17,26,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,380.0,,3691.0,,,Radiocarbon years BP,2,2.358490566037736,15.0,636.0,17,26,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,401.0,,3781.0,,,Radiocarbon years BP,2,5.371900826446281,26.0,484.0,19,29,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,420.0,,3921.0,,,Radiocarbon years BP,2,6.078431372549019,31.0,510.0,19,28,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,440.0,,4072.0,,,Radiocarbon years BP,2,6.843267108167771,31.0,453.0,18,27,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,460.0,,4223.0,,,Radiocarbon years BP,2,2.386634844868735,10.0,419.0,16,25,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,480.0,,4390.0,,,Radiocarbon years BP,2,6.620209059233449,19.0,287.0,14,24,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,501.0,,4687.0,,,Radiocarbon years BP,2,7.127429805615551,33.0,463.0,17,26,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,513.0,,4856.0,,,Radiocarbon years BP,2,3.482587064676617,7.0,201.0,13,22,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,530.0,,5096.0,,,Radiocarbon years BP,2,6.0263653483992465,32.0,531.0,16,25,8,pollen,Core,ABALONE,8
+Abalone Rocks Marsh,33.956389,-119.976667,0.0,8,540.0,,5238.0,,,Radiocarbon years BP,2,3.761061946902655,17.0,452.0,14,23,8,pollen,Core,ABALONE,8
+Site 1 (Cohen unpublished),30.83,-82.33,37.0,10,0.0,,,,,,,5.222437137330754,189.0,3619.0,41,44,10,pollen surface sample,Modern,ADC001,10
+South Soefje Bog,29.6,-97.516944,97.0,18,0.0,,,,,,,12.698412698412698,24.0,189.0,17,20,18,pollen surface sample,Modern,AKG001,18
+Alexis Lake,52.516667,-57.033333,200.0,25,527.0,1.0,30.0,,,Radiocarbon years BP,17,0.0,0,351.0,15,22,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,565.0,1.0,3209.0,,,Radiocarbon years BP,17,0.0,0,417.0,17,23,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,585.0,1.0,4883.0,,,Radiocarbon years BP,17,0.6230529595015576,2.0,321.0,9,15,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,605.0,1.0,6098.0,,,Radiocarbon years BP,17,0.2932551319648094,1.0,341.0,15,21,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,625.0,1.0,6855.0,,,Radiocarbon years BP,17,0.2840909090909091,1.0,352.0,15,20,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,645.0,1.0,7613.0,,,Radiocarbon years BP,17,0.0,0,408.0,15,22,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,670.0,1.0,8559.0,,,Radiocarbon years BP,17,0.0,0,127.0,11,16,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,685.0,1.0,9127.0,,,Radiocarbon years BP,17,0.0,0,241.0,14,20,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,705.0,1.0,9885.0,,,Radiocarbon years BP,17,0.0,0,198.0,12,18,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,725.0,1.0,10780.0,,,Radiocarbon years BP,17,0.0,0,221.0,12,17,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,745.0,1.0,11675.0,,,Radiocarbon years BP,17,0.0,0,248.0,16,22,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,767.0,1.0,12659.0,,,Radiocarbon years BP,17,0.0,0,249.0,18,26,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,807.0,1.0,14450.0,,,Radiocarbon years BP,17,0.0,0,105.0,11,16,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,853.0,1.0,19027.0,,,Radiocarbon years BP,17,0.0,0,145.0,15,20,25,pollen,Core,ALEXISLK,25
+Alexis Lake,52.516667,-57.033333,200.0,25,919.0,1.0,25594.0,,,Radiocarbon years BP,17,0.0,0,218.0,17,24,25,pollen,Core,ALEXISLK,25
+Aliuk Pond,54.583333,-57.366667,25.0,27,10.0,1.0,2255.0,,,Radiocarbon years BP,19,0.0,0,224.0,9,13,27,pollen,Core,ALIUK,27
+Aliuk Pond,54.583333,-57.366667,25.0,27,20.0,1.0,3219.0,,,Radiocarbon years BP,19,0.0,0,404.0,10,15,27,pollen,Core,ALIUK,27
+Aliuk Pond,54.583333,-57.366667,25.0,27,30.0,1.0,4182.0,,,Radiocarbon years BP,19,0.0,0,319.0,10,12,27,pollen,Core,ALIUK,27
+Aliuk Pond,54.583333,-57.366667,25.0,27,40.0,1.0,5146.0,,,Radiocarbon years BP,19,0.0,0,252.0,9,11,27,pollen,Core,ALIUK,27
+Aliuk Pond,54.583333,-57.366667,25.0,27,50.0,1.0,6110.0,,,Radiocarbon years BP,19,0.0,0,261.0,10,12,27,pollen,Core,ALIUK,27
+Aliuk Pond,54.583333,-57.366667,25.0,27,60.0,1.0,7074.0,,,Radiocarbon years BP,19,0.0,0,234.0,12,14,27,pollen,Core,ALIUK,27
+Aliuk Pond,54.583333,-57.366667,25.0,27,70.0,1.0,8037.0,,,Radiocarbon years BP,19,0.39370078740157477,1.0,254.0,17,20,27,pollen,Core,ALIUK,27
+Aliuk Pond,54.583333,-57.366667,25.0,27,80.0,1.0,9001.0,,,Radiocarbon years BP,19,0.0,0,129.0,12,14,27,pollen,Core,ALIUK,27
+Aliuk Pond,54.583333,-57.366667,25.0,27,90.0,1.0,9965.0,,,Radiocarbon years BP,19,0.7352941176470588,1.0,136.0,13,15,27,pollen,Core,ALIUK,27
+Lake Allie,44.8036,-94.55789999999999,328.0,29,1.0,,-12.0,,,Radiocarbon years BP,21,16.831683168316832,68.0,404.0,34,38,29,pollen,Core,ALLIE,29
+Lake Allie,44.8036,-94.55789999999999,328.0,29,10.0,,18.0,,,Radiocarbon years BP,21,13.975903614457833,58.0,415.0,35,38,29,pollen,Core,ALLIE,29
+Lake Allie,44.8036,-94.55789999999999,328.0,29,20.0,,51.0,,,Radiocarbon years BP,21,14.432989690721648,56.0,388.0,33,36,29,pollen,Core,ALLIE,29
+Lake Allie,44.8036,-94.55789999999999,328.0,29,30.0,,84.0,,,Radiocarbon years BP,21,13.563829787234042,51.0,376.0,30,35,29,pollen,Core,ALLIE,29
+Lake Allie,44.8036,-94.55789999999999,328.0,29,40.0,,116.0,,,Radiocarbon years BP,21,17.261904761904763,58.0,336.0,33,38,29,pollen,Core,ALLIE,29
+Lake Allie,44.8036,-94.55789999999999,328.0,29,50.0,,149.0,,,Radiocarbon years BP,21,24.316939890710383,89.0,366.0,35,38,29,pollen,Core,ALLIE,29
+Lake Allie,44.8036,-94.55789999999999,328.0,29,60.0,,182.0,,,Radiocarbon years BP,21,20.670391061452513,74.0,358.0,30,33,29,pollen,Core,ALLIE,29
+Lake Allie,44.8036,-94.55789999999999,328.0,29,70.0,,215.0,,,Radiocarbon years BP,21,13.88888888888889,45.0,324.0,31,34,29,pollen,Core,ALLIE,29
+Lake Allie,44.8036,-94.55789999999999,328.0,29,80.0,,248.0,,,Radiocarbon years BP,21,18.04733727810651,61.0,338.0,28,32,29,pollen,Core,ALLIE,29
+Lake Allie,44.8036,-94.55789999999999,328.0,29,90.0,,281.0,,,Radiocarbon years BP,21,21.114369501466275,72.0,341.0,27,32,29,pollen,Core,ALLIE,29
+Lake Allie,44.8036,-94.55789999999999,328.0,29,100.0,,314.0,,,Radiocarbon years BP,21,17.857142857142858,60.0,336.0,28,33,29,pollen,Core,ALLIE,29
+Lake Allie,44.8036,-94.55789999999999,328.0,29,110.0,,346.0,,,Radiocarbon years BP,21,19.402985074626866,65.0,335.0,25,28,29,pollen,Core,ALLIE,29
+Lake Allie,44.8036,-94.55789999999999,328.0,29,120.0,,379.0,,,Radiocarbon years BP,21,18.766756032171582,70.0,373.0,30,34,29,pollen,Core,ALLIE,29
+Lake Allie,44.8036,-94.55789999999999,328.0,29,130.0,,412.0,,,Radiocarbon years BP,21,24.840764331210192,78.0,314.0,29,34,29,pollen,Core

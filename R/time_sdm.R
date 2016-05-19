@@ -5,7 +5,7 @@ library(SDMTools)
 globals.ncores = 4
 globals.memory = Inf
 globals.nreps = 2
-globals.noccOpts = c(25, 50, 75, 100, 200, 500)
+globals.noccOpts = c(50, 75, 100, 200, 500)
 globals.srOpts = c(1, 0.5, 0.25, 0.1)
 globals.speciesOpts = c("sequoia")
 
@@ -58,7 +58,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   }else if (sr==0.25){
     pred <- pred_025deg
   }else if (sr == 0.1){
-    pred <- pred_01deg
+    pred <- pred_0_1deg
   }else{
     print("Invalid spatial resolution")
     return(FALSE)
@@ -70,7 +70,12 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   testing_set <- points[sample(q, q_test), ] ## select q_test random rows from points
   
   ## now take a random sampling on nocc rows
-  training_set <- points[sample(q, nocc), ] ## this is what we will build the model upon
+  if (nocc < q){
+    training_set <- points[sample(q, nocc), ] ## this is what we will build the model upon
+  }else{
+    training_set <- points[sample(q, q*0.8), ] ## hack around for debug on small files
+  }
+  
   
   
   ####*******Train the Model ******######
@@ -133,7 +138,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   r <- c(species, ncores, memory, sr, nocc, presence_threshold, totalTime['elapsed'], fitTime['elapsed'], predTime['elapsed'], accTime['elapsed'],
          accThreshold, accAUC, accOmmissionRate, accSensitivity, accSpecificity, accPropCorrect, accKappa,
          ntrees, cvDeviance.mean, cvDeviance.se, cvCorrelation.mean, cvCorrelation.se, cvRoc.mean, cvRoc.se,
-         trainingResidualDeviance, trainingTotalDeviance, trainingCorrelation, trainingRoc)
+         trainingResidualDeviance, trainingTotalDeviance, trainingCorrelation, trainingRoc, Sys.time())
   return (r) 
 }
 
@@ -143,12 +148,20 @@ ModelMaster <- function(cores, memory){
   rownames <- c("Species", "Cores", "Memory", "SpatialResolution", "NumOccurrences", "Threshold", "TotalTime", "fitTime", "predTime", "accTime", "threshold", 
                 "AUC", "ommission.rate", "sensitivity", "specificty", "prop.correct", "Kappa", 
                 'NumTrees', 'meanCVDeviance', 'seCVDeviance', 'meanCVCorrelation', 'seCVCorrelation', 'meanCVRoc', 'seCVRoc', 'trainingResidualDeviance', 'trainingMeanDeviance',
-                'trainingCorrelation', 'trainingROC')
-  for (n in 1:globals.nreps){
-    res <- timeSDM("sequoia", globals.ncores, globals.memory,100, 0.25)
-    df[[n]] <- res
-    print(n)
+                'trainingCorrelation', 'trainingROC', "Timestamp")
+  expID = 1
+  for (no in globals.noccOpts){ ## number of training examples 
+    for (sr in globals.srOpts){ ## spatial resolution
+      for (n in 1:globals.nreps){ ## these are the individual repeitions
+        res <- timeSDM("sequoia", globals.ncores, globals.memory,no, sr)
+        df[[expID]] <- res
+        print(expID)
+        expID = expID + 1
+      }
+    }
   }
+
+
   df <- t(data.frame(df))
   colnames(df) <- rownames
   View(df)
