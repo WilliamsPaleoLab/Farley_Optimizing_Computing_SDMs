@@ -5,7 +5,7 @@ import json
 import sys
 import pprint
 
-outputFile = "/Users/scottsfarley/documents/thesis-scripts/data/occurrences/Quercus.csv"
+outputFile = "/Users/scottsfarley/documents/thesis-scripts/data/occurrences/Tsuga.csv"
 
 
 
@@ -44,7 +44,7 @@ outputkeys= ['siteName', 'siteLatitude', 'siteLongitude', 'siteAltitude', 'siteI
 writer = csv.DictWriter(open(outputFile, 'w'), fieldnames=outputkeys)
 writer.writeheader()
 
-taxonSearch = "Quercus*"
+taxonSearch = "Tsuga*"
 
 
 testString = ''.join(ch for ch in taxonSearch if ch.isalnum()) ## this is the searchstring without anything else
@@ -54,8 +54,12 @@ testString = testString.upper()
 searchEndpoint = "http://api.neotomadb.org/v1/data/datasets?"
 bbox = '-167.2764,5.4995,-52.23204,83.162102' ## North America
 searchString = searchEndpoint + 'taxonname=' + taxonSearch + "&loc=" + bbox
-
-datasets = requests.get(searchString).json()
+try:
+    datasets = requests.get(searchString).json()
+except Exception as e:
+    print "Request error: " + str(e)
+    print "Dying..."
+    sys.exit(1)
 if datasets['success']:
     numDatasets = len(datasets['data'])
     print "Found ", numDatasets, "datasets for", taxonSearch
@@ -85,8 +89,12 @@ for dataset in datasets:
     siteID = dataset['Site']['SiteID']
     siteDesc = dataset['Site']['SiteDescription']
     downloadString = downloadEndpoint + str(datasetID)
-    print "Downloading dataset #", datasetID
-    download = requests.get(downloadString).json()
+    try:
+        download = requests.get(downloadString).json()
+    except Exception as e:
+        print "Request Error: " + str(e)
+        print "Dying..."
+        sys.exit()
     if download['success']:
         pass
     else:
@@ -95,6 +103,7 @@ for dataset in datasets:
     download = download['data'][0] ## just keep the first item in the data array
     chronID = download['DefChronologyID'] ## default chronology ID
     samples = download['Samples'] ## this is an array
+    print 'Dataset #', datasetID, "downloaded successfully with", len(samples), "samples."
     ## iterate through all of the samples (these are levels in a core)
     for sample in samples:
         depth = sample['AnalysisUnitDepth']
@@ -162,6 +171,7 @@ for dataset in datasets:
         except Exception as e:
             pass
     print (it / numDatasets)*100
+    it += 1
 
 
 

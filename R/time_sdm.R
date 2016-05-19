@@ -33,7 +33,8 @@ occPath <- "/Users/scottsfarley/documents/thesis-scripts/data/occurrences/"
 # picea_points <- read.csv(paste(occPath, "picea_ready.csv", sep=""))
 sequoia_points <- read.csv(paste(occPath, "sequoia_ready.csv", sep=""))
 
-timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, presence_threshold=0.5){
+timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto', 
+presence_threshold='auto', presence_threshold.method='max.sensitivity+specificity', percentField='pollenPercentage'){
   startTime <- proc.time()
   ## get the right species points
   if (species == "sequoia"){
@@ -64,6 +65,23 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
     return(FALSE)
   }
   
+  ## define the presence threshold from the pollen percentage data as defined by Nieto-Lugilde et al 2015
+  ## using the VAR_05 method
+  ## calculate the maximum percentage for the taxon then take 5% of that
+  if (pollen_threshold == 'auto'){
+    m <- max(points[percentField])
+    pollen_threshold <- m * 0.05
+    print(pollen_threshold)
+  }## else, its whatever is set in args
+  
+  ##do the thresholding
+  points['presence'] <- points[percentField]
+  points['presence'][points['presence'] < pollen_threshold] = 0
+  points['presence'][points['presence'] >= pollen_threshold] = 1
+  
+  
+  
+  
   ## Take a testing set
   q <- nrow(points)
   q_test <- testingFrac*q
@@ -75,7 +93,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   }else{
     training_set <- points[sample(q, q*0.8), ] ## hack around for debug on small files
   }
-  
+  print(training_set)
   
   
   ####*******Train the Model ******######
@@ -85,22 +103,34 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   fitEnd <- proc.time()
   fitTime <- fitEnd - fitStart
   
+  print ("Got to 106")
   ####*******Train the Model ******######
   predStart <- proc.time()
   prediction <- predict(pred, model, n.trees=model$gbm.call$best.trees, type="response")
   predEnd <- proc.time()
   predTime <- predEnd - predStart
   
+  print("Got to 114")
   ####*******Evaluate the Model ******######
   accStart <- proc.time()
   if(plot_prediction){
     plot(prediction)
   }
-  
+
+  print ("Got to here 118")
   
   test_preds <- predict.gbm(model, testing_set, n.trees=model$gbm.call$best.trees, type='response') ## these are the predicted values from the gbm at the points held out as testing set
   test_real <- as.vector(testing_set['presence']) ## these are pre-thresholded 'real' values of testing set coordiantes
   test_real <- t(test_real) ## transpose so its a row vector
+  
+  print("Got to here 124")
+  ##experiment with optimal thresholding
+  if (presence_threshold == 'auto'){
+    opt_threshold <- optim.thresh(test_real, test_preds)
+    print(opt_threshold)
+    presence_threshold = opt_threshold[presence_threshold.method]
+  }
+  print("Got to here 131")
   
   confusion_matrix <- confusion.matrix(test_real, test_preds, presence_threshold)
   
@@ -135,7 +165,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   totalTime <- endTime - startTime
   ## assemble the return vector
   
-  r <- c(species, ncores, memory, sr, nocc, presence_threshold, totalTime['elapsed'], fitTime['elapsed'], predTime['elapsed'], accTime['elapsed'],
+  r <- c(species, ncores, memory, sr, nocc, pollen_threshold, presence_threshold, totalTime['elapsed'], fitTime['elapsed'], predTime['elapsed'], accTime['elapsed'],
          accThreshold, accAUC, accOmmissionRate, accSensitivity, accSpecificity, accPropCorrect, accKappa,
          ntrees, cvDeviance.mean, cvDeviance.se, cvCorrelation.mean, cvCorrelation.se, cvRoc.mean, cvRoc.se,
          trainingResidualDeviance, trainingTotalDeviance, trainingCorrelation, trainingRoc, Sys.time())
@@ -145,7 +175,8 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 ModelMaster <- function(cores, memory){
   ## will run all combinations of species, nocc, sr and reps for a combination of cores and memory
   df <- list()
-  rownames <- c("Species", "Cores", "Memory", "SpatialResolution", "NumOccurrences", "Threshold", "TotalTime", "fitTime", "predTime", "accTime", "threshold", 
+  rownames <- c("Species", "Cores", "Memory", "SpatialResolution", "NumOccurrences", "pollenThreshold", "presenceThreshold", "TotalTime", "fitTime", "predTime", "accTime", 
+                "accThreshold", 
                 "AUC", "ommission.rate", "sensitivity", "specificty", "prop.correct", "Kappa", 
                 'NumTrees', 'meanCVDeviance', 'seCVDeviance', 'meanCVCorrelation', 'seCVCorrelation', 'meanCVRoc', 'seCVRoc', 'trainingResidualDeviance', 'trainingMeanDeviance',
                 'trainingCorrelation', 'trainingROC', "Timestamp")
