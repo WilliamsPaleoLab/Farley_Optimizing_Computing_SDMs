@@ -414,8 +414,8 @@ class Vars:
 
 
 import csv
-f = open("C://Users/willlab/documents/scott/thesis-scripts/data/occurrences/tsuga_with_climate.csv", 'r')
-out = open("C://Users/willlab/documents/scott/thesis-scripts/data/occurrences/tsuga_biovars.csv", 'w')
+f = open("C://Users/willlab/documents/scott/thesis-scripts/data/occurrences/picea_with_climate.csv", 'r')
+out = open("C://Users/willlab/documents/scott/thesis-scripts/data/occurrences/picea_biovars.csv", 'w')
 writer = csv.writer(out, lineterminator="\n")
 reader = csv.reader(f)
 header = True
