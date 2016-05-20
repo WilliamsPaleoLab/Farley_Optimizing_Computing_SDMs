@@ -1,13 +1,19 @@
+## load external libraries
+library(gbm)
 library(dismo)
 library(raster)
 library(SDMTools)
+
+
 ## initialization
 globals.ncores = Inf
 globals.memory = Inf
-globals.nreps = 2
-globals.noccOpts = c(50, 75, 100, 200, 500)
+globals.nreps = 1
+globals.noccOpts = c(50, 500, 1000, 10000, 30000)
 globals.srOpts = c(1, 0.5, 0.25, 0.1)
-globals.speciesOpts = c("sequoia")
+globals.speciesOpts = c('betula', 'quercus', 'picea', 'tsuga')
+
+## define a database connection
 
 ## predictor rasters
 ## HADGem 2100 monthly averages
@@ -117,8 +123,7 @@ presence_threshold='auto', presence_threshold.method='maxKappa', percentField='p
   test_preds <- predict.gbm(model, testing_set, n.trees=model$gbm.call$best.trees, type='response') ## these are the predicted values from the gbm at the points held out as testing set
   test_real <- as.vector(testing_set['presence']) ## these are pre-thresholded 'real' values of testing set coordiantes
   test_real <- t(test_real) ## transpose so its a row vector
-  
-  print("Got to here 124")
+
   ##experiment with optimal thresholding
   if (presence_threshold == 'auto'){
     opt_threshold <- optim.thresh(test_real, test_preds)
@@ -175,16 +180,19 @@ ModelMaster <- function(cores, memory){
                 'NumTrees', 'meanCVDeviance', 'seCVDeviance', 'meanCVCorrelation', 'seCVCorrelation', 'meanCVRoc', 'seCVRoc', 'trainingResidualDeviance', 'trainingMeanDeviance',
                 'trainingCorrelation', 'trainingROC', "Timestamp")
   expID = 1
-  for (no in globals.noccOpts){ ## number of training examples 
-    for (sr in globals.srOpts){ ## spatial resolution
-      for (n in 1:globals.nreps){ ## these are the individual repeitions
-        res <- timeSDM("sequoia", globals.ncores, globals.memory,no, sr)
-        df[[expID]] <- res
-        print(expID)
-        expID = expID + 1
+  for (taxon in globals.speciesOpts){
+    for (no in globals.noccOpts){ ## number of training examples 
+      for (sr in globals.srOpts){ ## spatial resolution
+        for (n in 1:globals.nreps){ ## these are the individual repeitions
+          res <- timeSDM(taxon, globals.ncores, globals.memory,no, sr)
+          df[[expID]] <- res
+          print(expID)
+          expID = expID + 1
+        }
       }
     }
   }
+
 
 
   df <- t(data.frame(df))

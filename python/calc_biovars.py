@@ -409,10 +409,6 @@ class Vars:
 
 
 
-
-
-
-
 import csv
 f = open("C://Users/willlab/documents/scott/thesis-scripts/data/occurrences/picea_with_climate.csv", 'r')
 out = open("C://Users/willlab/documents/scott/thesis-scripts/data/occurrences/picea_biovars.csv", 'w')
