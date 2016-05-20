@@ -2,7 +2,7 @@ library(dismo)
 library(raster)
 library(SDMTools)
 ## initialization
-globals.ncores = 4
+globals.ncores = Inf
 globals.memory = Inf
 globals.nreps = 2
 globals.noccOpts = c(50, 75, 100, 200, 500)
@@ -12,7 +12,7 @@ globals.speciesOpts = c("sequoia")
 ## predictor rasters
 ## HADGem 2100 monthly averages
 ## bioclimatic vars 2, 7, 8, 15, 18, 19
-predPath <- "/Users/scottsfarley/documents/thesis-scripts/data/predictors/standard_biovars/"
+predPath <- "C://Users/willlab/documents/Scott/thesis-scripts/data/predictors/standard_biovars/"
 
 pred_1deg <- stack(paste(predPath, "1_deg/", "standard_biovars_1_deg_2100.tif", sep=""))
 pred_05deg <- stack(paste(predPath, "0_5_deg/", "standard_biovars_0_5_deg_2100.tif", sep=""))
@@ -26,11 +26,11 @@ names(pred_0_1deg) <- c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19")
 
 ## load the occurrences 
 ## prethresholded and filtered to only include the above bioclimatic vars
-occPath <- "/Users/scottsfarley/documents/thesis-scripts/data/occurrences/"
-# quercus_points <- read.csv(paste(occPath, "quercus_ready.csv", sep=""))
-# betula_points <- read.csv(paste(occPath, "betula_ready.csv", sep=""))
-# tsuga_points <- read.csv(paste(occPath, "tsuga_ready.csv", sep=""))
-# picea_points <- read.csv(paste(occPath, "picea_ready.csv", sep=""))
+occPath <- "C://Users/willlab/documents/Scott/thesis-scripts/data/occurrences/"
+quercus_points <- read.csv(paste(occPath, "quercus_ready.csv", sep=""))
+betula_points <- read.csv(paste(occPath, "betula_ready.csv", sep=""))
+tsuga_points <- read.csv(paste(occPath, "tsuga_ready.csv", sep=""))
+picea_points <- read.csv(paste(occPath, "picea_ready.csv", sep=""))
 sequoia_points <- read.csv(paste(occPath, "sequoia_ready.csv", sep=""))
 
 timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto', 
@@ -196,7 +196,7 @@ ModelMaster <- function(cores, memory){
   df <- t(data.frame(df))
   colnames(df) <- rownames
   View(df)
-  write.csv(df, "/users/scottsfarley/documents/thesis-scripts/data/output/test.csv")
+  write.csv(df, "C://Users/willlab/documents/Scott/thesis-scripts/data/output/dry_run.csv")
 }
 
 
