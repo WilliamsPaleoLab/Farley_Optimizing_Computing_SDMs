@@ -34,7 +34,7 @@ picea_points <- read.csv(paste(occPath, "picea_ready.csv", sep=""))
 sequoia_points <- read.csv(paste(occPath, "sequoia_ready.csv", sep=""))
 
 timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto', 
-presence_threshold='auto', presence_threshold.method='max.sensitivity+specificity', percentField='pollenPercentage'){
+presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage'){
   startTime <- proc.time()
   ## get the right species points
   if (species == "sequoia"){
@@ -71,7 +71,6 @@ presence_threshold='auto', presence_threshold.method='max.sensitivity+specificit
   if (pollen_threshold == 'auto'){
     m <- max(points[percentField])
     pollen_threshold <- m * 0.05
-    print(pollen_threshold)
   }## else, its whatever is set in args
   
   ##do the thresholding
@@ -93,7 +92,6 @@ presence_threshold='auto', presence_threshold.method='max.sensitivity+specificit
   }else{
     training_set <- points[sample(q, q*0.8), ] ## hack around for debug on small files
   }
-  print(training_set)
   
   
   ####*******Train the Model ******######
@@ -102,22 +100,19 @@ presence_threshold='auto', presence_threshold.method='max.sensitivity+specificit
                     tree.complexity=5, learning.rate=0.001, verbose=FALSE, silent=TRUE)
   fitEnd <- proc.time()
   fitTime <- fitEnd - fitStart
-  
-  print ("Got to 106")
+
   ####*******Train the Model ******######
   predStart <- proc.time()
   prediction <- predict(pred, model, n.trees=model$gbm.call$best.trees, type="response")
   predEnd <- proc.time()
   predTime <- predEnd - predStart
   
-  print("Got to 114")
   ####*******Evaluate the Model ******######
   accStart <- proc.time()
   if(plot_prediction){
     plot(prediction)
   }
 
-  print ("Got to here 118")
   
   test_preds <- predict.gbm(model, testing_set, n.trees=model$gbm.call$best.trees, type='response') ## these are the predicted values from the gbm at the points held out as testing set
   test_real <- as.vector(testing_set['presence']) ## these are pre-thresholded 'real' values of testing set coordiantes
@@ -127,10 +122,9 @@ presence_threshold='auto', presence_threshold.method='max.sensitivity+specificit
   ##experiment with optimal thresholding
   if (presence_threshold == 'auto'){
     opt_threshold <- optim.thresh(test_real, test_preds)
-    print(opt_threshold)
-    presence_threshold = opt_threshold[presence_threshold.method]
+    presence_threshold = opt_threshold[[presence_threshold.method]]
+    presence_threshold = mean(presence_threshold)
   }
-  print("Got to here 131")
   
   confusion_matrix <- confusion.matrix(test_real, test_preds, presence_threshold)
   
