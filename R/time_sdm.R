@@ -1,17 +1,78 @@
 ## load external libraries
-library(gbm)
-library(dismo)
-library(raster)
-library(SDMTools)
+library(gbm) ## base pacakges for regression trees
+library(dismo) ## SDM package --> boosted regression tree function
+library(raster) ## for raster manipulation
+library(SDMTools) ## for accuracy assessment
+library(RMySQL) ## for database communication
+library(futile.logger) ## for logging to file
+
+## get system details
+systemVars <- Sys.info()
+os <- systemVars['sysname'][[1]]
+osRelease <- systemVars['release'][[1]]
+osVersion <- systemVars['version'][[1]]
+nodeName <- systemVars['nodename'][[1]]
+machineArch <- systemVars['machine'][[1]]
+loginName <- systemVars['login'][[1]]
+gui <- .Platform$GUI
+rArch <- .Platform$r_arch
+r <- R.Version()
+rVersion <- r$version.string
+rPlatform <- r$platform
+rName <- r$nickame
+nCores <- detectCores()
+platString <- paste(os, osRelease, osVersion, nodeName, machineArch)
 
 
 ## initialization
-globals.ncores = Inf
-globals.memory = Inf
+globals.ncores = nCores
+globals.memory = -1
 globals.nreps = 1
 globals.noccOpts = c(50, 500, 1000, 10000, 30000)
 globals.srOpts = c(1, 0.5, 0.25, 0.1)
 globals.speciesOpts = c('betula', 'quercus', 'picea', 'tsuga')
+
+
+##database utils
+dbDisconnectAll <- function(){ # close all active connections
+  lapply( dbListConnections(MySQL()), function(x) dbDisconnect(x) )
+}
+
+oqc <- function(sql){ ##open, query, close --> hack because I can't increase the timeout on the server 
+  con <- dbConnect(MySQL(), host=hostname, dbname=dbname, user=username, password=password)
+  result <- dbGetQuery(con, sql)
+  dbDisconnectAll()
+  return (result)
+}
+
+## set up logging to file and database
+## lgoging writes messages to disk, 
+## database records to remote mysql results
+
+##logger
+flog.logger("logger", DEBUG, appender=appender.file("C://Users/willlab/documents/scott/thesis-scripts/logs/testing.log"))
+flog.info("Starting script on %s", platString, name='logger')
+
+
+## database
+## load the database params
+source("C://Users/willlab/documents/scott/thesis-scripts/R/config.R")
+flog.info("Loaded db config.")
+##insert a new session 
+sql <- paste("INSERT INTO Sessions values (DEFAULT, '", os, "','", osRelease, "','", osVersion, "','", nodeName, "','", machineArch, "','", loginName, "','", loginName, "','", rArch, "','", rVersion, "','", rName, "','", rPlatform, "', DEFAULT, DEFAULT, 0, 0);", sep="")
+flog.info(sql)
+oqc(sql)
+
+## get the inserted ID
+sql <- "SELECT max(sessionID) FROM Sessions;"
+sessionID <- oqc(sql)[[1]]
+
+
+##logger
+flog.logger("logger", DEBUG, appender=appender.file("C://Users/willlab/document/scott/thesis-scripts/logs/testing.log"))
+flog.info("Starting session #%s", sessionID)
+
+
 
 ## define a database connection
 
@@ -40,7 +101,7 @@ picea_points <- read.csv(paste(occPath, "picea_ready.csv", sep=""))
 sequoia_points <- read.csv(paste(occPath, "sequoia_ready.csv", sep=""))
 
 timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto', 
-presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage'){
+presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage', test=FALSE){
   startTime <- proc.time()
   ## get the right species points
   if (species == "sequoia"){
@@ -83,8 +144,6 @@ presence_threshold='auto', presence_threshold.method='maxKappa', percentField='p
   points['presence'] <- points[percentField]
   points['presence'][points['presence'] < pollen_threshold] = 0
   points['presence'][points['presence'] >= pollen_threshold] = 1
-  
-  
   
   
   ## Take a testing set
@@ -169,9 +228,9 @@ presence_threshold='auto', presence_threshold.method='maxKappa', percentField='p
          ntrees, cvDeviance.mean, cvDeviance.se, cvCorrelation.mean, cvCorrelation.se, cvRoc.mean, cvRoc.se,
          trainingResidualDeviance, trainingTotalDeviance, trainingCorrelation, trainingRoc, Sys.time())
   return (r) 
-}
+}## end timeSDM function
 
-ModelMaster <- function(cores, memory){
+ModelMaster <- function(){
   ## will run all combinations of species, nocc, sr and reps for a combination of cores and memory
   df <- list()
   rownames <- c("Species", "Cores", "Memory", "SpatialResolution", "NumOccurrences", "pollenThreshold", "presenceThreshold", "TotalTime", "fitTime", "predTime", "accTime", 
@@ -179,15 +238,51 @@ ModelMaster <- function(cores, memory){
                 "AUC", "ommission.rate", "sensitivity", "specificty", "prop.correct", "Kappa", 
                 'NumTrees', 'meanCVDeviance', 'seCVDeviance', 'meanCVCorrelation', 'seCVCorrelation', 'meanCVRoc', 'seCVRoc', 'trainingResidualDeviance', 'trainingMeanDeviance',
                 'trainingCorrelation', 'trainingROC', "Timestamp")
-  expID = 1
+  flog.info("Loaded model master.")
+  index = 1
   for (taxon in globals.speciesOpts){
     for (no in globals.noccOpts){ ## number of training examples 
       for (sr in globals.srOpts){ ## spatial resolution
         for (n in 1:globals.nreps){ ## these are the individual repeitions
-          res <- timeSDM(taxon, globals.ncores, globals.memory,no, sr)
-          df[[expID]] <- res
-          print(expID)
-          expID = expID + 1
+          ## get the experiment id from the experiments table in the database
+          sql <- paste("SELECT experimentNum, cellNumber FROM Experiments WHERE taxon='", taxon, "' AND spatialResolution=", sr , " AND numOccurrences=" , no , " AND replicateNumber=",
+                       n, " AND Cores=", globals.ncores, " AND memory=", globals.memory, ";", sep="")
+          flog.info(sql)
+          thisID <- oqc(sql)
+          ## insert into the run table so we can check this off the list
+          if ((nrow(thisID) ==0) || (test=TRUE)){
+            ## this is a test
+            cellID = -1
+            expID = -1
+          }else{
+            cellID = thisID['cellNumber']
+            expID = thisID['experimentNumber']
+          }
+          flog.info("Running cell: %s, replicate #%s ***%s***", cellID, n, expID)
+          sql <- paste("INSERT INTO Runs VALUES (DEFAULT, ", cellID, ",", n, ",'", expID, "',", sessionID, ",'STARTED');", sep="")
+          flog.info(sql)
+          oqc(sql)
+          ######
+          res <- timeSDM(taxon, globals.ncores, globals.memory,no, sr) ## do the run
+           #####
+          flog.info("Run successful.")
+          print(res)
+          ## do results stuff
+          df[[index]] <- res ## append to the results vector
+          ## put the results into the database
+          sql <- paste("INSERT INTO Results VALUES (DEFAULT, ", cellID, ",", n, ",'", expID, "','", res[1], "',", res[2], ",", res[3], ",",
+                       res[4], ",", res[5], ",", res[6], ",", res[7], ",", res[8], ",", res[9], ",", res[10], ",", res[11], ",",
+                       res[12], ",", res[13], ",", res[14], ",", res[15], ",", res[16], ",", res[17], ",", res[18], ",", res[19],",",
+                       res[20], ",", res[21], ",", res[22], ",", res[23], ",", res[24], ",", res[25], ",", res[26], ",", res[27],",",
+                       res[28], ", DEFAULT);", sep=""
+                       )
+          flog.info(sql)
+          oqc(sql)
+          ## and set the run to finished
+          sql <- paste("UPDATE Runs SET runStatus='DONE' WHERE cellID=", cellID, " AND cellRep=", n, ";", sep="")
+          flog.info(sql)
+          oqc(sql)
+          index = index + 1
         }
       }
     }
