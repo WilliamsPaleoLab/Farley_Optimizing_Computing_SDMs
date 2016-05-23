@@ -3,7 +3,9 @@ __author__ = 'scottsfarley'
 import csv
 import json
 
-writer = csv.writer(open('/Users/scottsfarley/documents/thesis-scripts/data/experiment_grid.csv','w'))
+
+
+#writer = csv.writer(open('/Users/scottsfarley/documents/thesis-scripts/data/experiment_grid.csv','w'))
 
 coreOpts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] ##cpu cores
 memoryOpts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] ## mbytes memory
@@ -19,7 +21,7 @@ writer.writerow(header)
 hier = {'name' : 'root', 'children' : []}
 
 expID = 0
-size = 10
+size = 1000
 for c in coreOpts:
     cKey = "C" + str(c)
     cChildren = []
@@ -55,7 +57,7 @@ for c in coreOpts:
     cOut = {'name' : cKey, 'children' : cChildren}
     hier['children'].append(cOut)
 
-json.dump(hier, open("/Users/scottsfarley/documents/thesis-scripts/data/hierarchy.json",'w'))
+json.dump(hier, open("/Users/scottsfarley/documents/thesis-scripts/web/treemap/hierarchy.json",'w'))
 
 
 
