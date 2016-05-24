@@ -269,7 +269,7 @@ ModelMaster <- function(){
           
           flog.info("Running cell: %s, replicate #%s ***%s***", cellID, n, idString, name='logger')
           flog.info("Running %s  Cell Params: Cores: %s, Memory: %s, Taxon: %s, SR: %s, NO: %s", idString, globals.ncores, globals.memory, taxon, sr, no)
-          sql <- paste("UPDATE Experiments SET runSession=", sessionID, ", runStatus='STARTED, lastUpdated=DEFAULT WHERE experimentID=", idString, ";", sep="")
+          sql <- paste("UPDATE Experiments SET runSession=", sessionID, ", runStatus='STARTED', lastUpdated=DEFAULT WHERE experimentID='", idString, "';", sep="")
           oqc(sql)
           errorMessage = FALSE
           ######
