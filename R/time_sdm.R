@@ -1,4 +1,4 @@
-## load external libraries
+ ## load external libraries
 library(gbm) ## base pacakges for regression trees
 library(dismo) ## SDM package --> boosted regression tree function
 library(raster) ## for raster manipulation
@@ -30,7 +30,7 @@ set.seed(1)
 globals.ncores = nCores
 globals.memory = -1
 globals.nreps = 10
-globals.noccOpts = c(50, 500, 1000, 10000, 30000)
+globals.noccOpts = c(50, 500, 1000, 10000)
 globals.srOpts = c(1, 0.5, 0.25, 0.1)
 globals.speciesOpts = c('betula', 'quercus', 'picea', 'tsuga')
 
@@ -249,43 +249,50 @@ ModelMaster <- function(){
         cells = cells + 1
         for (n in 1:globals.nreps){ ## these are the individual repeitions
           ## get the experiment id from the experiments table in the database
-          sql <- paste("SELECT cellNumber FROM Experiments WHERE taxon='", taxon, "' AND spatialResolution=", sr , " AND numOccurrences=" , no , " AND replicateNumber=",
-                       n, " AND Cores=", globals.ncores, " AND memory=", globals.memory, ";", sep="")
+          ## make sure it is not currently in progress --> select only 'QUEUED' experiments
+          sql <- paste("SELECT cellNumber FROM Experiments  WHERE taxon='", taxon, "' AND spatialResolution=", sr , " AND numOccurrences=" , no , " AND replicateNumber=",
+                       n, " AND Cores=", globals.ncores, " AND memory=", globals.memory, " AND runStatus='QUEUED';", sep="")
           thisID <- oqc(sql)
-          ## insert into the run table so we can check this off the list
+          ## see if we got results back
           if (nrow(thisID) == 0){
-            flog.fatal("Found no matching experiments.")
+            flog.info("Found no matching experiments. Proceeding...")
+            next
           }
+          ## get the experiment numbers
           cellID = thisID['cellNumber']
           idString = paste(cellID, n, sep=".")
+          
+          
           flog.info("Running cell: %s, replicate #%s ***%s***", cellID, n, idString, name='logger')
           flog.info("Running %s  Cell Params: Cores: %s, Memory: %s, Taxon: %s, SR: %s, NO: %s", idString, globals.ncores, globals.memory, taxon, sr, no)
-          sql <- paste("INSERT INTO Runs VALUES (DEFAULT, ", cellID, ",", n, ",'", idString, "',", sessionID, ",'STARTED');", sep="")
+          sql <- paste("UPDATE Experiments SET runSession=", sessionID, ", runStatus='STARTED, lastUpdated=DEFAULT WHERE experimentID=", idString, ";", sep="")
           oqc(sql)
           errorMessage = FALSE
           ######
           #**
           #**
-          res <- tryCatch(timeSDM(taxon, globals.ncores, globals.memory,no, sr), error=function(e){
-            errorMessage = TRUE
-            flog.error(e, name='logger')
-            print(e)
-            sql <- paste("UPDATE Runs SET runStatus='ERROR' WHERE cellID=", cellID, " AND cellRep=", n, ";", sep="") 
-            oqc(sql)
-            flog.fatal("Error message recieved.")
-            flog.info("Cell %s Replicate %s: ERROR", cellID, n, name='logger') ## to file
-            return(c(FALSE))
+          res <- tryCatch(timeSDM(taxon, globals.ncores, globals.memory,no, sr),  ##this is the run here
+                          error=function(e){ ## catch if the run raises an error
+                            errorMessage = TRUE
+                            flog.error(e, name='logger')
+                            print(e)
+                            return(c(FALSE))
           }) ## do the run
           #**
           #**
           if (res[1] == FALSE){
             print("ADVANCING")
             flog.error('Caught error. Advancing...')
+            flog.error('Passing error.', name='logger')
+            flog.fatal("Run %s Errored. Proceeding to next replicate.", idString)
+            flog.info("Cell %s Replicate %s: ERROR", cellID, n, name='logger') ## to file
+            sql <- paste("UPDATE Experiments SET runStatus='ERROR', lastUpdated=DEFAULT WHERE cellNumber=", cellID, " AND replicateNumber=", n, ";", sep="") 
+            oqc(sql)
             next
           }
 
           ## and set the run to finished
-            sql <- paste("UPDATE Runs SET runStatus='DONE' WHERE cellID=", cellID, " AND cellRep=", n, ";", sep="")  
+            sql <- paste("UPDATE Experiments SET runStatus='DONE', lastUpdated=DEFAULT WHERE cellNumber=", cellID, " AND replicateNumber=", n, ";", sep="")  
             oqc(sql)
             ## put the results into the database
             sql <- paste("INSERT INTO Results VALUES (DEFAULT, ", cellID, ",", n, ",'", idString, "','", res[1], "',", res[2], ",", res[3], ",",
@@ -299,7 +306,6 @@ ModelMaster <- function(){
             flog.info("Cell %s Replicate %s: DONE", cellID, n) ## to screen
             ## do results stuff
             df[[reps]] <- res ## append to the results vector
-
           reps = reps + 1
         }
       }
