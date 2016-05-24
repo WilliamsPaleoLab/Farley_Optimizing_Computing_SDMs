@@ -1,5 +1,5 @@
 ##install packages if not yet installed
-install.packages('dismo', 'gbm', 'rgdal', 'raster', 'SDMTools', 'RMySQL', 'futile.logger')
+install.packages(c('dismo', 'gbm', 'rgdal', 'raster', 'SDMTools', 'RMySQL', 'futile.logger'))
 
  ## load external libraries
 library(gbm) ## base pacakges for regression trees
