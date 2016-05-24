@@ -19,15 +19,17 @@ rArch <- .Platform$r_arch
 r <- R.Version()
 rVersion <- r$version.string
 rPlatform <- r$platform
-rName <- r$nickame
+rName <- r$nickname
 nCores <- detectCores()
 platString <- paste(os, osRelease, osVersion, nodeName, machineArch)
+
+set.seed(1)
 
 
 ## initialization
 globals.ncores = nCores
 globals.memory = -1
-globals.nreps = 1
+globals.nreps = 10
 globals.noccOpts = c(50, 500, 1000, 10000, 30000)
 globals.srOpts = c(1, 0.5, 0.25, 0.1)
 globals.speciesOpts = c('betula', 'quercus', 'picea', 'tsuga')
@@ -57,20 +59,14 @@ flog.info("Starting script on %s", platString, name='logger')
 ## database
 ## load the database params
 source("C://Users/willlab/documents/scott/thesis-scripts/R/config.R")
-flog.info("Loaded db config.")
+flog.info("Loaded db config.", name='logger')
 ##insert a new session 
 sql <- paste("INSERT INTO Sessions values (DEFAULT, '", os, "','", osRelease, "','", osVersion, "','", nodeName, "','", machineArch, "','", loginName, "','", loginName, "','", rArch, "','", rVersion, "','", rName, "','", rPlatform, "', DEFAULT, DEFAULT, 0, 0);", sep="")
-flog.info(sql)
 oqc(sql)
 
 ## get the inserted ID
 sql <- "SELECT max(sessionID) FROM Sessions;"
 sessionID <- oqc(sql)[[1]]
-
-
-##logger
-flog.logger("logger", DEBUG, appender=appender.file("C://Users/willlab/document/scott/thesis-scripts/logs/testing.log"))
-flog.info("Starting session #%s", sessionID)
 
 
 
@@ -101,7 +97,7 @@ picea_points <- read.csv(paste(occPath, "picea_ready.csv", sep=""))
 sequoia_points <- read.csv(paste(occPath, "sequoia_ready.csv", sep=""))
 
 timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto', 
-presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage', test=FALSE){
+presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage'){
   startTime <- proc.time()
   ## get the right species points
   if (species == "sequoia"){
@@ -158,17 +154,23 @@ presence_threshold='auto', presence_threshold.method='maxKappa', percentField='p
     training_set <- points[sample(q, q*0.8), ] ## hack around for debug on small files
   }
   
+  training_set <- na.omit(training_set)
   
   ####*******Train the Model ******######
   fitStart <- proc.time()
+  model <- "NEW" ##overwrite
   model <- gbm.step(training_set, gbm.y="presence", gbm.x= c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19"),
-                    tree.complexity=5, learning.rate=0.001, verbose=FALSE, silent=TRUE)
+                    tree.complexity=5, learning.rate=0.001, verbose=FALSE, silent=TRUE, max.trees=100000000000)
+  if (is.null(model)){
+    stop("Got null model.")
+  }
   fitEnd <- proc.time()
   fitTime <- fitEnd - fitStart
 
+
   ####*******Train the Model ******######
   predStart <- proc.time()
-  prediction <- predict(pred, model, n.trees=model$gbm.call$best.trees, type="response")
+  prediction <-predict(pred, model, n.trees=model$gbm.call$best.trees, type="response")
   predEnd <- proc.time()
   predTime <- predEnd - predStart
   
@@ -238,58 +240,75 @@ ModelMaster <- function(){
                 "AUC", "ommission.rate", "sensitivity", "specificty", "prop.correct", "Kappa", 
                 'NumTrees', 'meanCVDeviance', 'seCVDeviance', 'meanCVCorrelation', 'seCVCorrelation', 'meanCVRoc', 'seCVRoc', 'trainingResidualDeviance', 'trainingMeanDeviance',
                 'trainingCorrelation', 'trainingROC', "Timestamp")
-  flog.info("Loaded model master.")
-  index = 1
+  flog.info("Loaded model master.", name='logger')
+  cells = 1
+  reps = 1
   for (taxon in globals.speciesOpts){
     for (no in globals.noccOpts){ ## number of training examples 
       for (sr in globals.srOpts){ ## spatial resolution
+        cells = cells + 1
         for (n in 1:globals.nreps){ ## these are the individual repeitions
           ## get the experiment id from the experiments table in the database
-          sql <- paste("SELECT experimentNum, cellNumber FROM Experiments WHERE taxon='", taxon, "' AND spatialResolution=", sr , " AND numOccurrences=" , no , " AND replicateNumber=",
+          sql <- paste("SELECT cellNumber FROM Experiments WHERE taxon='", taxon, "' AND spatialResolution=", sr , " AND numOccurrences=" , no , " AND replicateNumber=",
                        n, " AND Cores=", globals.ncores, " AND memory=", globals.memory, ";", sep="")
-          flog.info(sql)
           thisID <- oqc(sql)
           ## insert into the run table so we can check this off the list
-          if ((nrow(thisID) ==0) || (test=TRUE)){
-            ## this is a test
-            cellID = -1
-            expID = -1
-          }else{
-            cellID = thisID['cellNumber']
-            expID = thisID['experimentNumber']
+          if (nrow(thisID) == 0){
+            flog.fatal("Found no matching experiments.")
           }
-          flog.info("Running cell: %s, replicate #%s ***%s***", cellID, n, expID)
-          sql <- paste("INSERT INTO Runs VALUES (DEFAULT, ", cellID, ",", n, ",'", expID, "',", sessionID, ",'STARTED');", sep="")
-          flog.info(sql)
+          cellID = thisID['cellNumber']
+          idString = paste(cellID, n, sep=".")
+          flog.info("Running cell: %s, replicate #%s ***%s***", cellID, n, idString, name='logger')
+          flog.info("Running %s  Cell Params: Cores: %s, Memory: %s, Taxon: %s, SR: %s, NO: %s", idString, globals.ncores, globals.memory, taxon, sr, no)
+          sql <- paste("INSERT INTO Runs VALUES (DEFAULT, ", cellID, ",", n, ",'", idString, "',", sessionID, ",'STARTED');", sep="")
           oqc(sql)
+          errorMessage = FALSE
           ######
-          res <- timeSDM(taxon, globals.ncores, globals.memory,no, sr) ## do the run
-           #####
-          flog.info("Run successful.")
-          print(res)
-          ## do results stuff
-          df[[index]] <- res ## append to the results vector
-          ## put the results into the database
-          sql <- paste("INSERT INTO Results VALUES (DEFAULT, ", cellID, ",", n, ",'", expID, "','", res[1], "',", res[2], ",", res[3], ",",
-                       res[4], ",", res[5], ",", res[6], ",", res[7], ",", res[8], ",", res[9], ",", res[10], ",", res[11], ",",
-                       res[12], ",", res[13], ",", res[14], ",", res[15], ",", res[16], ",", res[17], ",", res[18], ",", res[19],",",
-                       res[20], ",", res[21], ",", res[22], ",", res[23], ",", res[24], ",", res[25], ",", res[26], ",", res[27],",",
-                       res[28], ", DEFAULT);", sep=""
-                       )
-          flog.info(sql)
-          oqc(sql)
+          #**
+          #**
+          res <- tryCatch(timeSDM(taxon, globals.ncores, globals.memory,no, sr), error=function(e){
+            errorMessage = TRUE
+            flog.error(e, name='logger')
+            print(e)
+            sql <- paste("UPDATE Runs SET runStatus='ERROR' WHERE cellID=", cellID, " AND cellRep=", n, ";", sep="") 
+            oqc(sql)
+            flog.fatal("Error message recieved.")
+            flog.info("Cell %s Replicate %s: ERROR", cellID, n, name='logger') ## to file
+            return(c(FALSE))
+          }) ## do the run
+          #**
+          #**
+          if (res[1] == FALSE){
+            print("ADVANCING")
+            flog.error('Caught error. Advancing...')
+            next
+          }
+
           ## and set the run to finished
-          sql <- paste("UPDATE Runs SET runStatus='DONE' WHERE cellID=", cellID, " AND cellRep=", n, ";", sep="")
-          flog.info(sql)
-          oqc(sql)
-          index = index + 1
+            sql <- paste("UPDATE Runs SET runStatus='DONE' WHERE cellID=", cellID, " AND cellRep=", n, ";", sep="")  
+            oqc(sql)
+            ## put the results into the database
+            sql <- paste("INSERT INTO Results VALUES (DEFAULT, ", cellID, ",", n, ",'", idString, "','", res[1], "',", res[2], ",", res[3], ",",
+                         res[4], ",", res[5], ",", res[6], ",", res[7], ",", res[8], ",", res[9], ",", res[10], ",", res[11], ",",
+                         res[12], ",", res[13], ",", res[14], ",", res[15], ",", res[16], ",", res[17], ",", res[18], ",", res[19],",",
+                         res[20], ",", res[21], ",", res[22], ",", res[23], ",", res[24], ",", res[25], ",", res[26], ",", res[27],",",
+                         res[28], ", DEFAULT);", sep="")
+            oqc(sql)
+            flog.info("Running time was %s", res[8])
+            flog.info("Cell %s Replicate %s: DONE", cellID, n, name='logger') ## to file
+            flog.info("Cell %s Replicate %s: DONE", cellID, n) ## to screen
+            ## do results stuff
+            df[[reps]] <- res ## append to the results vector
+
+          reps = reps + 1
         }
       }
     }
   }
-
-
-
+  ## sign off the session
+  sql <- paste("UPDATE Sessions SET sessionEnd=DEFAULT, cellsRun=", cells, ", repsRun=", reps, " WHERE sessionID=", sessionID, sep="")
+  oqc(sql)
+  
   df <- t(data.frame(df))
   colnames(df) <- rownames
   View(df)
