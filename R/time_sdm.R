@@ -58,7 +58,7 @@ flog.info("Starting script on %s", platString, name='logger')
 
 ## database
 ## load the database params
-source("C://Users/willlab/documents/scott/thesis-scripts/R/config.R")
+source("/Users/scottsfarley/documents/thesis-scripts/R/config.R")
 flog.info("Loaded db config.", name='logger')
 ##insert a new session 
 sql <- paste("INSERT INTO Sessions values (DEFAULT, '", os, "','", osRelease, "','", osVersion, "','", nodeName, "','", machineArch, "','", loginName, "','", loginName, "','", rArch, "','", rVersion, "','", rName, "','", rPlatform, "', DEFAULT, DEFAULT, 0, 0);", sep="")

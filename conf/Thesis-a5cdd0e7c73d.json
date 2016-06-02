@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "thesis-1329",
+  "private_key_id": "a5cdd0e7c73d2f8a53dcd7145ab58a0ca70d1026",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDUKx+Fa3go+ltl\n++SDd9ocBM5GtkXsmaXSUKO3WFlW7f7OqdHH3bZ5R2rKuT5qf9Pli7Oer+YH5yz0\na1XMgq8oTHq1Ok0ClGK4XLQKrH0Ga6qgYDimq7KE2woVKXts7n5XYq2TSIsJm4HY\nEAL9K8Mv8NRNSFDJWR4CUoW0zvcNp6y54uZb9o/joLyoIprcHMHacXYFRFQUcDSH\nMLZTU2f/oAo/Pyn3aUBjr14OI5yp2visC9dN+VXIzO0GA4rKmYGqoSLkcS04uIoA\nC/x1Af92zmETYfr6BXuxL8yDhAVVKtifqc4FfGfHijuhZlgpM4QOkQFzj3dXWrOY\nnS3e7wbVAgMBAAECggEBAIub5J3yXZr5QnMVEQTBNLADKYi2H8TURZzimxfl9sOQ\nz35FmFift5aOO+MxibSicFg3WPYuYHsKzzX1+vsbcw5dZNEjj9EGuv79YSs03QAA\nkMH/Dsf9avao+zV5mlHPjSsLL5Qew/6KaSI3RwA4b7N4EPrZfu8+yNRWYMzc8wvz\n+hDGMqi846GiLLk5/KNb0BDzBp6nXrE1rwnQSk9tESRYyWzx2kviCiwNG62kMEwi\ny4SMaZ9EkgAr26c9yd3kESGmSKsGWGXBkYL26FNaVtHhCzBmAC1s+QEefmQvZ3gg\nWxrbTZ5NOxjTbjuQvqvHHfZ6gXxZLnnzA0aUlb3CLoECgYEA+Bb8Fy2/zg0+WnpV\nhuyVdNWdtw7u0bSShrcU0ef4ODSZ6/kGKCxdIs2ieJ1fAyvhPJWQx/kKpIoeXtXr\nAI1Slw0fCc8Io146wpttCRJZeBSqGgBE0/+cIZv6QfV907O4kEatAQovAwQATkPG\neOObTOzUEf4Dua9yN1zcN14zb3kCgYEA2u7u3MTt2zrpdSGgl24c7K3OKxbUa73Z\nKnS3crpKNI65AZRZfs2DzehbQggTL4ObzLarCV+g6xuxmIvW/vNGTg0Xd48iLx8U\nkSe8KXC/T8UpQgIg+MvvTzf/zuDci93Czt7Tk2Orp6SDHisr4s6MQtQuuVOGyPbC\nDs4G2AwYbz0CgYAIPqtOEeUn8eS6mQoym7Yz1c2SAdsJ+RhNhdQZTb5AD+91micM\nOr01pOPbYk+ACXtIyievnaUu5rAvsqhGsmumPXdkmg7NbxpA0W2EOanjhbxJdOzU\nptAHhemBO6lc2cIueUrSmAYL8ZwY/cOgzN+iZNR/bJOvHheLo3hmFqla8QKBgQC3\nFPoxKonSPGjAp/dYyx9rGUmApR3MX728kFBco8asPvIdjQZuUMS5K2ctR/1rTX67\nacKMGylBky4n6EFJgP05Bh+qvsqSZ0ZWwMjMStnhhnojFg6moDwmnijQwyAL4s4n\nGxYJel8w2RVA5E9V4u5OcIwGNQBRDHFp2gbFIxBH7QKBgQCzXLyuRvvwaxNfJ8jd\nSwcroJPMcZVkxj8wtSMnr8/sDS+5pTEABx+wyykJaXyDn8kVLSh5yL0NVmTDVrgT\nLYrze6AfM6yOvUb15TudOSo0/0m5lMFBi0AShrqBDRrvaFTVpC2wDGTsDJJfyjKd\n0S2oTtjrLARcYZM56ISZhTs7PA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "sdm-database-sql@thesis-1329.iam.gserviceaccount.com",
+  "client_id": "106853489414848782125",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/sdm-database-sql%40thesis-1329.iam.gserviceaccount.com"
+}
