@@ -1,3 +1,6 @@
+##install packages if not yet installed
+install.packages(c('dismo', 'gbm', 'rgdal', 'raster', 'SDMTools', 'RMySQL', 'futile.logger'))
+
  ## load external libraries
 library(gbm) ## base pacakges for regression trees
 library(dismo) ## SDM package --> boosted regression tree function
@@ -5,6 +8,7 @@ library(raster) ## for raster manipulation
 library(SDMTools) ## for accuracy assessment
 library(RMySQL) ## for database communication
 library(futile.logger) ## for logging to file
+library(rgdal)
 
 ## get system details
 systemVars <- Sys.info()
@@ -52,13 +56,13 @@ oqc <- function(sql){ ##open, query, close --> hack because I can't increase the
 ## database records to remote mysql results
 
 ##logger
-flog.logger("logger", DEBUG, appender=appender.file("C://Users/willlab/documents/scott/thesis-scripts/logs/testing.log"))
+flog.logger("logger", DEBUG, appender=appender.file("C:/Users/student/Desktop/Scott/thesis-scripts/logs/testing.log"))
 flog.info("Starting script on %s", platString, name='logger')
 
 
 ## database
 ## load the database params
-source("/Users/scottsfarley/documents/thesis-scripts/R/config.R")
+
 flog.info("Loaded db config.", name='logger')
 ##insert a new session 
 sql <- paste("INSERT INTO Sessions values (DEFAULT, '", os, "','", osRelease, "','", osVersion, "','", nodeName, "','", machineArch, "','", loginName, "','", loginName, "','", rArch, "','", rVersion, "','", rName, "','", rPlatform, "', DEFAULT, DEFAULT, 0, 0);", sep="")
@@ -75,7 +79,7 @@ sessionID <- oqc(sql)[[1]]
 ## predictor rasters
 ## HADGem 2100 monthly averages
 ## bioclimatic vars 2, 7, 8, 15, 18, 19
-predPath <- "C://Users/willlab/documents/Scott/thesis-scripts/data/predictors/standard_biovars/"
+predPath <- "C:/Users/student/Desktop/Scott/thesis-scripts/data/predictors/standard_biovars/"
 
 pred_1deg <- stack(paste(predPath, "1_deg/", "standard_biovars_1_deg_2100.tif", sep=""))
 pred_05deg <- stack(paste(predPath, "0_5_deg/", "standard_biovars_0_5_deg_2100.tif", sep=""))
@@ -89,7 +93,7 @@ names(pred_0_1deg) <- c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19")
 
 ## load the occurrences 
 ## prethresholded and filtered to only include the above bioclimatic vars
-occPath <- "C://Users/willlab/documents/Scott/thesis-scripts/data/occurrences/"
+occPath <- "C:/Users/student/Desktop/Scott/thesis-scripts/data/occurrences/"
 quercus_points <- read.csv(paste(occPath, "quercus_ready.csv", sep=""))
 betula_points <- read.csv(paste(occPath, "betula_ready.csv", sep=""))
 tsuga_points <- read.csv(paste(occPath, "tsuga_ready.csv", sep=""))
@@ -265,7 +269,7 @@ ModelMaster <- function(){
           
           flog.info("Running cell: %s, replicate #%s ***%s***", cellID, n, idString, name='logger')
           flog.info("Running %s  Cell Params: Cores: %s, Memory: %s, Taxon: %s, SR: %s, NO: %s", idString, globals.ncores, globals.memory, taxon, sr, no)
-          sql <- paste("UPDATE Experiments SET runSession=", sessionID, ", runStatus='STARTED, lastUpdated=DEFAULT WHERE experimentID=", idString, ";", sep="")
+          sql <- paste("UPDATE Experiments SET runSession=", sessionID, ", runStatus='STARTED', lastUpdated=DEFAULT WHERE experimentID='", idString, "';", sep="")
           oqc(sql)
           errorMessage = FALSE
           ######
@@ -318,7 +322,7 @@ ModelMaster <- function(){
   df <- t(data.frame(df))
   colnames(df) <- rownames
   View(df)
-  write.csv(df, "C://Users/willlab/documents/Scott/thesis-scripts/data/output/dry_run.csv")
+  write.csv(df, "C:/Users/student/Desktop/Scott/thesis-scripts/data/output/dry_run.csv")
 }
 
 
