@@ -23,14 +23,86 @@ globals.totalMemory = KBToGB(systemInfo[['totalMem']])
 globals.experimentMemory = round(globals.totalMemory) ## rounded for experiment design
 globals.nreps = 10
 
-## database stuff
-drv <- dbDriver("MySQL")
-con <- dbConnect(drv, unix.socket='/cloudsql/thesis-1329:us-central1:sdm-database-3', username='root', password='G0Bears7!', dbname='timeSDM') 
+rownames <- c("Species", "Cores", "Memory", "SpatialResolution", "NumOccurrences", "pollenThreshold", "presenceThreshold", "TotalTime", "fitTime", "predTime", "accTime", 
+              "accThreshold", 
+              "AUC", "ommission.rate", "sensitivity", "specificty", "prop.correct", "Kappa", 
+              'NumTrees', 'meanCVDeviance', 'seCVDeviance', 'meanCVCorrelation', 'seCVCorrelation', 'meanCVRoc', 'seCVRoc', 'trainingResidualDeviance', 'trainingMeanDeviance',
+              'trainingCorrelation', 'trainingROC', "Timestamp")
 
-startSession <- function(){
-  
+startSession <- function(con){
+  ## insert into the main session table
+  sql <- "INSERT INTO SessionsManager VALUES(DEFAULT, 'STARTED', 0, DEFAULT, NULL);"
+  dbGetQuery(con, sql)
+  ## get that id 
+  lastID <- dbGetQuery(con, "SELECT LAST_INSERT_ID();")
+  ## now insert into the other tables
+  ## computer
+  sql <- paste("INSERT INTO SessionsComputer VALUES (DEFAULT, ",lastID,",'", systemInfo[['osFamily']], "','", systemInfo[['osRelease']], "','", systemInfo[['osVersion']], "','",
+          systemInfo[['nodeName']], "','", systemInfo[['machineArchitecture']], "','", systemInfo[['numCPUs']], "','", systemInfo[['threadsPerCPU']],"','", systemInfo[['cpuVendor']], "','",
+          systemInfo[['cpuModelNumber']], "','", systemInfo[['cpuModelName']], "','", systemInfo[['cpuClockRate']], "','", systemInfo[['cpuMIPS']], "','", systemInfo[['Hypervisor']],
+          "','", systemInfo[['virtualization']], "','", systemInfo[['L1d']], "','", systemInfo[['L1i']], "','", systemInfo[['L2']], "','", systemInfo[['L3']], "','", systemInfo[['totalMem']],
+          "','", systemInfo[['swapMem']], "');", sep="")
+  print(sql)
+  dbSendQuery(con, sql)
+  print ("SENT System query")
+  ##this is R version stuff
+  sql <- paste("INSERT INTO SessionsR VALUES (DEFAULT,", lastID, ",'", RInfo[['rPlatform']], "','", RInfo[['rVersion']], "','", RInfo[['rnickname']], "');", sep="")
+  dbSendQuery(con, sql)
+  return(lastID)
 }
 
+getAllAvailableExperiments <- function(con, verbose=TRUE){
+  sql <- paste("SELECT * FROM Experiments WHERE cores=", globals.ncores, " AND GBMemory=", globals.experimentMemory, " AND experimentStatus = 'NOT STARTED';", sep="")
+  rows <- dbGetQuery(con, sql)
+  print(paste("I am ", systemInfo[['nodeName']], ". I Have found: ", nrow(rows), " available experiments for ", globals.ncores, "core(s) and ", globals.experimentMemory, "GB Memory"))
+  return(rows)
+}
+
+getNextAvailableExperiment <- function(con){
+  ## select random row within this computer's capacity so not all experiments are done on one session 
+  sql <- paste("SELECT * FROM Experiments WHERE cores=", globals.ncores, " AND GBMemory=", globals.experimentMemory, " AND experimentStatus = 'NOT STARTED' ORDER BY rand() LIMIT 1;", sep="")
+  rows <- dbGetQuery(con, sql)
+  return(rows)
+}
+
+runNextExperiment <- function(experiment, con, sessionID){
+  ## takes in an experiment (database row) and delegates a timer on it
+  print(paste("Running experiment #", experiment['experimentID'][[1]], "on session", sessionID))
+  # pick out the important parts of the vector for later use
+  expID <- experiment['experimentID'][[1]]
+  cellID <- experiment['cellID'][[1]]
+  replicateNumber <- experiment[['replicateID']]
+  taxon <- experiment['taxon'][[1]]
+  spatialRes <- experiment['spatialResolution'][[1]]
+  numTraining <- experiment['trainingExamples'][[1]]
+  ## update the experiments table to tell the database that we're starting the experiment
+  sql = paste("UPDATE Experiments SET experimentStatus='STARTED', experimentStart=current_timestamp, experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="")
+  dbSendQuery(con, sql)
+  
+  #*********DO THE RUN*********
+  res <- tryCatch(timeSDM(taxon, globals.ncores, globals.totalMemory, numTraining, spatialRes),  ##this is the run here
+                  error=function(e){ ## catch if the run raises an error
+                    errorMessage = TRUE
+                    print(e)
+                    return(c(FALSE))
+                  })
+  if (res[1] == FALSE){ ## report the error and advance if we can't finish this experiment
+        sql <- paste("UPDATE Experiments SET experimentStatus='ERROR', experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="") 
+        dbSendQuery(con, sql)
+        return(FALSE) ## advance to next loop iteration
+  }
+  ## if it was not an error, we can put it in the database as a success
+  sql <- paste("UPDATE Experiments SET experimentStatus='DONE', experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="")  
+  dbSendQuery(con, sql)
+  ## and we can insert the results into the results table
+  sql <- paste("INSERT INTO Results VALUES (DEFAULT, ", expID, ",", sessionID, ",'", res[1], "',", res[2], ",", res[3], ",",
+               res[4], ",", res[5], ",", res[6], ",", res[7], ",", res[8], ",", res[9], ",", res[10], ",", res[11], ",",
+               res[12], ",", res[13], ",", res[14], ",", res[15], ",", res[16], ",", res[17], ",", res[18], ",", res[19],",",
+               res[20], ",", res[21], ",", res[22], ",", res[23], ",", res[24], ",", res[25], ",", res[26], ",", res[27],",",
+               res[28], ", DEFAULT, ", cellID, ",",replicateNumber, ",'" , globals.totalMemory, "');", sep="")
+  dbSendQuery(con, sql)
+  print(paste("Finished running experiment#", expID))
+}
 
 ## predictor rasters
 ## HADGem 2100 monthly averages
@@ -63,15 +135,15 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   
   startTime <- proc.time()
   ## get the right species points
-  if (species == "sequoia"){
+  if (species == "Sequoia"){
     points <- sequoia_points
-  }else if (species == 'quercus'){
+  }else if (species == 'Quercus'){
     points <- quercus_points
-  }else if (species == "betula"){
+  }else if (species == "Betula"){
     points <- betula_points
-  }else if (species == "tsuga"){
+  }else if (species == "Tsuga"){
     points<- tsuga_points
-  }else if (species == "picea"){
+  }else if (species == "Picea"){
     points<- picea_points
   }else{
     print("Invalid species name.")
@@ -123,7 +195,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   fitStart <- proc.time()
   model <- "NEW" ##overwrite
   model <- gbm.step(training_set, gbm.y="presence", gbm.x= c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19"),
-                    tree.complexity=5, learning.rate=0.001, verbose=FALSE, silent=TRUE, max.trees=100000000000)
+                    tree.complexity=5, learning.rate=0.001, verbose=FALSE, silent=TRUE, max.trees=100000000000, plot.main=FALSE, plot.folds = FALSE)
   if (is.null(model)){
     stop("Got null model.")
   }
@@ -194,5 +266,23 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
          trainingResidualDeviance, trainingTotalDeviance, trainingCorrelation, trainingRoc, Sys.time())
   return (r) 
 }## end timeSDM function
+
+Run <- function(iterations){
+  ## database stuff
+  drv <- dbDriver("MySQL")
+  con <- dbConnect(drv, unix.socket='/cloudsql/thesis-1329:us-central1:sdm-database-3', username='root', password='G0Bears7!', dbname='timeSDM') 
+  thisSession <- startSession(con)[[1]]
+  print(paste("Running session #", thisSession))
+  iter = 0
+  while (iter < iterations){
+    ## get the next experiment
+    nextExp <- getNextAvailableExperiment(con)
+    runNextExperiment(nextExp, con, thisSession)
+    iter = iter + 1
+  }
+  print(paste("Finished", iterations, "iterations.  Cleaning up."))
+  sql <- paste("UPDATE SessionsManager SET sessionEnd=current_timestamp, cellsRun=", iterations, ", sessionStatus='CLOSED' WHERE sessionID=", thisSession, sep="")
+}
+
 
 
