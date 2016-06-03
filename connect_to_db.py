@@ -1,4 +1,4 @@
-import mysql.connector
+import MySQLdb
 print "Imported connector."
 cnx = MySQLdb.connect(unix_socket='/cloudsql/' + 'thesis-1329:us-central1:sdm-database-3', user='root', db='timeSDM', passwd='G0Bears7!')
 print "Connected."
@@ -22,11 +22,13 @@ for core in cores:
             for s in spatialRes:
                 cell += 1
                 for i in range(n):
-                    expName = "Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
+                    expName =  "Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
                     print expName
-                    data = (cell, core, g, taxon, t, s, i, expName, catName)
-                    sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
-                    cursor.execute(sql, data)
+                    data = (cell, i, core, g, taxon, t, s, catName)
+
+                    sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, NULL,%s, 'NOT STARTED', DEFAULT, DEFAULT, DEFAULT);"
+		    
+		    cursor.execute(sql, data)
 ##Super
 superConfs = [(16, 60), (32, 120), (32, 208)]
 catName = "Super"
@@ -37,10 +39,10 @@ for conf in superConfs:
             for i in range(n):
                 g = conf[1]
                 core = conf[0]
-                expName = "Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
-                print expName
-                data = (cell, core, g, taxon, t, s, i, expName, catName)
-                sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
+                expName = 'NULL'#"Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
+                print cell
+                data = (cell, i, core, g, taxon, t, s, expName, catName)
+                sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', DEFAULT, DEFAULT, DEFAULT);"
                 cursor.execute(sql, data)
 
 ## N sensitivity
@@ -53,10 +55,10 @@ s = 0.25
 for t in trainingExamples:
     cell += 1
     for i in range(n):
-        expName = "Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
-        print expName
-        data = (cell, core, g, taxon, t, s, i, expName, catName)
-        sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
+        expName = 'NULL'#"Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
+  	print cell
+        data = (cell, i, core, g, taxon, t, s, expName, catName)
+        sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED',DEFAULT, DEFAULT, DEFAULT);"
         cursor.execute(sql, data)
 
 ## sSensitivity
@@ -68,10 +70,10 @@ spatialRes = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 2.5, 5]
 for s in spatialRes:
     cell += 1
     for i in range(n):
-        expName = "Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
-        print expName
-        data = (cell, core, g, taxon, t, s, i, expName, catName)
-        sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
+        expName = 'NULL'#"Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
+        print cell
+        data = (cell, i, core, g, taxon, t, s, expName, catName)
+        sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', DEFAULT, DEFAULT, DEFAULT);"
         cursor.execute(sql, data)
 
 ## tSensitivity
@@ -86,8 +88,10 @@ for c in confs:
         for i in range(n):
             core = c[0]
             g = c[1]
-            expName = "Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
-            print expName
-            data = (cell, core, g, taxon, t, s, i, expName, catName)
-            sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
+            expName = 'NULL' #"Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
+            print cell
+            data = (cell, i, core, g, taxon, t, s, expName, catName)
+            sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', DEFAULT, DEFAULT, DEFAULT);"
             cursor.execute(sql, data)
+
+cnx.commit()
