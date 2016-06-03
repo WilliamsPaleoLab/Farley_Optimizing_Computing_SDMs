@@ -7,6 +7,22 @@ library(RMySQL) ## for database communication
 library(rgdal)
 library(parallel)
 
+
+## get command line arguments
+args = commandArgs(trailingOnly=TRUE)
+if (length(args)==0) {
+  globals.numIters = 1  ## default number of runs
+  globals.shutdownOnFinish = TRUE
+} else if (length(args)==1) {
+  globals.numIters = args[1]
+  globals.shutdownOnFinish = TRUE
+}else if (length(args) == 2){
+  globals.numIters = args[1]
+  globals.shutdownOnFinish = args[2] ## shutdown the virtual machine when the script finishes execution
+}
+
+setwd("/home/rstudio")
+
 ##load in the config script
 source("config.R")
 
@@ -23,15 +39,14 @@ globals.totalMemory = KBToGB(systemInfo[['totalMem']])
 globals.experimentMemory = round(globals.totalMemory) ## rounded for experiment design
 globals.nreps = 10
 
-rownames <- c("Species", "Cores", "Memory", "SpatialResolution", "NumOccurrences", "pollenThreshold", "presenceThreshold", "TotalTime", "fitTime", "predTime", "accTime", 
-              "accThreshold", 
+rownames <- c("pollenThreshold", "presenceThreshold", "TotalTime", "fitTime", "predTime", "accTime", 
               "AUC", "ommission.rate", "sensitivity", "specificty", "prop.correct", "Kappa", 
               'NumTrees', 'meanCVDeviance', 'seCVDeviance', 'meanCVCorrelation', 'seCVCorrelation', 'meanCVRoc', 'seCVRoc', 'trainingResidualDeviance', 'trainingMeanDeviance',
               'trainingCorrelation', 'trainingROC', "Timestamp")
 
 startSession <- function(con){
   ## insert into the main session table
-  sql <- "INSERT INTO SessionsManager VALUES(DEFAULT, 'STARTED', 0, DEFAULT, NULL);"
+  sql <- "INSERT INTO SessionsManager VALUES(DEFAULT, 'STARTED', DEFAULT, NULL, 0);"
   dbGetQuery(con, sql)
   ## get that id 
   lastID <- dbGetQuery(con, "SELECT LAST_INSERT_ID();")
@@ -42,9 +57,7 @@ startSession <- function(con){
           systemInfo[['cpuModelNumber']], "','", systemInfo[['cpuModelName']], "','", systemInfo[['cpuClockRate']], "','", systemInfo[['cpuMIPS']], "','", systemInfo[['Hypervisor']],
           "','", systemInfo[['virtualization']], "','", systemInfo[['L1d']], "','", systemInfo[['L1i']], "','", systemInfo[['L2']], "','", systemInfo[['L3']], "','", systemInfo[['totalMem']],
           "','", systemInfo[['swapMem']], "');", sep="")
-  print(sql)
   dbSendQuery(con, sql)
-  print ("SENT System query")
   ##this is R version stuff
   sql <- paste("INSERT INTO SessionsR VALUES (DEFAULT,", lastID, ",'", RInfo[['rPlatform']], "','", RInfo[['rVersion']], "','", RInfo[['rnickname']], "');", sep="")
   dbSendQuery(con, sql)
@@ -67,7 +80,7 @@ getNextAvailableExperiment <- function(con){
 
 runNextExperiment <- function(experiment, con, sessionID){
   ## takes in an experiment (database row) and delegates a timer on it
-  print(paste("Running experiment #", experiment['experimentID'][[1]], "on session", sessionID))
+  print(paste("Running experiment #", experiment['experimentID'][[1]]))
   # pick out the important parts of the vector for later use
   expID <- experiment['experimentID'][[1]]
   cellID <- experiment['cellID'][[1]]
@@ -78,6 +91,7 @@ runNextExperiment <- function(experiment, con, sessionID){
   ## update the experiments table to tell the database that we're starting the experiment
   sql = paste("UPDATE Experiments SET experimentStatus='STARTED', experimentStart=current_timestamp, experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="")
   dbSendQuery(con, sql)
+  errorMessage = FALSE
   
   #*********DO THE RUN*********
   res <- tryCatch(timeSDM(taxon, globals.ncores, globals.totalMemory, numTraining, spatialRes),  ##this is the run here
@@ -86,20 +100,47 @@ runNextExperiment <- function(experiment, con, sessionID){
                     print(e)
                     return(c(FALSE))
                   })
-  if (res[1] == FALSE){ ## report the error and advance if we can't finish this experiment
+  
+  if ((res[1] == FALSE) || (errorMessage== TRUE)){ ## report the error and advance if we can't finish this experiment
         sql <- paste("UPDATE Experiments SET experimentStatus='ERROR', experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="") 
         dbSendQuery(con, sql)
         return(FALSE) ## advance to next loop iteration
   }
   ## if it was not an error, we can put it in the database as a success
-  sql <- paste("UPDATE Experiments SET experimentStatus='DONE', experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="")  
+  sql <- paste("UPDATE Experiments SET experimentStatus='DONE', experimentEnd=current_timestamp, experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="")  
   dbSendQuery(con, sql)
   ## and we can insert the results into the results table
-  sql <- paste("INSERT INTO Results VALUES (DEFAULT, ", expID, ",", sessionID, ",'", res[1], "',", res[2], ",", res[3], ",",
-               res[4], ",", res[5], ",", res[6], ",", res[7], ",", res[8], ",", res[9], ",", res[10], ",", res[11], ",",
-               res[12], ",", res[13], ",", res[14], ",", res[15], ",", res[16], ",", res[17], ",", res[18], ",", res[19],",",
-               res[20], ",", res[21], ",", res[22], ",", res[23], ",", res[24], ",", res[25], ",", res[26], ",", res[27],",",
-               res[28], ", DEFAULT, ", cellID, ",",replicateNumber, ",'" , globals.totalMemory, "');", sep="")
+  sql <- paste("INSERT INTO Results VALUES (DEFAULT, ",
+               expID,  # experiment ID
+               ",", sessionID, # sessionID
+               ",'", res[1],  #pollen threshold
+               "',", res[2], # presence threshold
+               ",", res[3], # totalTime
+               ",",res[4], #fit time
+               ",", res[5], # predictionTime
+               ",", res[6], #accuracyTime
+               ",", res[7], ## AUC
+               ",", res[8], ## OR 
+               ",", res[9], ## sensitivity
+               ",", res[10],##specificity
+               ",", res[11], ##propCorrect  
+               ",", res[12], ##kapaa  
+               ",", res[13], ##numTrees
+               ",", res[14],##meanDev 
+               ",", res[15],##seDev
+               ",", res[16], ##meanCor
+               ",", res[17], ##seCor
+               ",", res[18], ##meanROC
+               ",", res[19], ##seROC
+               ",", res[20], ##resDev
+               ",", res[21], ##meanDev
+               ",", res[22], ##trainingCor
+               ",", res[23], ##trainingROC
+               ", DEFAULT, ", ## current_timestamp
+               cellID,  ##cell number
+               ",", replicateNumber,  ## replicate number
+               ",'" , globals.totalMemory, "');" ## real Memory
+               , sep="")
   dbSendQuery(con, sql)
   print(paste("Finished running experiment#", expID))
 }
@@ -260,8 +301,8 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   totalTime <- endTime - startTime
   ## assemble the return vector
   
-  r <- c(species, ncores, memory, sr, nocc, pollen_threshold, presence_threshold, totalTime['elapsed'], fitTime['elapsed'], predTime['elapsed'], accTime['elapsed'],
-         accThreshold, accAUC, accOmmissionRate, accSensitivity, accSpecificity, accPropCorrect, accKappa,
+  r <- c(pollen_threshold, presence_threshold, totalTime['elapsed'], fitTime['elapsed'], predTime['elapsed'], accTime['elapsed'],
+          accAUC, accOmmissionRate, accSensitivity, accSpecificity, accPropCorrect, accKappa,
          ntrees, cvDeviance.mean, cvDeviance.se, cvCorrelation.mean, cvCorrelation.se, cvRoc.mean, cvRoc.se,
          trainingResidualDeviance, trainingTotalDeviance, trainingCorrelation, trainingRoc, Sys.time())
   return (r) 
@@ -270,19 +311,33 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 Run <- function(iterations){
   ## database stuff
   drv <- dbDriver("MySQL")
-  con <- dbConnect(drv, unix.socket='/cloudsql/thesis-1329:us-central1:sdm-database-3', username='root', password='G0Bears7!', dbname='timeSDM') 
+  con <- dbConnect(drv, unix.socket='/home/sfarley2/cloudsql/thesis-1329:us-central1:sdm-database-3', username='root', password='G0Bears7!', dbname='timeSDM') 
   thisSession <- startSession(con)[[1]]
   print(paste("Running session #", thisSession))
   iter = 0
   while (iter < iterations){
     ## get the next experiment
     nextExp <- getNextAvailableExperiment(con)
+    if (nrow(nextExp) == 0){
+      print("No valid experiments found.")
+      return(NULL)
+    }
     runNextExperiment(nextExp, con, thisSession)
     iter = iter + 1
   }
   print(paste("Finished", iterations, "iterations.  Cleaning up."))
-  sql <- paste("UPDATE SessionsManager SET sessionEnd=current_timestamp, cellsRun=", iterations, ", sessionStatus='CLOSED' WHERE sessionID=", thisSession, sep="")
+  sql <- paste("UPDATE SessionsManager SET sessionEnd=current_timestamp, replicatesRun=", iterations, ", sessionStatus='CLOSED' WHERE sessionID=", thisSession, sep="")
+  dbSendQuery(con, sql)
 }
 
+## auto Run
+Run(globals.numIters)
+
+## stop the instance when we get a return from the Run command
+if (globals.shutdownOnFinish){
+  system("shutdown")
+}else{
+  system('echo "Finished running script"')
+}
 
 
