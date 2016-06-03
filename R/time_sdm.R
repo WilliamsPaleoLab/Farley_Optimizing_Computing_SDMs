@@ -1,5 +1,5 @@
 install.packages(c("dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal"), repos='http://cran.mtu.edu/')
-install.packages("RMySQL")
+install.packages("RMySQL", repos='http://cran.mtu.edu/')
  ## load external libraries
 library(gbm) ## base pacakges for regression trees
 library(dismo) ## SDM package --> boosted regression tree function
