@@ -1,3 +1,4 @@
+install.packages(c("dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal"))
  ## load external libraries
 library(gbm) ## base pacakges for regression trees
 library(dismo) ## SDM package --> boosted regression tree function
