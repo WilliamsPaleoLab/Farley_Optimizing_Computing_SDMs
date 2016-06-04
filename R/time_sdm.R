@@ -26,7 +26,7 @@ if (length(args)==0) {
 setwd("/home/rstudio")
 
 ##load in the config script
-source("config.R")
+source("thesis-scripts/R/config.R")
 
 
 ## get system details
