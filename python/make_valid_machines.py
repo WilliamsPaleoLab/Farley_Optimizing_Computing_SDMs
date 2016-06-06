@@ -43,10 +43,11 @@ for t in validTypes:
     cpu = t[0]
     mem = t[1]
     cost = t[2]
-    if mem % 3 == 0:
+    if mem % 3 == 0 or mem == 1 or mem == 2 or mem ==4 :
         cumCost += cost
         i += 1
-
+        result.append((cpu, mem))
+print result
 print cumCost
 print i
 
