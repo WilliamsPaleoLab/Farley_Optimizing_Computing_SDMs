@@ -50,3 +50,11 @@ splitAndStrip <- function(x, splitter=":", stripper=" "){
   o <- strsplit(p, splitter)
   return(o)
 }
+
+KBToGB <- function(x, strip=TRUE){
+  if(strip){
+    x <- gsub("kB", "", x, fixed=TRUE)
+  }
+  x <- (as.numeric(x)) / 1048576
+  return(x)
+}

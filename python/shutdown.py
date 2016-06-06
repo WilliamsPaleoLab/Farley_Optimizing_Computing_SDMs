@@ -1,11 +1,21 @@
 import MySQLdb
-cnx = MySQLdb.connect(unix_socket='/cloudsql/' + 'thesis-1329:us-central1:sdm-database-3', user='root', db='timeSDM', passwd='G0Bears7!')
+
+
+keys = open("/keys.txt", 'r')
+pw = keys.readlines()[0]
+
+dbParams = open("/host.txt", 'r')
+host = dbParams.readlines()[0]
+
+cnx = MySQLdb.connect(unix_socket=host, user='root', db='timeSDM', passwd=pw)
 cursor = cnx.cursor()
 import socket
 hostname = socket.gethostname()
-sql = "SELECT SessionsManager.sessionID FROM SessionsManager INNER JOIN SessionsComputer on SessionsComputer.sessionID = SessionsManager.sessionID WHERE sessionStatus='STARTED' AND nodeName=" + str(hostname) + " ORDER BY sessionStart DESC LIMIT 1;"
+sql = "SELECT SessionsManager.sessionID FROM SessionsManager INNER JOIN SessionsComputer on SessionsComputer.sessionID = SessionsManager.sessionID WHERE sessionStatus='STARTED' AND nodeName='" + str(hostname) + "' ORDER BY sessionStart DESC LIMIT 1;"
 cursor.execute(sql)
 row = cursor.fetchone()
+sessionID = row[0]
+>>>>>>> origin/master
 sql = "UPDATE Experiments SET experimentStatus='INTERRUPTED', experimentLastUpdate=current_timestamp WHERE sessionID=" + str(sessionID) + " AND experimentStatus='STARTED';"
 cursor.execute(sql)
 sql = "UPDATE SessionsManager SET sessionStatus='INTERRUPTED', sessionEnd=current_timestamp WHERE sessionID=" + str(sessionID) + ";"

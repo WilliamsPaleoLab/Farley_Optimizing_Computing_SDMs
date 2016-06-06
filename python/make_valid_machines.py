@@ -43,7 +43,7 @@ for t in validTypes:
     cpu = t[0]
     mem = t[1]
     cost = t[2]
-    if mem % 2 == 0:
+    if mem % 3 == 0:
         cumCost += cost
         i += 1
 

@@ -1,85 +1,156 @@
-##install packages if not yet installed
-install.packages(c('dismo', 'gbm', 'rgdal', 'raster', 'SDMTools', 'RMySQL', 'futile.logger'))
-
+install.packages(c("dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal"), repos='http://cran.mtu.edu/')
+install.packages("RMySQL", repos='http://cran.mtu.edu/')
  ## load external libraries
 library(gbm) ## base pacakges for regression trees
 library(dismo) ## SDM package --> boosted regression tree function
 library(raster) ## for raster manipulation
 library(SDMTools) ## for accuracy assessment
 library(RMySQL) ## for database communication
-library(futile.logger) ## for logging to file
 library(rgdal)
+library(parallel)
+
+
+## get command line arguments
+args = commandArgs(trailingOnly=TRUE)
+if (length(args)==0) {
+  globals.numIters = 1  ## default number of runs
+  globals.shutdownOnFinish = TRUE
+} else if (length(args)==1) {
+  globals.numIters = args[1]
+  globals.shutdownOnFinish = TRUE
+}else if (length(args) == 2){
+  globals.numIters = args[1]
+  globals.shutdownOnFinish = args[2] ## shutdown the virtual machine when the script finishes execution
+}
+
+setwd("/home/rstudio")
+
+##load in the config script
+source("thesis-scripts/R/config.R")
+
 
 ## get system details
-systemVars <- Sys.info()
-os <- systemVars['sysname'][[1]]
-osRelease <- systemVars['release'][[1]]
-osVersion <- systemVars['version'][[1]]
-nodeName <- systemVars['nodename'][[1]]
-machineArch <- systemVars['machine'][[1]]
-loginName <- systemVars['login'][[1]]
-gui <- .Platform$GUI
-rArch <- .Platform$r_arch
-r <- R.Version()
-rVersion <- r$version.string
-rPlatform <- r$platform
-rName <- r$nickname
-nCores <- detectCores()
-platString <- paste(os, osRelease, osVersion, nodeName, machineArch)
-
-set.seed(1)
+source("thesis-scripts/R/linux_getVars.R")
+systemInfo <- getSystemVars()
+RInfo <- getRVars()
 
 
 ## initialization
-globals.ncores = nCores
-globals.memory = -1
+globals.ncores = detectCores()
+globals.totalMemory = KBToGB(systemInfo[['totalMem']])
+globals.experimentMemory = round(globals.totalMemory) ## rounded for experiment design
 globals.nreps = 10
-globals.noccOpts = c(50, 500, 1000, 10000)
-globals.srOpts = c(1, 0.5, 0.25, 0.1)
-globals.speciesOpts = c('betula', 'quercus', 'picea', 'tsuga')
 
+rownames <- c("pollenThreshold", "presenceThreshold", "TotalTime", "fitTime", "predTime", "accTime", 
+              "AUC", "ommission.rate", "sensitivity", "specificty", "prop.correct", "Kappa", 
+              'NumTrees', 'meanCVDeviance', 'seCVDeviance', 'meanCVCorrelation', 'seCVCorrelation', 'meanCVRoc', 'seCVRoc', 'trainingResidualDeviance', 'trainingMeanDeviance',
+              'trainingCorrelation', 'trainingROC', "Timestamp")
 
-##database utils
-dbDisconnectAll <- function(){ # close all active connections
-  lapply( dbListConnections(MySQL()), function(x) dbDisconnect(x) )
+startSession <- function(con){
+  ## insert into the main session table
+  sql <- "INSERT INTO SessionsManager VALUES(DEFAULT, 'STARTED', DEFAULT, NULL, 0);"
+  dbGetQuery(con, sql)
+  ## get that id 
+  lastID <- dbGetQuery(con, "SELECT LAST_INSERT_ID();")
+  ## now insert into the other tables
+  ## computer
+  sql <- paste("INSERT INTO SessionsComputer VALUES (DEFAULT, ",lastID,",'", systemInfo[['osFamily']], "','", systemInfo[['osRelease']], "','", systemInfo[['osVersion']], "','",
+          systemInfo[['nodeName']], "','", systemInfo[['machineArchitecture']], "','", systemInfo[['numCPUs']], "','", systemInfo[['threadsPerCPU']],"','", systemInfo[['cpuVendor']], "','",
+          systemInfo[['cpuModelNumber']], "','", systemInfo[['cpuModelName']], "','", systemInfo[['cpuClockRate']], "','", systemInfo[['cpuMIPS']], "','", systemInfo[['Hypervisor']],
+          "','", systemInfo[['virtualization']], "','", systemInfo[['L1d']], "','", systemInfo[['L1i']], "','", systemInfo[['L2']], "','", systemInfo[['L3']], "','", systemInfo[['totalMem']],
+          "','", systemInfo[['swapMem']], "');", sep="")
+  dbSendQuery(con, sql)
+  ##this is R version stuff
+  sql <- paste("INSERT INTO SessionsR VALUES (DEFAULT,", lastID, ",'", RInfo[['rPlatform']], "','", RInfo[['rVersion']], "','", RInfo[['rnickname']], "');", sep="")
+  dbSendQuery(con, sql)
+  return(lastID)
 }
 
-oqc <- function(sql){ ##open, query, close --> hack because I can't increase the timeout on the server 
-  con <- dbConnect(MySQL(), host=hostname, dbname=dbname, user=username, password=password)
-  result <- dbGetQuery(con, sql)
-  dbDisconnectAll()
-  return (result)
+getAllAvailableExperiments <- function(con, verbose=TRUE){
+  sql <- paste("SELECT * FROM Experiments WHERE cores=", globals.ncores, " AND GBMemory=", globals.experimentMemory, " AND experimentStatus = 'NOT STARTED';", sep="")
+  rows <- dbGetQuery(con, sql)
+  print(paste("I am ", systemInfo[['nodeName']], ". I Have found: ", nrow(rows), " available experiments for ", globals.ncores, "core(s) and ", globals.experimentMemory, "GB Memory"))
+  return(rows)
 }
 
-## set up logging to file and database
-## lgoging writes messages to disk, 
-## database records to remote mysql results
+getNextAvailableExperiment <- function(con){
+  ## select random row within this computer's capacity so not all experiments are done on one session 
+  sql <- paste("SELECT * FROM Experiments WHERE cores=", globals.ncores, " AND GBMemory=", globals.experimentMemory, " AND experimentStatus = 'NOT STARTED' ORDER BY rand() LIMIT 1;", sep="")
+  rows <- dbGetQuery(con, sql)
+  return(rows)
+}
 
-##logger
-flog.logger("logger", DEBUG, appender=appender.file("C:/Users/student/Desktop/Scott/thesis-scripts/logs/testing.log"))
-flog.info("Starting script on %s", platString, name='logger')
-
-
-## database
-## load the database params
-
-flog.info("Loaded db config.", name='logger')
-##insert a new session 
-sql <- paste("INSERT INTO Sessions values (DEFAULT, '", os, "','", osRelease, "','", osVersion, "','", nodeName, "','", machineArch, "','", loginName, "','", loginName, "','", rArch, "','", rVersion, "','", rName, "','", rPlatform, "', DEFAULT, DEFAULT, 0, 0);", sep="")
-oqc(sql)
-
-## get the inserted ID
-sql <- "SELECT max(sessionID) FROM Sessions;"
-sessionID <- oqc(sql)[[1]]
-
-
-
-## define a database connection
+runNextExperiment <- function(experiment, con, sessionID){
+  ## takes in an experiment (database row) and delegates a timer on it
+  print(paste("Running experiment #", experiment['experimentID'][[1]]))
+  # pick out the important parts of the vector for later use
+  expID <- experiment['experimentID'][[1]]
+  cellID <- experiment['cellID'][[1]]
+  replicateNumber <- experiment[['replicateID']]
+  taxon <- experiment['taxon'][[1]]
+  spatialRes <- experiment['spatialResolution'][[1]]
+  numTraining <- experiment['trainingExamples'][[1]]
+  ## update the experiments table to tell the database that we're starting the experiment
+  sql = paste("UPDATE Experiments SET experimentStatus='STARTED', experimentStart=current_timestamp, experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="")
+  dbSendQuery(con, sql)
+  errorMessage = FALSE
+  
+  #*********DO THE RUN*********
+  res <- tryCatch(timeSDM(taxon, globals.ncores, globals.totalMemory, numTraining, spatialRes),  ##this is the run here
+                  error=function(e){ ## catch if the run raises an error
+                    errorMessage = TRUE
+                    print(e)
+                    return(c(FALSE))
+                  })
+  
+  if ((res[1] == FALSE) || (errorMessage== TRUE)){ ## report the error and advance if we can't finish this experiment
+        sql <- paste("UPDATE Experiments SET experimentStatus='ERROR', experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="") 
+        dbSendQuery(con, sql)
+        return(FALSE) ## advance to next loop iteration
+  }
+  ## if it was not an error, we can put it in the database as a success
+  sql <- paste("UPDATE Experiments SET experimentStatus='DONE', experimentEnd=current_timestamp, experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="")  
+  dbSendQuery(con, sql)
+  ## and we can insert the results into the results table
+  sql <- paste("INSERT INTO Results VALUES (DEFAULT, ",
+               expID,  # experiment ID
+               ",", sessionID, # sessionID
+               ",'", res[1],  #pollen threshold
+               "',", res[2], # presence threshold
+               ",", res[3], # totalTime
+               ",",res[4], #fit time
+               ",", res[5], # predictionTime
+               ",", res[6], #accuracyTime
+               ",", res[7], ## AUC
+               ",", res[8], ## OR 
+               ",", res[9], ## sensitivity
+               ",", res[10],##specificity
+               ",", res[11], ##propCorrect  
+               ",", res[12], ##kapaa  
+               ",", res[13], ##numTrees
+               ",", res[14],##meanDev 
+               ",", res[15],##seDev
+               ",", res[16], ##meanCor
+               ",", res[17], ##seCor
+               ",", res[18], ##meanROC
+               ",", res[19], ##seROC
+               ",", res[20], ##resDev
+               ",", res[21], ##meanDev
+               ",", res[22], ##trainingCor
+               ",", res[23], ##trainingROC
+               ", DEFAULT, ", ## current_timestamp
+               cellID,  ##cell number
+               ",", replicateNumber,  ## replicate number
+               ",'" , globals.totalMemory, "');" ## real Memory
+               , sep="")
+  dbSendQuery(con, sql)
+  print(paste("Finished running experiment#", expID))
+}
 
 ## predictor rasters
 ## HADGem 2100 monthly averages
 ## bioclimatic vars 2, 7, 8, 15, 18, 19
-predPath <- "C:/Users/student/Desktop/Scott/thesis-scripts/data/predictors/standard_biovars/"
+predPath <- "thesis-scripts/data/predictors/standard_biovars/"
 
 pred_1deg <- stack(paste(predPath, "1_deg/", "standard_biovars_1_deg_2100.tif", sep=""))
 pred_05deg <- stack(paste(predPath, "0_5_deg/", "standard_biovars_0_5_deg_2100.tif", sep=""))
@@ -93,26 +164,29 @@ names(pred_0_1deg) <- c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19")
 
 ## load the occurrences 
 ## prethresholded and filtered to only include the above bioclimatic vars
-occPath <- "C:/Users/student/Desktop/Scott/thesis-scripts/data/occurrences/"
+occPath <- "thesis-scripts/data/occurrences/"
 quercus_points <- read.csv(paste(occPath, "quercus_ready.csv", sep=""))
 betula_points <- read.csv(paste(occPath, "betula_ready.csv", sep=""))
 tsuga_points <- read.csv(paste(occPath, "tsuga_ready.csv", sep=""))
 picea_points <- read.csv(paste(occPath, "picea_ready.csv", sep=""))
 sequoia_points <- read.csv(paste(occPath, "sequoia_ready.csv", sep=""))
 
+
+
 timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto', 
-presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage'){
+  presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage'){
+  
   startTime <- proc.time()
   ## get the right species points
-  if (species == "sequoia"){
+  if (species == "Sequoia"){
     points <- sequoia_points
-  }else if (species == 'quercus'){
+  }else if (species == 'Quercus'){
     points <- quercus_points
-  }else if (species == "betula"){
+  }else if (species == "Betula"){
     points <- betula_points
-  }else if (species == "tsuga"){
+  }else if (species == "Tsuga"){
     points<- tsuga_points
-  }else if (species == "picea"){
+  }else if (species == "Picea"){
     points<- picea_points
   }else{
     print("Invalid species name.")
@@ -164,7 +238,7 @@ presence_threshold='auto', presence_threshold.method='maxKappa', percentField='p
   fitStart <- proc.time()
   model <- "NEW" ##overwrite
   model <- gbm.step(training_set, gbm.y="presence", gbm.x= c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19"),
-                    tree.complexity=5, learning.rate=0.001, verbose=FALSE, silent=TRUE, max.trees=100000000000)
+                    tree.complexity=5, learning.rate=0.001, verbose=FALSE, silent=TRUE, max.trees=100000000000, plot.main=FALSE, plot.folds = FALSE)
   if (is.null(model)){
     stop("Got null model.")
   }
@@ -229,100 +303,43 @@ presence_threshold='auto', presence_threshold.method='maxKappa', percentField='p
   totalTime <- endTime - startTime
   ## assemble the return vector
   
-  r <- c(species, ncores, memory, sr, nocc, pollen_threshold, presence_threshold, totalTime['elapsed'], fitTime['elapsed'], predTime['elapsed'], accTime['elapsed'],
-         accThreshold, accAUC, accOmmissionRate, accSensitivity, accSpecificity, accPropCorrect, accKappa,
+  r <- c(pollen_threshold, presence_threshold, totalTime['elapsed'], fitTime['elapsed'], predTime['elapsed'], accTime['elapsed'],
+          accAUC, accOmmissionRate, accSensitivity, accSpecificity, accPropCorrect, accKappa,
          ntrees, cvDeviance.mean, cvDeviance.se, cvCorrelation.mean, cvCorrelation.se, cvRoc.mean, cvRoc.se,
          trainingResidualDeviance, trainingTotalDeviance, trainingCorrelation, trainingRoc, Sys.time())
   return (r) 
 }## end timeSDM function
 
-ModelMaster <- function(){
-  ## will run all combinations of species, nocc, sr and reps for a combination of cores and memory
-  df <- list()
-  rownames <- c("Species", "Cores", "Memory", "SpatialResolution", "NumOccurrences", "pollenThreshold", "presenceThreshold", "TotalTime", "fitTime", "predTime", "accTime", 
-                "accThreshold", 
-                "AUC", "ommission.rate", "sensitivity", "specificty", "prop.correct", "Kappa", 
-                'NumTrees', 'meanCVDeviance', 'seCVDeviance', 'meanCVCorrelation', 'seCVCorrelation', 'meanCVRoc', 'seCVRoc', 'trainingResidualDeviance', 'trainingMeanDeviance',
-                'trainingCorrelation', 'trainingROC', "Timestamp")
-  flog.info("Loaded model master.", name='logger')
-  cells = 1
-  reps = 1
-  for (taxon in globals.speciesOpts){
-    for (no in globals.noccOpts){ ## number of training examples 
-      for (sr in globals.srOpts){ ## spatial resolution
-        cells = cells + 1
-        for (n in 1:globals.nreps){ ## these are the individual repeitions
-          ## get the experiment id from the experiments table in the database
-          ## make sure it is not currently in progress --> select only 'QUEUED' experiments
-          sql <- paste("SELECT cellNumber FROM Experiments  WHERE taxon='", taxon, "' AND spatialResolution=", sr , " AND numOccurrences=" , no , " AND replicateNumber=",
-                       n, " AND Cores=", globals.ncores, " AND memory=", globals.memory, " AND runStatus='QUEUED';", sep="")
-          thisID <- oqc(sql)
-          ## see if we got results back
-          if (nrow(thisID) == 0){
-            flog.info("Found no matching experiments. Proceeding...")
-            next
-          }
-          ## get the experiment numbers
-          cellID = thisID['cellNumber']
-          idString = paste(cellID, n, sep=".")
-          
-          
-          flog.info("Running cell: %s, replicate #%s ***%s***", cellID, n, idString, name='logger')
-          flog.info("Running %s  Cell Params: Cores: %s, Memory: %s, Taxon: %s, SR: %s, NO: %s", idString, globals.ncores, globals.memory, taxon, sr, no)
-          sql <- paste("UPDATE Experiments SET runSession=", sessionID, ", runStatus='STARTED', lastUpdated=DEFAULT WHERE experimentID='", idString, "';", sep="")
-          oqc(sql)
-          errorMessage = FALSE
-          ######
-          #**
-          #**
-          res <- tryCatch(timeSDM(taxon, globals.ncores, globals.memory,no, sr),  ##this is the run here
-                          error=function(e){ ## catch if the run raises an error
-                            errorMessage = TRUE
-                            flog.error(e, name='logger')
-                            print(e)
-                            return(c(FALSE))
-          }) ## do the run
-          #**
-          #**
-          if (res[1] == FALSE){
-            print("ADVANCING")
-            flog.error('Caught error. Advancing...')
-            flog.error('Passing error.', name='logger')
-            flog.fatal("Run %s Errored. Proceeding to next replicate.", idString)
-            flog.info("Cell %s Replicate %s: ERROR", cellID, n, name='logger') ## to file
-            sql <- paste("UPDATE Experiments SET runStatus='ERROR', lastUpdated=DEFAULT WHERE cellNumber=", cellID, " AND replicateNumber=", n, ";", sep="") 
-            oqc(sql)
-            next
-          }
-
-          ## and set the run to finished
-            sql <- paste("UPDATE Experiments SET runStatus='DONE', lastUpdated=DEFAULT WHERE cellNumber=", cellID, " AND replicateNumber=", n, ";", sep="")  
-            oqc(sql)
-            ## put the results into the database
-            sql <- paste("INSERT INTO Results VALUES (DEFAULT, ", cellID, ",", n, ",'", idString, "','", res[1], "',", res[2], ",", res[3], ",",
-                         res[4], ",", res[5], ",", res[6], ",", res[7], ",", res[8], ",", res[9], ",", res[10], ",", res[11], ",",
-                         res[12], ",", res[13], ",", res[14], ",", res[15], ",", res[16], ",", res[17], ",", res[18], ",", res[19],",",
-                         res[20], ",", res[21], ",", res[22], ",", res[23], ",", res[24], ",", res[25], ",", res[26], ",", res[27],",",
-                         res[28], ", DEFAULT);", sep="")
-            oqc(sql)
-            flog.info("Running time was %s", res[8])
-            flog.info("Cell %s Replicate %s: DONE", cellID, n, name='logger') ## to file
-            flog.info("Cell %s Replicate %s: DONE", cellID, n) ## to screen
-            ## do results stuff
-            df[[reps]] <- res ## append to the results vector
-          reps = reps + 1
-        }
-      }
+Run <- function(iterations){
+  ## database stuff
+  drv <- dbDriver("MySQL")
+  con <- dbConnect(drv, unix.socket=hostname, username=username, password=password, dbname=dbname) 
+  thisSession <- startSession(con)[[1]]
+  print(paste("Running session #", thisSession))
+  iter = 0
+  while (iter < iterations){
+    ## get the next experiment
+    nextExp <- getNextAvailableExperiment(con)
+    if (nrow(nextExp) == 0){
+      print("No valid experiments found.")
+      return(NULL)
     }
+    runNextExperiment(nextExp, con, thisSession)
+    iter = iter + 1
   }
-  ## sign off the session
-  sql <- paste("UPDATE Sessions SET sessionEnd=DEFAULT, cellsRun=", cells, ", repsRun=", reps, " WHERE sessionID=", sessionID, sep="")
-  oqc(sql)
-  
-  df <- t(data.frame(df))
-  colnames(df) <- rownames
-  View(df)
-  write.csv(df, "C:/Users/student/Desktop/Scott/thesis-scripts/data/output/dry_run.csv")
+  print(paste("Finished", iterations, "iterations.  Cleaning up."))
+  sql <- paste("UPDATE SessionsManager SET sessionEnd=current_timestamp, replicatesRun=", iterations, ", sessionStatus='CLOSED' WHERE sessionID=", thisSession, sep="")
+  dbSendQuery(con, sql)
+}
+
+## auto Run
+Run(globals.numIters)
+
+## stop the instance when we get a return from the Run command
+if (globals.shutdownOnFinish){
+  system("shutdown")
+}else{
+  system('echo "Finished running script"')
 }
 
 
