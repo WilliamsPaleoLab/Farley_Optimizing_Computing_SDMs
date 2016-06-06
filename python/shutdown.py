@@ -1,5 +1,12 @@
 import MySQLdb
-cnx = MySQLdb.connect(unix_socket='/cloudsql/' + 'thesis-1329:us-central1:sdm-database-3', user='root', db='timeSDM', passwd='#')
+
+keys = open("/keys.txt", 'r')
+pw = keys.readlines()[0]
+
+dbParams = open("/host.txt", 'r')
+host = dbParams.readlines()[0]
+
+cnx = MySQLdb.connect(unix_socket=host, user='root', db='timeSDM', passwd=pw)
 cursor = cnx.cursor()
 import socket
 hostname = socket.gethostname()
