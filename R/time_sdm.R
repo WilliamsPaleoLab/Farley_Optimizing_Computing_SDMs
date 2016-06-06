@@ -313,7 +313,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 Run <- function(iterations){
   ## database stuff
   drv <- dbDriver("MySQL")
-  con <- dbConnect(drv, unix.socket='/cloudsql/thesis-1329:us-central1:sdm-database-3', username='root', password='G0Bears7!', dbname='timeSDM') 
+  con <- dbConnect(drv, unix.socket=hostname, username=username, password=password, dbname=dbname) 
   thisSession <- startSession(con)[[1]]
   print(paste("Running session #", thisSession))
   iter = 0
