@@ -25,7 +25,7 @@ for core in cores:
                     expName = "Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
                     print expName
                     data = (cell, core, g, taxon, t, s, i, expName, catName)
-                    sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
+                    sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
                     cursor.execute(sql, data)
 ##Super
 superConfs = [(16, 60), (32, 120), (32, 208)]
@@ -40,7 +40,7 @@ for conf in superConfs:
                 expName = "Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
                 print expName
                 data = (cell, core, g, taxon, t, s, i, expName, catName)
-                sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
+                sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
                 cursor.execute(sql, data)
 
 ## N sensitivity
@@ -56,7 +56,7 @@ for t in trainingExamples:
         expName = "Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
         print expName
         data = (cell, core, g, taxon, t, s, i, expName, catName)
-        sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
+        sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
         cursor.execute(sql, data)
 
 ## sSensitivity
@@ -71,7 +71,7 @@ for s in spatialRes:
         expName = "Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
         print expName
         data = (cell, core, g, taxon, t, s, i, expName, catName)
-        sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
+        sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
         cursor.execute(sql, data)
 
 ## tSensitivity
@@ -89,5 +89,5 @@ for c in confs:
             expName = "Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
             print expName
             data = (cell, core, g, taxon, t, s, i, expName, catName)
-            sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
+            sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', NULL, NULL, DEFAULT);"
             cursor.execute(sql, data)
