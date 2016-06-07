@@ -164,7 +164,7 @@ runNextExperiment <- function(experiment, con, sessionID){
   dbSendQuery(con, sql) ## results query
   
   sql = paste("UPDATE SessionsManager SET replicatesRun = replicatesRun + 1, tableLastUpdate=current_timestamp WHERE sessionID=", sessionID, ";", sep="")
-  deSendQuery(con, sql) ## update the sessions manager
+  dbSendQuery(con, sql) ## update the sessions manager
   
   print(paste("Finished running experiment#", expID))
 }
