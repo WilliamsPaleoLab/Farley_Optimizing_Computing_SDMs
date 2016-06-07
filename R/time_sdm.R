@@ -83,7 +83,8 @@ getNextAvailableExperiment <- function(con){
 runNextExperiment <- function(experiment, con, sessionID){
   ## takes in an experiment (database row) and delegates a timer on it
   print(paste("Running experiment #", experiment['experimentID'][[1]]))
-  system2("logger", args=paste("R-Process: Started Experiment #", experiment['experimentID'][[1]])) 
+  expLog = paste("R-Process: Started Experiment #", experiment['experimentID'][[1]])
+  system2("logger", args=expLog) 
   # pick out the important parts of the vector for later use
   expID <- experiment['experimentID'][[1]]
   cellID <- experiment['cellID'][[1]]
