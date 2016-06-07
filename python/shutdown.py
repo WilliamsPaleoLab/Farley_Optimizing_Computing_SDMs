@@ -1,11 +1,11 @@
 import MySQLdb
 
 
-keys = open("/keys.txt", 'r')
-pw = keys.readlines()[0]
+keys = open("/home/keys.txt", 'r')
+pw = keys.readlines()[0].replace("\n", "")
 
 dbParams = open("/host.txt", 'r')
-host = dbParams.readlines()[0]
+host = dbParams.readlines()[0].replace("\n", "")
 
 cnx = MySQLdb.connect(unix_socket=host, user='root', db='timeSDM', passwd=pw)
 cursor = cnx.cursor()
@@ -15,7 +15,6 @@ sql = "SELECT SessionsManager.sessionID FROM SessionsManager INNER JOIN Sessions
 cursor.execute(sql)
 row = cursor.fetchone()
 sessionID = row[0]
->>>>>>> origin/master
 sql = "UPDATE Experiments SET experimentStatus='INTERRUPTED', experimentLastUpdate=current_timestamp WHERE sessionID=" + str(sessionID) + " AND experimentStatus='STARTED';"
 cursor.execute(sql)
 sql = "UPDATE SessionsManager SET sessionStatus='INTERRUPTED', sessionEnd=current_timestamp WHERE sessionID=" + str(sessionID) + ";"

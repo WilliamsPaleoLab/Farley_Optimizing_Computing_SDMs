@@ -48,7 +48,7 @@ rownames <- c("pollenThreshold", "presenceThreshold", "TotalTime", "fitTime", "p
 
 startSession <- function(con){
   ## insert into the main session table
-  sql <- "INSERT INTO SessionsManager VALUES(DEFAULT, 'STARTED', DEFAULT, NULL, 0);"
+  sql <- "INSERT INTO SessionsManager VALUES(DEFAULT, 'STARTED', DEFAULT, NULL, 0, current_timestamp);"
   dbGetQuery(con, sql)
   ## get that id 
   lastID <- dbGetQuery(con, "SELECT LAST_INSERT_ID();")
@@ -93,7 +93,7 @@ runNextExperiment <- function(experiment, con, sessionID){
   spatialRes <- experiment['spatialResolution'][[1]]
   numTraining <- experiment['trainingExamples'][[1]]
   ## update the experiments table to tell the database that we're starting the experiment
-  sql = paste("UPDATE Experiments SET experimentStatus='STARTED', experimentStart=current_timestamp, experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="")
+  sql = paste("UPDATE Experiments SET experimentStatus='STARTED', experimentStart=current_timestamp, experimentLastUpdate=current_timestamp, sessionID=", sessionID ," WHERE experimentID=", expID, ";", sep="")
   dbSendQuery(con, sql)
   errorMessage = FALSE
   
@@ -145,7 +145,11 @@ runNextExperiment <- function(experiment, con, sessionID){
                ",", replicateNumber,  ## replicate number
                ",'" , globals.totalMemory, "');" ## real Memory
                , sep="")
-  dbSendQuery(con, sql)
+  dbSendQuery(con, sql) ## results query
+  
+  sql = paste("UPDATE SessionsManager SET replicatesRun = replicatesRun + 1, tableLastUpdate=current_timestamp WHERE sessionID=", sessionID, ";", sep="")
+  deSendQuery(con, sql) ## update the sessions manager
+  
   print(paste("Finished running experiment#", expID))
 }
 
@@ -319,20 +323,19 @@ Run <- function(iterations){
   thisSession <- startSession(con)[[1]]
   print(paste("Running session #", thisSession))
   system2("logger", args=paste("R-Process: Started Session #", thisSession)) 
-  iter = 0
-  while (iter < iterations){
+  for (iter in 0:iterations){
+    print(iter)
     ## get the next experiment
     nextExp <- getNextAvailableExperiment(con)
     if (nrow(nextExp) == 0){
       print("No valid experiments found.")
-      return(NULL)
+      break
     }
     runNextExperiment(nextExp, con, thisSession)
-    iter = iter + 1
   }
-  print(paste("Finished", iterations, "iterations.  Cleaning up."))
+  print(paste("Finished", iter, "iterations.  Cleaning up."))
   system2("logger", args=paste("Finished process.  Cleaning up...")) 
-  sql <- paste("UPDATE SessionsManager SET sessionEnd=current_timestamp, replicatesRun=", iterations, ", sessionStatus='CLOSED' WHERE sessionID=", thisSession, sep="")
+  sql <- paste("UPDATE SessionsManager SET sessionEnd=current_timestamp, sessionStatus='CLOSED', tableLastUpdate=current_timestamp WHERE sessionID=", thisSession, sep="")
   dbSendQuery(con, sql)
 }
 
@@ -345,5 +348,3 @@ if (globals.shutdownOnFinish){
 }else{
   system('echo "Finished running script"')
 }
-
-
