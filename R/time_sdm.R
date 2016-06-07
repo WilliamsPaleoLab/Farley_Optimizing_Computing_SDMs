@@ -19,7 +19,7 @@ if (length(args)==0) {
   globals.numIters = args[1]
   globals.shutdownOnFinish = args[2] ## shutdown the virtual machine when the script finishes execution
   globals.doInstall = TRUE
-}else if (legnth(args) == 3){
+}else if (length(args) == 3){
   globals.numIters = args[1]
   globals.shutdownOnFinish = args[2]
   globals.doInstall = args[3]
