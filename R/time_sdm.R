@@ -1,6 +1,36 @@
-install.packages(c("dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal"), repos='http://cran.mtu.edu/')
-install.packages("RMySQL", repos='http://cran.mtu.edu/')
- ## load external libraries
+## Welcome to the timeSDM script.  
+## This script manages database sessions, gets experiments, and then times the execution of a boosted regression tree species distribution model
+## Designed to be run in a cloud computing environment.
+## Author: Scott Farley
+## Email: sfarley2@wisc.edu
+## Open source licensed under the MIT License
+
+## get command line arguments
+args = commandArgs(trailingOnly=TRUE)
+if (length(args)==0) {
+  globals.numIters = 5  ## default number of runs
+  globals.shutdownOnFinish = TRUE
+  globals.doInstall = TRUE
+} else if (length(args)==1) {
+  globals.numIters = args[1]
+  globals.shutdownOnFinish = TRUE
+  globals.doInstall = TRUE
+}else if (length(args) == 2){
+  globals.numIters = args[1]
+  globals.shutdownOnFinish = args[2] ## shutdown the virtual machine when the script finishes execution
+  globals.doInstall = TRUE
+}else if (legnth(args) == 3){
+  globals.numIters = args[1]
+  globals.shutdownOnFinish = args[2]
+  globals.doInstall = args[3]
+}
+
+if (globals.doInstall){
+  install.packages(c("dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal"), repos='http://cran.mtu.edu/')
+  install.packages("RMySQL", repos='http://cran.mtu.edu/')
+}
+
+## load external libraries
 library(gbm) ## base pacakges for regression trees
 library(dismo) ## SDM package --> boosted regression tree function
 library(raster) ## for raster manipulation
@@ -8,20 +38,6 @@ library(SDMTools) ## for accuracy assessment
 library(RMySQL) ## for database communication
 library(rgdal)
 library(parallel)
-
-
-## get command line arguments
-args = commandArgs(trailingOnly=TRUE)
-if (length(args)==0) {
-  globals.numIters = 1  ## default number of runs
-  globals.shutdownOnFinish = TRUE
-} else if (length(args)==1) {
-  globals.numIters = args[1]
-  globals.shutdownOnFinish = TRUE
-}else if (length(args) == 2){
-  globals.numIters = args[1]
-  globals.shutdownOnFinish = args[2] ## shutdown the virtual machine when the script finishes execution
-}
 
 setwd("/home/rstudio")
 
