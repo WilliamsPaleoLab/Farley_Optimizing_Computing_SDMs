@@ -83,6 +83,7 @@ getNextAvailableExperiment <- function(con){
 runNextExperiment <- function(experiment, con, sessionID){
   ## takes in an experiment (database row) and delegates a timer on it
   print(paste("Running experiment #", experiment['experimentID'][[1]]))
+  system2("logger", args=paste("R-Process: Started Experiment #", experiment['experimentID'][[1]])) 
   # pick out the important parts of the vector for later use
   expID <- experiment['experimentID'][[1]]
   cellID <- experiment['cellID'][[1]]
@@ -316,6 +317,7 @@ Run <- function(iterations){
   con <- dbConnect(drv, unix.socket=hostname, username=username, password=password, dbname=dbname) 
   thisSession <- startSession(con)[[1]]
   print(paste("Running session #", thisSession))
+  system2("logger", args=paste("R-Process: Started Session #", thisSession)) 
   iter = 0
   while (iter < iterations){
     ## get the next experiment
@@ -328,6 +330,7 @@ Run <- function(iterations){
     iter = iter + 1
   }
   print(paste("Finished", iterations, "iterations.  Cleaning up."))
+  system2("logger", args=paste("Finished process.  Cleaning up...")) 
   sql <- paste("UPDATE SessionsManager SET sessionEnd=current_timestamp, replicatesRun=", iterations, ", sessionStatus='CLOSED' WHERE sessionID=", thisSession, sep="")
   dbSendQuery(con, sql)
 }
