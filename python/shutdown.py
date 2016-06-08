@@ -7,7 +7,7 @@ pw = keys.readlines()[0].replace("\n", "")
 dbParams = open("/host.txt", 'r')
 host = dbParams.readlines()[0].replace("\n", "")
 
-cnx = MySQLdb.connect(unix_socket=host, user='root', db='timeSDM', passwd=pw)
+cnx = MySQLdb.connect(host=host, user='root', db='timeSDM', passwd=pw)
 cursor = cnx.cursor()
 import socket
 hostname = socket.gethostname()
