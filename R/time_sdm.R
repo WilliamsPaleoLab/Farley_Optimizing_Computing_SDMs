@@ -335,7 +335,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 Run <- function(iterations){
   ## database stuff
   drv <- dbDriver("MySQL")
-  con <- dbConnect(drv, hostname=hostname, username=username, password=password, dbname=dbname) 
+  con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname) 
   thisSession <- startSession(con)[[1]]
   print(paste("Running session #", thisSession))
   system2("logger", args=paste("R-Process: Started Session #", thisSession)) 
