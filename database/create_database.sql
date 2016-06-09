@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS SessionsManager(
 );
 
 CREATE TABLE IF NOT EXISTS  SessionsR(
-	rSessionID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
+	rSessionID BIGINT UExperimentsNSIGNED NOT NULL AUTO_INCREMENT UNIQUE,
     sessionID BIGINT,
     rPlatform text,
     rVersion text,
