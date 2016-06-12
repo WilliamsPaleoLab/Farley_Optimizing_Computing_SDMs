@@ -144,7 +144,7 @@ app.get("/experiments", function(req,res){
   }
   connection = createDBConnection(hostname, db, password, username)
   sql = "SELECT * FROM Experiments "
-  sql += "WHERE 1 = 1 AND (? is NULL or ? = lower(experimentStatus)) "
+  sql += "WHERE 1 = 1 AND (? is NULL or BINARY ? = lower(experimentStatus)) "
   sql += " AND (? is NULL or ? = trainingExamples) "
   sql += " AND (? is NULL or ? = spatialResolution)"
   sql += " AND (? is NULL or ? = cores) "
@@ -402,22 +402,24 @@ app.get("/statistics", function(req, res){
           minTotalTime, minTotalTime, maxTotalTime, maxTotalTime,
           minTestingAUC, minTestingAUC, maxTestingAUC, maxTestingAUC,
           offset, limit]
-  sql = "SELECT AVG(totalTime), MAX(totalTime), MIN(totalTime), STD(totalTime), variance(totalTime), median(totalTime), Count(totalTime), "
-  sql += "AVG(testingAUC), MAX(testingAUC), MIN(testingAUC), STD(testingAUC), variance(testingAUC), median(testingAUC), Count(testingAUC), "
-  sql += " FROM results INNER JOIN Experiments on Experiments.experimentID = Results.experimentID "
-  sql += " WHERE 1 = 1 AND (? is NULL or ? LIKE lower(experimentStatus)) "
-  sql += " AND (? is NULL or ? = trainingExamples) "
-  sql += " AND (? is NULL or ? = spatialResolution)"
-  sql += " AND (? is NULL or ? = cores) "
-  sql += " AND (? is NULL or ? = GBMemory)"
-  sql += " AND (? is NULL or ? like lower(taxon) )"
-  sql += " AND (? IS NULL or ? like lower(experimentCategory) ) "
+  sql = "SELECT AVG(totalTime), MAX(totalTime), MIN(totalTime), STD(totalTime), variance(totalTime), Count(totalTime), "
+  sql += "AVG(testingAUC), MAX(testingAUC), MIN(testingAUC), STD(testingAUC), variance(testingAUC),  Count(testingAUC), "
+  sql += " Experiments.cores, Experiments.GBMemory, Experiments.trainingExamples, Experiments.spatialResolution, Experiments.taxon, Experiments.experimentCategory, Experiments.cellID "
+  sql += " FROM Results INNER JOIN Experiments on Experiments.experimentID = Results.experimentID "
+  sql += " WHERE 1 = 1 AND (? is NULL or ? LIKE lower(Experiments.experimentStatus)) "
+  sql += " AND (? is NULL or ? = Experiments.trainingExamples) "
+  sql += " AND (? is NULL or ? = Experiments.spatialResolution)"
+  sql += " AND (? is NULL or ? = Experiments.cores) "
+  sql += " AND (? is NULL or ? = Experiments.GBMemory)"
+  sql += " AND (? is NULL or ? like lower(Experiments.taxon) )"
+  sql += " AND (? IS NULL or ? like lower(Experiments.experimentCategory) ) "
   sql += " AND (? IS NULL or ? = Experiments.sessionID) "
-  sql += " AND (? IS NULL or ? > totalTime) "
-  sql += " AND (? IS NULL or ? < totalTime) "
-  sql += " AND (? IS NULL or ? > testingAUC) "
-  sql += " AND (? IS NULL or ? < testingAUC) "
-  sql += " GROUP by cellID; ";
+  sql += " AND (? IS NULL or ? > Results.totalTime) "
+  sql += " AND (? IS NULL or ? < Results.totalTime) "
+  sql += " AND (? IS NULL or ? > Results.testingAUC) "
+  sql += " AND (? IS NULL or ? < Results.testingAUC) "
+  sql += " GROUP by Results.cellID; ";
+  console.log(sql)
   connection = createDBConnection(hostname, db, password, username)
   connection.query({sql : sql,  values :
     values}, function(err, results){
@@ -441,6 +443,39 @@ app.get("/statistics", function(req, res){
   })
 })
 
+
+app.get("/newconfigs", function(req, res){
+  CPUs = req.query.CPUs
+  memory = req.query.memory
+  limit = req.query.limit
+  offset = req.query.offset
+  status = req.query.status
+  sql = "SELECT cores, GBMemory from Experiments WHERE BINARY experimentStatus='NOT STARTED' "
+  sql += "AND (? IS NULL or ? = cores) AND (? IS NULL or ? = GBMemory) GROUP BY cores, GBMemory;"
+  connection = createDBConnection(hostname, db, password, username)
+  values = [CPUs, CPUs, memory, memory, offset, limit]
+  connection.query({sql : sql,  values :
+    values}, function(err, results){
+    if(!err) {
+      out = {
+        success :true,
+        timestamp: new Date().toLocaleString(),
+        data : results,
+        message: ""
+      }
+        res.json(out);
+    }else{
+      out = {
+        success: false,
+        timestamp : new Date().toLocaleString(),
+        data: [],
+        message: err
+      }
+      res.json(out)
+    }
+  })
+
+})
 
 
 app.listen(PORT);
