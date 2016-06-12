@@ -44,7 +44,8 @@ function createDBConnection(host, db, password, user){
     host     : host,
     user     : user,
     password : password,
-    database : db
+    database : db,
+    multipleStatements: true
   });
   connection.connect();
   return connection
@@ -461,6 +462,54 @@ app.get("/newconfigs", function(req, res){
         success :true,
         timestamp: new Date().toLocaleString(),
         data : results,
+        message: ""
+      }
+        res.json(out);
+    }else{
+      out = {
+        success: false,
+        timestamp : new Date().toLocaleString(),
+        data: [],
+        message: err
+      }
+      res.json(out)
+    }
+  })
+})
+
+app.get("/configstatus/:cores/:memory", function(req, res){
+  CPUs = req.params.cores
+  memory = req.params.cores
+  connection = createDBConnection(hostname, db, password, username)
+  sql = "SELECT count(*) from Experiments WHERE cores = ? and GBMemory = ?;" //get the total expected number
+  sql += " SELECT count(*) from Experiments WHERE cores = ? and GBMemory = ? AND BINARY experimentStatus = 'DONE'; " // get the number that have finished
+  sql += " SELECT count(*) from Experiments WHERE cores = ? AND GBMemory = ? AND BINARY experimentStatus = 'ERROR'; " // get the number that have errored out
+  sql += " SELECT count(*) from Experiments WHERE cores= ? AND GBMemory = ? AND BINARY experimentStatus = 'NOT STARTED'; "
+  sql += " SELECT count(*) from Experiments WHERE cores= ? AND GBMemory = ? AND BINARY experimentStatus = 'STARTED' ;"
+  sql += " SELECT count(*) from Experiments WHERE cores= ? AND GBMemory = ? AND BINARY experimentStatus = 'REMOVED'; "
+  sql += " SELECT count(*) from Experiments WHERE cores= ? AND GBMemory = ? AND BINARY experimentStatus = 'DONE - OLD' ;"
+  values = [CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory]
+  connection.query({sql : sql,  values :
+    values}, function(err, results){
+    if(!err) {
+      i = {
+        'TotalExperiments' : results[0][0]['count(*)'],
+        'Done' : results[1][0]['count(*)'],
+        'Error' : results[2][0]['count(*)'],
+        'NotStarted' : results[3][0]['count(*)'],
+        'InProgress' : results[4][0]['count(*)'],
+        'Legacy' : results[6][0]['count(*)'],
+        'PercentCompleted' : (+results[1][0]['count(*)'] / +results[0][0]['count(*)']) * 100,
+      }
+      if ((i['Done'] + i['Error']) == i['TotalExperiments']){
+        i['CellComplete'] = true
+      }else{
+        i['CellComplete'] = false
+      }
+      out = {
+        success :true,
+        timestamp: new Date().toLocaleString(),
+        data : i,
         message: ""
       }
         res.json(out);
