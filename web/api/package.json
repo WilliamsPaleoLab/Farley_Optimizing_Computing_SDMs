@@ -9,7 +9,8 @@
   "dependencies" : {
 	"mysql": "latest"  ,
   "express" : "latest",
-  "body-parser": "~1.0.1"
+  "body-parser": "~1.0.1",
+"httpdispatcher": "latest"
 },
   "author": "Scott Farley",
   "license": "MIT"

@@ -21,7 +21,8 @@ password = 'Thesis-Scripting123!'
 db = 'timeSDM'
 
 //Serve on this port
-const PORT=8080;
+const PORT=80
+80;
 
 // //Handle different HTTP verbs
 // function handleRequest(request, response){
@@ -58,7 +59,8 @@ router.use(function(req, res, next) {
 });
 
 
-app.get("/sessions", function(req,res){
+router.route("/sessions")
+  .get(function(req,res){
   connection = createDBConnection(hostname, db, password, username)
   //get the query params
   var sessionStatus = req.query.sessionStatus
@@ -144,7 +146,7 @@ app.get("/experiments", function(req,res){
   }
   connection = createDBConnection(hostname, db, password, username)
   sql = "SELECT * FROM Experiments "
-  sql += "WHERE 1 = 1 AND (? is NULL or ? = lower(experimentStatus)) "
+  sql += "WHERE 1 = 1 AND (? is NULL or ? LIKE lower(experimentStatus)) "
   sql += " AND (? is NULL or ? = trainingExamples) "
   sql += " AND (? is NULL or ? = spatialResolution)"
   sql += " AND (? is NULL or ? = cores) "
@@ -352,81 +354,7 @@ app.get("/results/:cellID/:replicateID", function(req, res){
     }
   })
 })
-app.get("/", function(req, res){
-  j = {
-    success :true,
-    timestamp: new Date().toLocaleString(),
-    directory: {
-      sessions: "http://104.154.235.236:8080/sessions",
-      experiments: "http://104.154.235.236:8080/experiments",
-      results: "http://104.154.235.236:8080/results",
-      openSessions: "http://104.154.235.236:8080/sessions?sessionStatus=STARTED",
-      openExperiments: "http://104.154.235.236:8080/experiments?experimentStatus=STARTED"
-}
-  }
-  res.json(j)
-})
 
-app.get("/statistics", function(req, res){
-  experimentStatus = req.query.status
-  numTrainingExamples = req.query.numExamples
-  spatialResolution = req.query.spatialResolution
-  CPUs = req.query.CPUs
-  memory = req.query.memory
-  taxon = req.query.taxon
-  category = req.query.category
-  limit = req.query.limit
-  offset = req.query.offset
-  sessionID = req.query.sessionID
-  minTotalTime = req.query.minTotalTime
-  maxTotalTime = req.query.maxTotalTime
-  minTestingAUC = req.query.minTestingAUC
-  maxTestingAUC = req.query.maxTestingAUC
-  replicateID = req.params.replicateID
-  values = [experimentStatus, experimentStatus, numTrainingExamples,
-          numTrainingExamples, spatialResolution, spatialResolution, CPUs, CPUs,
-          memory, memory, taxon, taxon, category, category, sessionID, sessionID,
-          minTotalTime, minTotalTime, maxTotalTime, maxTotalTime,
-          minTestingAUC, minTestingAUC, maxTestingAUC, maxTestingAUC,
-          offset, limit]
-  sql = "SELECT AVG(totalTime), MAX(totalTime), MIN(totalTime), STD(totalTime), variance(totalTime), median(totalTime), Count(totalTime), "
-  sql += "AVG(testingAUC), MAX(testingAUC), MIN(testingAUC), STD(testingAUC), variance(testingAUC), median(testingAUC), Count(testingAUC), "
-  sql += " FROM results INNER JOIN Experiments on Experiments.experimentID = Results.experimentID "
-  sql += " WHERE 1 = 1 AND (? is NULL or ? LIKE lower(experimentStatus)) "
-  sql += " AND (? is NULL or ? = trainingExamples) "
-  sql += " AND (? is NULL or ? = spatialResolution)"
-  sql += " AND (? is NULL or ? = cores) "
-  sql += " AND (? is NULL or ? = GBMemory)"
-  sql += " AND (? is NULL or ? like lower(taxon) )"
-  sql += " AND (? IS NULL or ? like lower(experimentCategory) ) "
-  sql += " AND (? IS NULL or ? = Experiments.sessionID) "
-  sql += " AND (? IS NULL or ? > totalTime) "
-  sql += " AND (? IS NULL or ? < totalTime) "
-  sql += " AND (? IS NULL or ? > testingAUC) "
-  sql += " AND (? IS NULL or ? < testingAUC) "
-  sql += " GROUP by cellID; ";
-  connection = createDBConnection(hostname, db, password, username)
-  connection.query({sql : sql,  values :
-    values}, function(err, results){
-    if(!err) {
-      out = {
-        success :true,
-        timestamp: new Date().toLocaleString(),
-        data : results,
-        message: ""
-      }
-        res.json(out);
-    }else{
-      out = {
-        success: false,
-        timestamp : new Date().toLocaleString(),
-        data: [],
-        message: err
-      }
-      res.json(out)
-    }
-  })
-})
 
 
 
