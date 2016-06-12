@@ -498,10 +498,11 @@ app.get("/configstatus/:cores/:memory", function(req, res){
         'Error' : results[2][0]['count(*)'],
         'NotStarted' : results[3][0]['count(*)'],
         'InProgress' : results[4][0]['count(*)'],
+        'Removed' : results[5][0]['count(*)'],
         'Legacy' : results[6][0]['count(*)'],
-        'PercentCompleted' : (+results[1][0]['count(*)'] / +results[0][0]['count(*)']) * 100,
+        'PercentCompleted' : ((+results[1][0]['count(*)'] + +results[2][0]['count(*)']) / (+results[0][0]['count(*)'] - +results[5][0]['count(*)'] )) * 100,
       }
-      if ((i['Done'] + i['Error']) == i['TotalExperiments']){
+      if ((i['Done'] + i['Error']) == (i['TotalExperiments'] - i['Removed'])){
         i['CellComplete'] = true
       }else{
         i['CellComplete'] = false
