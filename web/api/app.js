@@ -354,6 +354,19 @@ app.get("/results/:cellID/:replicateID", function(req, res){
   })
 })
 
+app.get("/", function(req, res){
+  j = {
+    success :true,
+    timestamp: new Date().toLocaleString(),
+    directory: {
+      sessions: "http://104.154.235.236:8080/sessions",
+      experiments: "http://104.154.235.236:8080/experiments",
+      results: "http://104.154.235.236:8080/results"
+    }
+  }
+  res.json(j)
+})
+
 
 
 
