@@ -502,9 +502,9 @@ app.get("/configstatus/:cores/:memory", function(req, res){
         'Removed' : results[5][0]['count(*)'],
         'Legacy' : results[6][0]['count(*)'],
         'Interrupted' : results[7][0]['count(*)'],
-        'PercentCompleted' : ((+results[1][0]['count(*)'] + +results[2][0]['count(*)']) / (+results[0][0]['count(*)'] - +results[5][0]['count(*)'] )) * 100,
+        'PercentCompleted' : ((+results[1][0]['count(*)'] + +results[2][0]['count(*)'] + +results[7][0]['count(*)']) / (+results[0][0]['count(*)'] - +results[5][0]['count(*)'] )) * 100,
       }
-      if ((i['Done'] + i['Error']) == (i['TotalExperiments'] - i['Removed'])){
+      if ((i['Done'] + i['Error'] + i['Interrupted']) == (i['TotalExperiments'] - i['Removed'])){
         i['CellComplete'] = true
       }else{
         i['CellComplete'] = false

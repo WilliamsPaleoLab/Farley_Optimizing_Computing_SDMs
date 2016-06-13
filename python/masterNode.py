@@ -4,4 +4,7 @@ import requests
 
 
 def masterNode():
-    nextConfig
+    while True:
+        nextConfig = requests.get("http://104.154.235.236:8080/nextconfig").json()
+        cores = nextConfig['data']['cores']
+        memory = nextConfig['data']['GBMemory']
