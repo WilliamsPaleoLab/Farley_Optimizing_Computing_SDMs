@@ -488,6 +488,7 @@ app.get("/configstatus/:cores/:memory", function(req, res){
   sql += " SELECT count(*) from Experiments WHERE cores= ? AND GBMemory = ? AND BINARY experimentStatus = 'STARTED' ;"
   sql += " SELECT count(*) from Experiments WHERE cores= ? AND GBMemory = ? AND BINARY experimentStatus = 'REMOVED'; "
   sql += " SELECT count(*) from Experiments WHERE cores= ? AND GBMemory = ? AND BINARY experimentStatus = 'DONE - OLD' ;"
+  sql += " SELECT count(*) from Experiments WHERE cores= ? AND GBMemory = ? AND BINARY experimentStatus = 'INTERRUPTED' ;"
   values = [CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory]
   connection.query({sql : sql,  values :
     values}, function(err, results){
@@ -500,6 +501,7 @@ app.get("/configstatus/:cores/:memory", function(req, res){
         'InProgress' : results[4][0]['count(*)'],
         'Removed' : results[5][0]['count(*)'],
         'Legacy' : results[6][0]['count(*)'],
+        'Interrupted' : results[7][0]['count(*)'],
         'PercentCompleted' : ((+results[1][0]['count(*)'] + +results[2][0]['count(*)']) / (+results[0][0]['count(*)'] - +results[5][0]['count(*)'] )) * 100,
       }
       if ((i['Done'] + i['Error']) == (i['TotalExperiments'] - i['Removed'])){
@@ -524,7 +526,30 @@ app.get("/configstatus/:cores/:memory", function(req, res){
       res.json(out)
     }
   })
+})
 
+app.get("/nextConfig", function(req, res){
+  connection = createDBConnection(hostname, db, password, username)
+  sql = "SELECT cores, GBMemory from Experiments where BINARY experimentStatus = 'NOT STARTED' ORDER BY cores, GBMemory ASC LIMIT 1;"
+  connection.query(sql, function(err, results){
+  if (!err){
+    out = {
+      success :true,
+      timestamp: new Date().toLocaleString(),
+      data : results,
+      message: ""
+    }
+      res.json(out);
+  }else{
+    out = {
+      success: false,
+      timestamp : new Date().toLocaleString(),
+      data: [],
+      message: err
+    }
+    res.json(out)
+  }
+  })
 })
 
 

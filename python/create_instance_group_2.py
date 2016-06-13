@@ -147,6 +147,27 @@ def createInstanceTemplateAndGroup(compute, project, zone, cores, gbMemory, grou
     createInstanceGroup(templateName, groupSize, groupName)
     print "Created instance group " + groupName + " with " + str(groupSize) + " instances."
 
-createInstanceTemplateAndGroup(compute, PROJECT, ZONE, 1, 1, 6)
+def getConfigCompletion(cores, memory):
+    url = "http://104.154.235.236:8080/configstatus/" + str(cores) + "/" + str(memory)
+    response = requests.get(url).json()
+    percentComplete = response['data']['PercentCompleted']
+    return percentComplete
 
-def createAndManageGroup(compute, project, zone, cores, gbMemory, groupSize)
+def createAndManageGroup(compute, project, zone, cores, gbMemory, groupSize):
+    ## create a group
+    createInstanceTemplateAndGroup(compute, project,zone, cores, gbMemory, groupSize)
+    percent = 0
+    while percent < 100:
+        percent = getConfigCompletion(cores, gbMemory)
+        time.sleep(60) ## wait one minute then poll again
+    ## cleanup when operation is done
+    groupName = "group-" + str(cores) + "-" + str(gbMemory)
+    templateName = "template-" + str(cores) + "-" + str(gbMemory)
+    operation = deleteInstanceGroup(compute, project, zone, groupName) ## kill the instance group
+    wait_for_operation(compute, project, zone, operation['name'])
+    operation = deleteInstanceTemplate(compute, project, templateName) ## delete the template
+    print "Finished operation."
+    return True
+
+
+
