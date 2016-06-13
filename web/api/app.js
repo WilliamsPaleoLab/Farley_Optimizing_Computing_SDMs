@@ -479,7 +479,7 @@ app.get("/newconfigs", function(req, res){
 
 app.get("/configstatus/:cores/:memory", function(req, res){
   CPUs = req.params.cores
-  memory = req.params.cores
+  memory = req.params.memory
   connection = createDBConnection(hostname, db, password, username)
   sql = "SELECT count(*) from Experiments WHERE cores = ? and GBMemory = ?;" //get the total expected number
   sql += " SELECT count(*) from Experiments WHERE cores = ? and GBMemory = ? AND BINARY experimentStatus = 'DONE'; " // get the number that have finished
