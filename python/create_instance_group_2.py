@@ -171,4 +171,3 @@ def createAndManageGroup(compute, project, zone, cores, gbMemory, groupSize):
     return True
 
 
-

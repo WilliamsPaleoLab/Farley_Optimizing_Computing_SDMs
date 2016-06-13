@@ -11,3 +11,8 @@ def masterNode(iters):
         memory = nextConfig['data']['GBMemory']
         createAndManageGroup(compute, PROJECT, ZONE, cores, memory, 3)
         print "Finished group iteration #", i
+
+
+if __name__ == "__main__":
+    masterNode(100)
+
