@@ -489,7 +489,7 @@ app.get("/configstatus/:cores/:memory", function(req, res){
   sql += " SELECT count(*) from Experiments WHERE cores= ? AND GBMemory = ? AND BINARY experimentStatus = 'REMOVED'; "
   sql += " SELECT count(*) from Experiments WHERE cores= ? AND GBMemory = ? AND BINARY experimentStatus = 'DONE - OLD' ;"
   sql += " SELECT count(*) from Experiments WHERE cores= ? AND GBMemory = ? AND BINARY experimentStatus = 'INTERRUPTED' ;"
-  values = [CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory]
+  values = [CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory]
   connection.query({sql : sql,  values :
     values}, function(err, results){
     if(!err) {
