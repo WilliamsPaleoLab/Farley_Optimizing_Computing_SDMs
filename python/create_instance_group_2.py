@@ -24,7 +24,11 @@ PROJECT = "thesis-1329"
 ZONE = "us-central1-c"
 
 
-def create_instance_template(compute, project, cores, GBMemory, name, description = ""):
+def create_instance_template(compute, project, cores, GBMemory, name, description = "", tryToOverwrite=True):
+    try:
+        compute.instanceTemplates().delete(project=project, instanceTemplate=name, quiet=True).execute()
+    except Exception as e:
+        print str(e)
     mbMemory = GBMemory * 1024 ## to byte size
     machineType = "custom-" + str(cores) + "-" + str(mbMemory)
     rest = {
@@ -96,8 +100,14 @@ def listInstanceTemplates(compute, project):
     response = compute.instanceTemplates().list(project=project).execute()
     pprint.pprint(response['items'])
 
-def createInstanceGroup(template, size, groupName):
+def createInstanceGroup(template, size, groupName, tryToOverwrite=True):
     """The REST implementation doesnt seem to work, so use the command shell instead."""
+    try:
+        cmd = 'gcloud compute instance-groups managed delete ' + groupName + " --quiet"
+        os.system(cmd)
+        print "Deleted old instances"
+    except Exception as e:
+        print str(e)
     cmd = 'gcloud compute instance-groups managed create ' + groupName + ' --base-instance-name ' + groupName + ' --size ' + str(size) + ' --template ' + template + " --quiet"
     os.system(cmd)
 
