@@ -98,7 +98,7 @@ def listInstanceTemplates(compute, project):
 
 def createInstanceGroup(template, size, groupName):
     """The REST implementation doesnt seem to work, so use the command shell instead."""
-    cmd = 'gcloud compute instance-groups managed create ' + groupName + ' --base-instance-name ' + groupName + ' --size ' + str(size) + ' --template ' + template
+    cmd = 'gcloud compute instance-groups managed create ' + groupName + ' --base-instance-name ' + groupName + ' --size ' + str(size) + ' --template ' + template + " --quiet"
     os.system(cmd)
 
 
@@ -111,7 +111,7 @@ def listInstanceGroups(compute, project, zone):
     return response
 
 def deleteInstanceGroupCMD(groupName):
-    cmd = 'gcloud compute instance-groups managed delete ' + groupName
+    cmd = 'gcloud compute instance-groups managed delete ' + groupName + " --quiet"
     os.system(cmd)
 
 def deleteInstanceGroup(compute, project, zone, groupName):
