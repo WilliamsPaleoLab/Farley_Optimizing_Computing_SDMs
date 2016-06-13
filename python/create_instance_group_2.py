@@ -110,6 +110,9 @@ def listInstanceGroups(compute, project, zone):
     pprint.pprint(response)
     return response
 
+def deleteInstanceGroupCMD(groupName):
+    cmd = 'gcloud compute instance-groups managed delete ' + groupName
+    os.system(cmd)
 
 def deleteInstanceGroup(compute, project, zone, groupName):
     response = compute.instanceGroups().delete(project=project, zone=zone, instanceGroup=groupName).execute()
@@ -155,18 +158,18 @@ def getConfigCompletion(cores, memory):
 
 def createAndManageGroup(compute, project, zone, cores, gbMemory, groupSize):
     ## create a group
-    createInstanceTemplateAndGroup(compute, project,zone, cores, gbMemory, groupSize)
+    createInstanceTemplateAndGroup(compute, project, zone, cores, gbMemory, groupSize)
     percent = 0
     while percent < 100:
         percent = getConfigCompletion(cores, gbMemory)
         print percent
-        time.sleep(60) ## wait one minute then poll again
+        time.sleep(30) ## wait one minute then poll again
     ## cleanup when operation is done
     groupName = "group-" + str(cores) + "-" + str(gbMemory)
     templateName = "template-" + str(cores) + "-" + str(gbMemory)
     operation = deleteInstanceGroup(compute, project, zone, groupName) ## kill the instance group
     wait_for_operation(compute, project, zone, operation['name'])
-    operation = deleteInstanceTemplate(compute, project, templateName) ## delete the template
+    deleteInstanceGroupCMD(groupName) ## delete the template
     print "Finished operation."
     return True
 
