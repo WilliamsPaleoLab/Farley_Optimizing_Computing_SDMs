@@ -159,6 +159,7 @@ def createAndManageGroup(compute, project, zone, cores, gbMemory, groupSize):
     percent = 0
     while percent < 100:
         percent = getConfigCompletion(cores, gbMemory)
+        print percent
         time.sleep(60) ## wait one minute then poll again
     ## cleanup when operation is done
     groupName = "group-" + str(cores) + "-" + str(gbMemory)
