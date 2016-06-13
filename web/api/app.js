@@ -128,13 +128,22 @@ app.get("/sessions/:sessionID", function(req,res){
 });
 
 app.get("/experiments", function(req,res){
-  experimentStatus = req.query.status.toLowerCase()
+  experimentStatus = req.query.status
+  if (experimentStatus != undefined){
+    experimentStatus = experimentStatus.toLowerCase()
+  }
   numTrainingExamples = req.query.numExamples
   spatialResolution = req.query.spatialResolution
   CPUs = req.query.CPUs
   memory = req.query.memory
-  taxon = req.query.taxon.toLowerCase()
-  category = req.query.category.toLowerCase()
+  taxon = req.query.taxon
+  if (taxon != undefined){
+    taxon = taxon.toLowerCase()
+  }
+  category = req.query.category
+  if (category != undefined){
+    category = category.toLowerCase()
+  }
   limit = req.query.limit
   offset = req.query.offset
   sessionID = req.query.sessionID
