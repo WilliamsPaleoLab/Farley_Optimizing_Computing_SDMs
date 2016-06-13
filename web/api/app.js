@@ -106,6 +106,7 @@ app.get("/sessions/:sessionID", function(req,res){
   sql += " WHERE SessionsManager.sessionID = ?"
 
     connection.query({sql : sql,  values : [sessionID]}, function(err, results){
+      connection.end()
       if(!err) {
         out = {
           success :true,
@@ -159,6 +160,7 @@ app.get("/experiments", function(req,res){
       [experimentStatus, experimentStatus, numTrainingExamples,
         numTrainingExamples, spatialResolution, spatialResolution, CPUs, CPUs,
         memory, memory, taxon, taxon, category, category, sessionID, sessionID, limit, offset]}, function(err, results){
+                connection.end()
       if(!err) {
         out = {
           success :true,
@@ -186,6 +188,7 @@ app.get("/experiments/:experimentID", function(req,res){
   sql += "WHERE experimentID = ?;"
     connection.query({sql : sql,  values :
       [expID]}, function(err, results){
+      connection.end()
       if(!err) {
         out = {
           success :true,
@@ -212,6 +215,7 @@ app.get("/experiments/:cellID/:replicateID", function(req,res){
   sql = "SELECT * FROM Experiments "
   sql += "WHERE cellID = ? AND replicateID = ?"
     connection.query({sql : sql,  values :
+      connection.end()
       [cellID, repID]}, function(err, results){
       if(!err) {
         out = {
@@ -279,6 +283,7 @@ app.get("/results", function(req,res){
         minTotalTime, minTotalTime, maxTotalTime, maxTotalTime,
         minTestingAUC, minTestingAUC, maxTestingAUC, maxTestingAUC,
         offset, limit]}, function(err, results){
+      connection.end()
       if(!err) {
         out = {
           success :true,
@@ -306,6 +311,7 @@ app.get("/results/:experimentID", function(req, res){
   connection = createDBConnection(hostname, db, password, username)
   connection.query({sql : sql,  values :
     [experimentID]}, function(err, results){
+    connection.end()
     if(!err) {
       out = {
         success :true,
@@ -334,6 +340,7 @@ app.get("/results/:cellID/:replicateID", function(req, res){
   connection = createDBConnection(hostname, db, password, username)
   connection.query({sql : sql,  values :
     [cellID, replicateID]}, function(err, results){
+      connection.end()
     if(!err) {
       out = {
         success :true,
@@ -368,18 +375,6 @@ app.get("/", function(req, res){
   res.json(j)
 })
 
-app.get("/", function(req, res){
-  j = {
-    success :true,
-    timestamp: new Date().toLocaleString(),
-    directory: {
-      sessions: "http://104.154.235.236:8080/sessions",
-      experiments: "http://104.154.235.236:8080/experiments",
-      results: "http://104.154.235.236:8080/results"
-    }
-  }
-  res.json(j)
-})
 
 app.get("/statistics", function(req, res){
   experimentStatus = req.query.status
@@ -424,6 +419,7 @@ app.get("/statistics", function(req, res){
   connection = createDBConnection(hostname, db, password, username)
   connection.query({sql : sql,  values :
     values}, function(err, results){
+      connection.end()
     if(!err) {
       out = {
         success :true,
@@ -457,6 +453,7 @@ app.get("/newconfigs", function(req, res){
   values = [CPUs, CPUs, memory, memory, offset, limit]
   connection.query({sql : sql,  values :
     values}, function(err, results){
+      connection.end()
     if(!err) {
       out = {
         success :true,
@@ -492,6 +489,7 @@ app.get("/configstatus/:cores/:memory", function(req, res){
   values = [CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory, CPUs, memory]
   connection.query({sql : sql,  values :
     values}, function(err, results){
+      connection.end()
     if(!err) {
       i = {
         'TotalExperiments' : results[0][0]['count(*)'],
@@ -532,6 +530,7 @@ app.get("/nextConfig", function(req, res){
   connection = createDBConnection(hostname, db, password, username)
   sql = "SELECT cores, GBMemory from Experiments where BINARY experimentStatus = 'NOT STARTED' OR BINARY experimentStatus='DONE - OLD' ORDER BY cores, GBMemory ASC LIMIT 1;"
   connection.query(sql, function(err, results){
+      connection.end()
   if (!err){
     out = {
       success :true,
