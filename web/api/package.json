@@ -6,12 +6,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "dependencies" : {
-	"mysql": "latest"  ,
-  "express" : "latest",
-  "body-parser": "~1.0.1",
-"httpdispatcher": "latest"
-},
+  "dependencies": {
+    "body-parser": "~1.0.1",
+    "express": "latest",
+    "forever": "^0.15.2",
+    "httpdispatcher": "latest",
+    "mysql": "latest"
+  },
   "author": "Scott Farley",
   "license": "MIT"
 }
