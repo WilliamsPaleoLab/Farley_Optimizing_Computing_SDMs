@@ -127,13 +127,13 @@ app.get("/sessions/:sessionID", function(req,res){
 });
 
 app.get("/experiments", function(req,res){
-  experimentStatus = req.query.status
+  experimentStatus = req.query.status.toLowerCase()
   numTrainingExamples = req.query.numExamples
   spatialResolution = req.query.spatialResolution
   CPUs = req.query.CPUs
   memory = req.query.memory
-  taxon = req.query.taxon
-  category = req.query.category
+  taxon = req.query.taxon.toLowerCase()
+  category = req.query.category.toLowerCase()
   limit = req.query.limit
   offset = req.query.offset
   sessionID = req.query.sessionID
@@ -530,7 +530,7 @@ app.get("/configstatus/:cores/:memory", function(req, res){
 
 app.get("/nextConfig", function(req, res){
   connection = createDBConnection(hostname, db, password, username)
-  sql = "SELECT cores, GBMemory from Experiments where BINARY experimentStatus = 'NOT STARTED' ORDER BY cores, GBMemory ASC LIMIT 1;"
+  sql = "SELECT cores, GBMemory from Experiments where BINARY experimentStatus = 'NOT STARTED' OR BINARY experimentStatus='DONE - OLD' ORDER BY cores, GBMemory ASC LIMIT 1;"
   connection.query(sql, function(err, results){
   if (!err){
     out = {
