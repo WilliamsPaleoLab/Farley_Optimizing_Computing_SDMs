@@ -508,14 +508,14 @@ app.get("/configstatus/:cores/:memory", function(req, res){
         'InProgress' : results[4][0]['count(*)'],
         'Removed' : results[5][0]['count(*)'],
         'Legacy' : results[6][0]['count(*)'],
-        'Interrupted' : results[7][0]['count(*)'],
-        'PercentCompleted' : ((+results[1][0]['count(*)'] + +results[2][0]['count(*)'] + +results[7][0]['count(*)']) / (+results[0][0]['count(*)'] - +results[5][0]['count(*)'] )) * 100,
-      }
-      if ((i['Done'] + i['Error'] + i['Interrupted']) == (i['TotalExperiments'] - i['Removed'])){
-        i['CellComplete'] = true
-      }else{
-        i['CellComplete'] = false
-      }
+        'Interrupted' : results[7][0]['count(*)']
+    }
+    i['PercentCompleted'] = ((i['Done'] + i['Error'] + i['Removed'] + i['Interrupted']) / i['TotalExperiments'] ) *100
+    if (i['PercentCompleted'] > 99.9){
+      i['CellComplete'] = true
+    }else{
+      i['CellComplete'] = false
+     }
       out = {
         success :true,
         timestamp: new Date().toLocaleString(),
