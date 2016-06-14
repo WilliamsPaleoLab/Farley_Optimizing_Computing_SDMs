@@ -91,7 +91,7 @@ getAllAvailableExperiments <- function(con, verbose=TRUE){
 
 getNextAvailableExperiment <- function(con){
   ## select random row within this computer's capacity so not all experiments are done on one session 
-  sql <- paste("SELECT * FROM Experiments WHERE cores=", globals.ncores, " AND GBMemory=", globals.experimentMemory, " AND experimentStatus = 'NOT STARTED' ORDER BY rand() LIMIT 1;", sep="")
+  sql <- paste("SELECT * FROM Experiments WHERE cores=", globals.ncores, " AND GBMemory=", globals.experimentMemory, " AND experimentStatus = 'NOT STARTED' OR experimentStatus='INTERRUPTED' ORDER BY rand() LIMIT 1;", sep="")
   rows <- dbGetQuery(con, sql)
   return(rows)
 }
