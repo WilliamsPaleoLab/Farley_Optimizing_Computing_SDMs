@@ -26,7 +26,7 @@ ZONE = "us-central1-c"
 
 def create_instance_template(compute, project, cores, GBMemory, name, description = "", tryToOverwrite=True):
     try:
-        compute.instanceTemplates().delete(project=project, instanceTemplate=name, quiet=True).execute()
+        compute.instanceTemplates().delete(project=project, instanceTemplate=name).execute()
     except Exception as e:
         print str(e)
     mbMemory = GBMemory * 1024 ## to byte size
@@ -177,9 +177,9 @@ def createAndManageGroup(compute, project, zone, cores, gbMemory, groupSize):
     ## cleanup when operation is done
     groupName = "group-" + str(cores) + "-" + str(gbMemory)
     templateName = "template-" + str(cores) + "-" + str(gbMemory)
-    operation = deleteInstanceGroup(compute, project, zone, groupName) ## kill the instance group
-    wait_for_operation(compute, project, zone, operation['name'])
-    deleteInstanceGroupCMD(groupName) ## delete the template
+    ## kill the instance group
+    deleteInstanceGroupCMD(groupName)
+    deleteInstanceTemplate(compute, PROJECT, templateName) ## delete the template
     print "Finished operation."
     return True
 

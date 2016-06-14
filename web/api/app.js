@@ -128,10 +128,11 @@ app.get("/sessions/:sessionID", function(req,res){
 });
 
 app.get("/experiments", function(req,res){
-  experimentStatus = req.query.status
+  experimentStatus = req.query.experimentStatus
   if (experimentStatus != undefined){
     experimentStatus = experimentStatus.toLowerCase()
   }
+  console.log(experimentStatus)
   numTrainingExamples = req.query.numExamples
   spatialResolution = req.query.spatialResolution
   CPUs = req.query.CPUs
@@ -369,22 +370,6 @@ app.get("/results/:cellID/:replicateID", function(req, res){
     }
   })
 })
-app.get("/", function(req, res){
-  j = {
-    success :true,
-    timestamp: new Date().toLocaleString(),
-    directory: {
-      sessions: "http://104.154.235.236:8080/sessions",
-      experiments: "http://104.154.235.236:8080/experiments",
-      results: "http://104.154.235.236:8080/results",
-      openSessions: "http://104.154.235.236:8080/sessions?sessionStatus=STARTED",
-      openExperiments: "http://104.154.235.236:8080/experiments?experimentStatus=STARTED"
-}
-  }
-  res.json(j)
-})
-
-
 app.get("/statistics", function(req, res){
   experimentStatus = req.query.status
   numTrainingExamples = req.query.numExamples
@@ -450,14 +435,14 @@ app.get("/statistics", function(req, res){
 })
 
 
-app.get("/newconfigs", function(req, res){
+app.get("/allconfigs", function(req, res){
   CPUs = req.query.CPUs
   memory = req.query.memory
   limit = req.query.limit
   offset = req.query.offset
   status = req.query.status
-  sql = "SELECT cores, GBMemory from Experiments WHERE BINARY experimentStatus='NOT STARTED' "
-  sql += "AND (? IS NULL or ? = cores) AND (? IS NULL or ? = GBMemory) GROUP BY cores, GBMemory;"
+  sql = "SELECT cores, GBMemory from Experiments WHERE "
+  sql += " (? IS NULL or ? = cores) AND (? IS NULL or ? = GBMemory) GROUP BY cores, GBMemory;"
   connection = createDBConnection(hostname, db, password, username)
   values = [CPUs, CPUs, memory, memory, offset, limit]
   connection.query({sql : sql,  values :
@@ -559,6 +544,66 @@ app.get("/nextConfig", function(req, res){
   }
   })
 })
+
+app.get("/", function(req, res){
+  connection = createDBConnection(hostname, db, password, username)
+  sql = "SELECT count(*) from Experiments;" //get the total expected number
+  sql += " SELECT count(*) from Experiments WHERE BINARY experimentStatus = 'DONE'; " // get the number that have finished
+  sql += " SELECT count(*) from Experiments WHERE BINARY experimentStatus = 'ERROR'; " // get the number that have errored out
+  sql += " SELECT count(*) from Experiments WHERE experimentStatus = 'NOT STARTED'; "
+  sql += " SELECT count(*) from Experiments WHERE BINARY experimentStatus = 'STARTED' ;"
+  sql += " SELECT count(*) from Experiments WHERE BINARY experimentStatus = 'REMOVED'; "
+  sql += " SELECT count(*) from Experiments WHERE BINARY experimentStatus = 'DONE - OLD' ;"
+  sql += " SELECT count(*) from Experiments WHERE BINARY experimentStatus = 'INTERRUPTED' ;"
+  sql += " SELECT count(*) from SessionsManager WHERE sessionStatus = 'STARTED'; "
+  connection.query({sql : sql}, function(err, results){
+      connection.end()
+    if(!err) {
+      i = {
+        'TotalExperiments' : results[0][0]['count(*)'],
+        'Done' : results[1][0]['count(*)'],
+        'Error' : results[2][0]['count(*)'],
+        'NotStarted' : results[3][0]['count(*)'],
+        'InProgress' : results[4][0]['count(*)'],
+        'Removed' : results[5][0]['count(*)'],
+        'Legacy' : results[6][0]['count(*)'],
+        'Interrupted' : results[7][0]['count(*)'],
+    }
+    i['PercentCompleted'] = ((i['Done'] + i['Error'] + i['Removed'] + i['Interrupted']) / i['TotalExperiments'] ) *100
+
+      out = {
+        success :true,
+        timestamp: new Date().toLocaleString(),
+        globalsStatus : i,
+        currentRunning: results['8'][0]['count(*)'],
+        directory: {
+          openSessions: "http://104.154.235.236:8080/sessions?sessionStatus=started",
+          runningExperiments: "http://104.154.235.236:8080/experiments?experimentStatus=started",
+          completedExperiments: "http://104.154.235.236:8080/experimentStatus=done",
+          results: "http://104.154.235.236:8080/results",
+          configurations: "http://104.154.235.236:8080/allconfigs",
+          nextConfig: "http://104.154.235.236:8080/nextconfig",
+          cellStatistics: "http://104.154.235.236:8080/statistics",
+          experiments: "http://104.154.235.236:8080/experiments",
+          sessions: "http://104.154.235.236:8080/sessions"
+        },
+        message: ""
+      }
+        res.json(out);
+    }else{
+      out = {
+        success: false,
+        timestamp : new Date().toLocaleString(),
+        data: [],
+        message: err
+      }
+      res.json(out)
+    }
+  })
+})
+
+
+app.get("/")
 
 
 app.listen(PORT);
