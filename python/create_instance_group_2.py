@@ -167,6 +167,7 @@ def getConfigCompletion(cores, memory):
     return percentComplete
 
 def createAndManageGroup(compute, project, zone, cores, gbMemory, groupSize):
+    r = requests.post("http://104.154.235.236:8080/update")
     ## create a group
     createInstanceTemplateAndGroup(compute, project, zone, cores, gbMemory, groupSize)
     percent = 0
