@@ -14,5 +14,4 @@ def masterNode(iters):
 
 
 if __name__ == "__main__":
-    masterNode(100)
-
+    masterNode(10000)

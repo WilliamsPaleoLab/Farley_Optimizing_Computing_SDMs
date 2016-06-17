@@ -602,6 +602,31 @@ app.get("/", function(req, res){
   })
 })
 
+app.post("/update", function(req, res){
+  connection = createDBConnection(hostname, db, password, username)
+  sql = "update Experiments SET experimentStatus = 'INTERRUPTED', experimentLastUpdate=current_timestamp WHERE experimentStatus = 'STARTED';"
+  connection.query({sql : sql}, function(err, results){
+      connection.end()
+      if (!err){
+        out = {
+                success: true,
+                timestamp : new Date().toLocaleString(),
+                data: [],
+                message: ""
+              }
+      }else{
+        out = {
+          success: false,
+          timestamp : new Date().toLocaleString(),
+          data: [],
+          message: err
+        }
+
+      }
+      res.json(out)
+  })
+})
+
 
 app.get("/")
 
