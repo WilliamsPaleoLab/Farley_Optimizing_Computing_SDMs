@@ -54,7 +54,7 @@ RInfo <- getRVars()
 ## initialization
 globals.ncores = detectCores()
 nodename <- Sys.info()['nodename']
-nodeSplit <- splitstr(nodename, "-")
+nodeSplit <- strsplit(nodename, "-")
 globals.totalMemory =nodeSplit[2]
 globals.experimentMemory = nodeSplit[3]
 globals.nreps = 10
