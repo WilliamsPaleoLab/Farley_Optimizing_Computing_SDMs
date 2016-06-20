@@ -55,8 +55,9 @@ RInfo <- getRVars()
 globals.ncores = detectCores()
 nodename <- Sys.info()['nodename']
 nodeSplit <- strsplit(nodename, "-")
-globals.totalMemory =nodeSplit[2]
+globals.totalMemory = systemInfo[['totalMem']]
 globals.experimentMemory = nodeSplit[3]
+print(globals.experimentMemory)
 globals.nreps = 10
 globals.saveThreshold = 0.25
 
