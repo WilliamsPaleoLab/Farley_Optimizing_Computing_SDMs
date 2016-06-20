@@ -1,4 +1,4 @@
-## Welcome to the timeSDM script.  
+## Welcome to the timeSDM script.
 ## This script manages database sessions, gets experiments, and then times the execution of a boosted regression tree species distribution model
 ## Designed to be run in a cloud computing environment.
 ## Author: Scott Farley
@@ -53,12 +53,15 @@ RInfo <- getRVars()
 
 ## initialization
 globals.ncores = detectCores()
-globals.totalMemory = KBToGB(systemInfo[['totalMem']])
-globals.experimentMemory = round(globals.totalMemory) ## rounded for experiment design
+nodename <- Sys.info()['nodename']
+nodeSplit <- splitstr(nodename, "-")
+globals.totalMemory =nodeSplit[2]
+globals.experimentMemory = nodeSplit[3]
 globals.nreps = 10
+globals.saveThreshold = 0.25
 
-rownames <- c("pollenThreshold", "presenceThreshold", "TotalTime", "fitTime", "predTime", "accTime", 
-              "AUC", "ommission.rate", "sensitivity", "specificty", "prop.correct", "Kappa", 
+rownames <- c("pollenThreshold", "presenceThreshold", "TotalTime", "fitTime", "predTime", "accTime",
+              "AUC", "ommission.rate", "sensitivity", "specificty", "prop.correct", "Kappa",
               'NumTrees', 'meanCVDeviance', 'seCVDeviance', 'meanCVCorrelation', 'seCVCorrelation', 'meanCVRoc', 'seCVRoc', 'trainingResidualDeviance', 'trainingMeanDeviance',
               'trainingCorrelation', 'trainingROC', "Timestamp")
 
@@ -66,7 +69,7 @@ startSession <- function(con){
   ## insert into the main session table
   sql <- "INSERT INTO SessionsManager VALUES(DEFAULT, 'STARTED', DEFAULT, NULL, 0, current_timestamp);"
   dbGetQuery(con, sql)
-  ## get that id 
+  ## get that id
   lastID <- dbGetQuery(con, "SELECT LAST_INSERT_ID();")
   ## now insert into the other tables
   ## computer
@@ -90,7 +93,7 @@ getAllAvailableExperiments <- function(con, verbose=TRUE){
 }
 
 getNextAvailableExperiment <- function(con){
-  ## select random row within this computer's capacity so not all experiments are done on one session 
+  ## select random row within this computer's capacity so not all experiments are done on one session
   sql <- paste("SELECT * FROM Experiments WHERE cores=", globals.ncores, " AND GBMemory=", globals.experimentMemory, " AND experimentStatus = 'NOT STARTED' OR experimentStatus='INTERRUPTED' OR experimentStatus='DONE - OLD' ORDER BY rand() LIMIT 1;", sep="")
   rows <- dbGetQuery(con, sql)
   return(rows)
@@ -100,7 +103,7 @@ runNextExperiment <- function(experiment, con, sessionID){
   ## takes in an experiment (database row) and delegates a timer on it
   print(paste("Running experiment #", experiment['experimentID'][[1]]))
   expLog = paste("R-Process: Started Experiment #", experiment['experimentID'][[1]])
-  system2("logger", args=expLog) 
+  system2("logger", args=expLog)
   # pick out the important parts of the vector for later use
   expID <- experiment['experimentID'][[1]]
   cellID <- experiment['cellID'][[1]]
@@ -112,22 +115,32 @@ runNextExperiment <- function(experiment, con, sessionID){
   sql = paste("UPDATE Experiments SET experimentStatus='STARTED', experimentStart=current_timestamp, experimentLastUpdate=current_timestamp, sessionID=", sessionID ," WHERE experimentID=", expID, ";", sep="")
   dbSendQuery(con, sql)
   errorMessage = FALSE
-  
+
+  ## decide if we need to save the output
+  rand <- runif(1, 0, 1)
+  if (rand < globals.saveThreshod){
+    save =  TRUE
+    saveName = experimentID
+  }else{
+    save = FALSE
+    saveName = "none"
+  }
+
   #*********DO THE RUN*********
-  res <- tryCatch(timeSDM(taxon, globals.ncores, globals.totalMemory, numTraining, spatialRes),  ##this is the run here
+  res <- tryCatch(timeSDM(taxon, globals.ncores, globals.totalMemory, numTraining, spatialRes, save=save, imgName=saveName),  ##this is the run here
                   error=function(e){ ## catch if the run raises an error
                     errorMessage = TRUE
                     print(e)
                     return(c(FALSE))
                   })
-  
+
   if ((res[1] == FALSE) || (errorMessage== TRUE)){ ## report the error and advance if we can't finish this experiment
-        sql <- paste("UPDATE Experiments SET experimentStatus='ERROR', experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="") 
+        sql <- paste("UPDATE Experiments SET experimentStatus='ERROR', experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="")
         dbSendQuery(con, sql)
         return(FALSE) ## advance to next loop iteration
   }
   ## if it was not an error, we can put it in the database as a success
-  sql <- paste("UPDATE Experiments SET experimentStatus='DONE', experimentEnd=current_timestamp, experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="")  
+  sql <- paste("UPDATE Experiments SET experimentStatus='DONE', experimentEnd=current_timestamp, experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="")
   dbSendQuery(con, sql)
   ## and we can insert the results into the results table
   sql <- paste("INSERT INTO Results VALUES (DEFAULT, ",
@@ -140,13 +153,13 @@ runNextExperiment <- function(experiment, con, sessionID){
                ",", res[5], # predictionTime
                ",", res[6], #accuracyTime
                ",", res[7], ## AUC
-               ",", res[8], ## OR 
+               ",", res[8], ## OR
                ",", res[9], ## sensitivity
                ",", res[10],##specificity
-               ",", res[11], ##propCorrect  
-               ",", res[12], ##kapaa  
+               ",", res[11], ##propCorrect
+               ",", res[12], ##kapaa
                ",", res[13], ##numTrees
-               ",", res[14],##meanDev 
+               ",", res[14],##meanDev
                ",", res[15],##seDev
                ",", res[16], ##meanCor
                ",", res[17], ##seCor
@@ -162,10 +175,10 @@ runNextExperiment <- function(experiment, con, sessionID){
                ",'" , globals.totalMemory, "');" ## real Memory
                , sep="")
   dbSendQuery(con, sql) ## results query
-  
+
   sql = paste("UPDATE SessionsManager SET replicatesRun = replicatesRun + 1, tableLastUpdate=current_timestamp WHERE sessionID=", sessionID, ";", sep="")
   dbSendQuery(con, sql) ## update the sessions manager
-  
+
   print(paste("Finished running experiment#", expID))
 }
 
@@ -184,7 +197,7 @@ names(pred_05deg) <- c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19")
 names(pred_025deg) <- c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19")
 names(pred_0_1deg) <- c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19")
 
-## load the occurrences 
+## load the occurrences
 ## prethresholded and filtered to only include the above bioclimatic vars
 occPath <- "thesis-scripts/data/occurrences/"
 quercus_points <- read.csv(paste(occPath, "quercus_ready.csv", sep=""))
@@ -195,9 +208,9 @@ sequoia_points <- read.csv(paste(occPath, "sequoia_ready.csv", sep=""))
 
 
 
-timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto', 
-  presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage'){
-  
+timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto',
+  presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage', save=FALSE, saveFolder='/home/rstudio/thesis-scripts/model-output', imgName="rasterOutput"){
+
   startTime <- proc.time()
   ## get the right species points
   if (species == "Sequoia"){
@@ -214,7 +227,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
     print("Invalid species name.")
     return(FALSE)
   }
-  
+
   if (sr == 1){
     pred <- pred_1deg
   }else if (sr==0.5){
@@ -227,7 +240,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
     print("Invalid spatial resolution")
     return(FALSE)
   }
-  
+
   ## define the presence threshold from the pollen percentage data as defined by Nieto-Lugilde et al 2015
   ## using the VAR_05 method
   ## calculate the maximum percentage for the taxon then take 5% of that
@@ -235,27 +248,27 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
     m <- max(points[percentField])
     pollen_threshold <- m * 0.05
   }## else, its whatever is set in args
-  
+
   ##do the thresholding
   points['presence'] <- points[percentField]
   points['presence'][points['presence'] < pollen_threshold] = 0
   points['presence'][points['presence'] >= pollen_threshold] = 1
-  
-  
+
+
   ## Take a testing set
   q <- nrow(points)
   q_test <- testingFrac*q
   testing_set <- points[sample(q, q_test), ] ## select q_test random rows from points
-  
+
   ## now take a random sampling on nocc rows
   if (nocc < q){
     training_set <- points[sample(q, nocc), ] ## this is what we will build the model upon
   }else{
     training_set <- points[sample(q, q*0.8), ] ## hack around for debug on small files
   }
-  
+
   training_set <- na.omit(training_set)
-  
+
   ####*******Train the Model ******######
   fitStart <- proc.time()
   model <- "NEW" ##overwrite
@@ -273,14 +286,14 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   prediction <-predict(pred, model, n.trees=model$gbm.call$best.trees, type="response")
   predEnd <- proc.time()
   predTime <- predEnd - predStart
-  
+
   ####*******Evaluate the Model ******######
   accStart <- proc.time()
   if(plot_prediction){
     plot(prediction)
   }
 
-  
+
   test_preds <- predict.gbm(model, testing_set, n.trees=model$gbm.call$best.trees, type='response') ## these are the predicted values from the gbm at the points held out as testing set
   test_real <- as.vector(testing_set['presence']) ## these are pre-thresholded 'real' values of testing set coordiantes
   test_real <- t(test_real) ## transpose so its a row vector
@@ -291,9 +304,9 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
     presence_threshold = opt_threshold[[presence_threshold.method]]
     presence_threshold = mean(presence_threshold)
   }
-  
+
   confusion_matrix <- confusion.matrix(test_real, test_preds, presence_threshold)
-  
+
   acc <- accuracy(test_real, test_preds, presence_threshold) ## calculate accuracy statistics
   accThreshold <- acc$threshold
   accAUC <- acc$AUC
@@ -302,7 +315,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   accSpecificity <- acc$specificity
   accPropCorrect <- acc$prop.correct
   accKappa <- acc$Kappa
-  
+
   ## model fitting statistics that might be useful to keep
   cvDeviance.mean <- model$cv.statistics$deviance.mean
   cvDeviance.se <- model$cv.statistics$deviance.se
@@ -310,35 +323,42 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   cvCorrelation.se <- model$cv.statistics$correlation.se
   cvRoc.mean <- model$cv.statistics$discrimination.mean
   cvRoc.se <- model$cv.statistics$discrimination.se
-  
+
   trainingResidualDeviance <- model$self.statistics$mean.resid
   trainingTotalDeviance <- model$self.statistics$mean.null
   trainingCorrelation <- model$self.statistics$correlation
   trainingRoc <- model$self.statistics$discrimination
-  
+
   ntrees <- model$gbm.call$best.trees
-  
+
   ## stop the timers
   accEnd <- proc.time()
   accTime <- accEnd - accStart
   endTime <- proc.time()
   totalTime <- endTime - startTime
+
+  ## save the result
+  if (save){
+    fullPath = saveLocation + "/" + imgName
+    writeRaster(prediction, fullPath, overwrite=TRUE)
+  }
+
   ## assemble the return vector
-  
+
   r <- c(pollen_threshold, presence_threshold, totalTime['elapsed'], fitTime['elapsed'], predTime['elapsed'], accTime['elapsed'],
           accAUC, accOmmissionRate, accSensitivity, accSpecificity, accPropCorrect, accKappa,
          ntrees, cvDeviance.mean, cvDeviance.se, cvCorrelation.mean, cvCorrelation.se, cvRoc.mean, cvRoc.se,
          trainingResidualDeviance, trainingTotalDeviance, trainingCorrelation, trainingRoc, Sys.time())
-  return (r) 
+  return (r)
 }## end timeSDM function
 
 Run <- function(iterations){
   ## database stuff
   drv <- dbDriver("MySQL")
-  con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname) 
+  con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
   thisSession <- startSession(con)[[1]]
   print(paste("Running session #", thisSession))
-  system2("logger", args=paste("R-Process: Started Session #", thisSession)) 
+  system2("logger", args=paste("R-Process: Started Session #", thisSession))
   for (iter in 0:iterations){
     print(iter)
     ## get the next experiment
@@ -350,7 +370,7 @@ Run <- function(iterations){
     runNextExperiment(nextExp, con, thisSession)
   }
   print(paste("Finished", iter, "iterations.  Cleaning up."))
-  system2("logger", args=paste("Finished process.  Cleaning up...")) 
+  system2("logger", args=paste("Finished process.  Cleaning up..."))
   sql <- paste("UPDATE SessionsManager SET sessionEnd=current_timestamp, sessionStatus='CLOSED', tableLastUpdate=current_timestamp WHERE sessionID=", thisSession, sep="")
   dbSendQuery(con, sql)
 }
