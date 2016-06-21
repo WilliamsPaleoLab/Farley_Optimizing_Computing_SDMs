@@ -121,7 +121,7 @@ runNextExperiment <- function(experiment, con, sessionID){
   rand <- runif(1, 0, 1)
   if (rand < globals.saveThreshold){
     save =  TRUE
-    saveName = experimentID
+    saveName = expID
   }else{
     save = FALSE
     saveName = "none"
