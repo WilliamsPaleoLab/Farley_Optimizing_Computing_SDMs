@@ -119,7 +119,7 @@ runNextExperiment <- function(experiment, con, sessionID){
 
   ## decide if we need to save the output
   rand <- runif(1, 0, 1)
-  if (rand < globals.saveThreshod){
+  if (rand < globals.saveThreshold){
     save =  TRUE
     saveName = experimentID
   }else{
