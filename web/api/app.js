@@ -627,6 +627,49 @@ app.post("/update", function(req, res){
   })
 })
 
+app.get("/results", function(req, res){
+  connection = createDBConnection(hostname, db, password, username)
+  experimentNumber = req.query.experimentNumber
+  cellNumber = req.query.cellNumber
+  sessionNumber = req.query.sessionNumber
+  cores = req.query.cores
+  memory = req.query.memory
+  spatialResolution = req.query.spatialResolution
+  trainingExamples = req.query.trainingExamples
+  taxon = req.query.taxon
+  sql = "SELECT * FROM Results INNER JOIN Experiments on Experiments.experimentID = Results.experimentID "
+  sql += " WHERE (1 = 1 ) "
+  sql += " AND (? IS NULL or ? = Results.experimentID) "
+  sql += " AND (? IS NULL or ? = Results.cellID) "
+  sql += " AND (? IS NULL or ? = Results.sessionID) "
+  sql += " AND (? IS NULL or ? = Experiments.cores) "
+  sql += " AND (? IS NULL or ? = Experiments.GBMemory) "
+  sql += " AND (? IS NULL or ? = Experiments.spatialResolution) "
+  sql += " AND (? IS NULL or ? = Experiments.trainingExamples) "
+  sql += " AND (? IS NULL or ? = Experiments.taxon) "
+  connection.query({sql : sql, values: [experimentID, experimentID, cellNumber, cellNumber, sessionNumber, sessionNumber,
+  cores, cores, memory, memory, spatialResolution, spatialResolution, trainingExamples, trainingExamples, taxon, taxon]}, function(err, results){
+      connection.end()
+      if (!err){
+        out = {
+                success: true,
+                timestamp : new Date().toLocaleString(),
+                data: results,
+                message: ""
+              }
+      }else{
+        out = {
+          success: false,
+          timestamp : new Date().toLocaleString(),
+          data: [],
+          message: err
+        }
+
+      }
+      res.json(out)
+  })
+})
+
 
 app.get("/")
 
