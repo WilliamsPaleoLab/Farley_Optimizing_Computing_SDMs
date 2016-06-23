@@ -1,4 +1,4 @@
-username <- 'root'
-hostname <- "/cloudsql/thesis-1329:us-central1:sdm-database-3"
-password <- "G0Bears7!"
+username <- 'Scripting'
+hostname <- "104.154.235.236"
+password <- "Thesis-Scripting123!"
 dbname <- "timeSDM"

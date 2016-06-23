@@ -56,7 +56,7 @@ globals.ncores = detectCores()
 nodename <- Sys.info()['nodename']
 nodeSplit <- strsplit(nodename, "-")
 globals.totalMemory = systemInfo[['totalMem']]
-globals.experimentMemory = nodeSplit[3]
+globals.experimentMemory = nodeSplit[['nodename']][3]
 print(globals.experimentMemory)
 globals.nreps = 10
 globals.saveThreshold = 0.25
@@ -119,9 +119,9 @@ runNextExperiment <- function(experiment, con, sessionID){
 
   ## decide if we need to save the output
   rand <- runif(1, 0, 1)
-  if (rand < globals.saveThreshod){
+  if (rand < globals.saveThreshold){
     save =  TRUE
-    saveName = experimentID
+    saveName = expID
   }else{
     save = FALSE
     saveName = "none"
