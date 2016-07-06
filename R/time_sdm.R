@@ -51,13 +51,14 @@ systemInfo <- getSystemVars()
 RInfo <- getRVars()
 
 
-## initialization
-globals.ncores = detectCores()
-nodename <- Sys.info()['nodename']
-nodeSplit <- strsplit(nodename, "-")
+# ## initialization
+rows <- dbGetQuery(con, sql)
+# nodename <- Sys.info()['nodename']
+# nodeSplit <- strsplit(nodename, "-")
 globals.totalMemory = systemInfo[['totalMem']]
-globals.experimentMemory = nodeSplit[['nodename']][3]
-print(globals.experimentMemory)
+# globals.experimentMemory = nodeSplit[['nodename']][3]
+# print(globals.experimentMemory)
+globals.experimentMemory = 4
 globals.nreps = 10
 globals.saveThreshold = 0.25
 
@@ -211,7 +212,7 @@ sequoia_points <- read.csv(paste(occPath, "sequoia_ready.csv", sep=""))
 
 timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto',
   presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage', 
-  save=FALSE, saveFolder='/home/rstudio/thesis-scripts/model-output', imgName="rasterOutput", modelMethod='GBM-BRT'){
+  save=FALSE, saveLocation='/home/rstudio/thesis-scripts/model-output', imgName="rasterOutput", modelMethod='GBM-BRT'){
 
   startTime <- proc.time()
   ## get the right species points
