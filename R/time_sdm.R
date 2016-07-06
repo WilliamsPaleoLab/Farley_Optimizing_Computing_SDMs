@@ -26,7 +26,7 @@ if (length(args)==0) {
 }
 
 if (globals.doInstall){
-  install.packages(c("dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal"), repos='http://cran.mtu.edu/')
+  install.packages(c("dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth"), repos='http://cran.mtu.edu/')
   install.packages("RMySQL", repos='http://cran.mtu.edu/')
 }
 
