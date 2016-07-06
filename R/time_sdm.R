@@ -116,6 +116,7 @@ runNextExperiment <- function(experiment, con, sessionID){
   sql = paste("UPDATE Experiments SET experimentStatus='STARTED', experimentStart=current_timestamp, experimentLastUpdate=current_timestamp, sessionID=", sessionID ," WHERE experimentID=", expID, ";", sep="")
   dbSendQuery(con, sql)
   errorMessage = FALSE
+  modelMethod = experiment['model'][[1]]
 
   ## decide if we need to save the output
   rand <- runif(1, 0, 1)
@@ -134,7 +135,6 @@ runNextExperiment <- function(experiment, con, sessionID){
                     print(e)
                     return(c(FALSE))
                   })
-
   if ((res[1] == FALSE) || (errorMessage== TRUE)){ ## report the error and advance if we can't finish this experiment
         sql <- paste("UPDATE Experiments SET experimentStatus='ERROR', experimentLastUpdate=current_timestamp WHERE experimentID=", expID, ";", sep="")
         dbSendQuery(con, sql)
@@ -210,7 +210,8 @@ sequoia_points <- read.csv(paste(occPath, "sequoia_ready.csv", sep=""))
 
 
 timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto',
-  presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage', save=FALSE, saveFolder='/home/rstudio/thesis-scripts/model-output', imgName="rasterOutput"){
+  presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage', 
+  save=FALSE, saveFolder='/home/rstudio/thesis-scripts/model-output', imgName="rasterOutput", modelMethod='GBM-BRT'){
 
   startTime <- proc.time()
   ## get the right species points
@@ -273,8 +274,23 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   ####*******Train the Model ******######
   fitStart <- proc.time()
   model <- "NEW" ##overwrite
-  model <- gbm.step(training_set, gbm.y="presence", gbm.x= c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19"),
-                    tree.complexity=5, learning.rate=0.001, verbose=FALSE, silent=TRUE, max.trees=100000000000, plot.main=FALSE, plot.folds = FALSE)
+  if (modelMethod == 'GBM-BRT') {
+    model <- gbm.step(training_set, gbm.y="presence", gbm.x= c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19"),
+                      tree.complexity=5, learning.rate=0.001, verbose=FALSE, silent=TRUE, max.trees=100000000000, plot.main=FALSE, plot.folds = FALSE)
+  }else if (modelMethod == 'MARS'){
+    x <- training_set[c('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', 'presence')]
+    f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', sep=' + ')))
+    model <- earth(f, data=x)
+  }else if (modelMethod == 'SVM'){
+    x <- training_set[c('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', 'presence')]
+    f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', sep=' + ')))
+    model <- svm(f, data=x)
+  }else if (modelMethod == 'GAM'){
+    x <- training_set[c('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', 'presence')]
+    f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', sep=' + ')))
+    model <- gam(f, data=x)
+  }
+
   if (is.null(model)){
     stop("Got null model.")
   }
@@ -282,9 +298,21 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   fitTime <- fitEnd - fitStart
 
 
-  ####*******Train the Model ******######
+  ####*******Predict the Model ******######
   predStart <- proc.time()
-  prediction <-predict(pred, model, n.trees=model$gbm.call$best.trees, type="response")
+  if (modelMethod == 'GBM-BRT'){
+    prediction <-predict(pred, model, n.trees=model$gbm.call$best.trees, type="response")
+    test_preds <- predict.gbm(model, testing_set, n.trees=model$gbm.call$best.trees, type='response') ## these are the predicted values from the gbm at the points held out as testing set
+  }else if (modelMethod == 'MARS'){
+    prediction <- predict(pred, model, type='response')
+    test_preds <- predict(model, testingSet, type='response')
+  }else if (modelMethod == 'SVM'){
+    prediction <- predict(pred, model, type='response')
+    test_preds <- predict(model, testingSet, type='response')
+  }else if (modelMethod == 'GAM'){
+    prediction <- predict(pred, model, type='response')
+    test_preds <- predict(model, testingSet, type='response')
+  }
   predEnd <- proc.time()
   predTime <- predEnd - predStart
 
@@ -293,10 +321,8 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   if(plot_prediction){
     plot(prediction)
   }
-
-
-  test_preds <- predict.gbm(model, testing_set, n.trees=model$gbm.call$best.trees, type='response') ## these are the predicted values from the gbm at the points held out as testing set
-  test_real <- as.vector(testing_set['presence']) ## these are pre-thresholded 'real' values of testing set coordiantes
+  
+  test_real <- as.vector(testing_set['presence']) ## these are pre-thresholded 'real' values of testing set coordinates
   test_real <- t(test_real) ## transpose so its a row vector
 
   ##experiment with optimal thresholding
@@ -318,19 +344,36 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   accKappa <- acc$Kappa
 
   ## model fitting statistics that might be useful to keep
-  cvDeviance.mean <- model$cv.statistics$deviance.mean
-  cvDeviance.se <- model$cv.statistics$deviance.se
-  cvCorrelation.mean <- model$cv.statistics$correlation.mean
-  cvCorrelation.se <- model$cv.statistics$correlation.se
-  cvRoc.mean <- model$cv.statistics$discrimination.mean
-  cvRoc.se <- model$cv.statistics$discrimination.se
+  if (modelMethod == 'GBM-BRT'){
+    cvDeviance.mean <- model$cv.statistics$deviance.mean
+    cvDeviance.se <- model$cv.statistics$deviance.se
+    cvCorrelation.mean <- model$cv.statistics$correlation.mean
+    cvCorrelation.se <- model$cv.statistics$correlation.se
+    cvRoc.mean <- model$cv.statistics$discrimination.mean
+    cvRoc.se <- model$cv.statistics$discrimination.se
+    
+    trainingResidualDeviance <- model$self.statistics$mean.resid
+    trainingTotalDeviance <- model$self.statistics$mean.null
+    trainingCorrelation <- model$self.statistics$correlation
+    trainingRoc <- model$self.statistics$discrimination
+    
+    ntrees <- model$gbm.call$best.trees
+  }else{
+    cvDeviance.mean <- NULL
+    cvDeviance.se <- NULL
+    cvCorrelation.mean <- NULL
+    cvCorrelation.se <- NULL
+    cvRoc.mean <- NULL
+    cvRoc.se <- NULL
+    
+    trainingResidualDeviance <- NULL
+    trainingTotalDeviance <- NULL
+    trainingCorrelation <- NULL
+    trainingRoc <- NULL
+    
+    ntrees <- NULL
+  }
 
-  trainingResidualDeviance <- model$self.statistics$mean.resid
-  trainingTotalDeviance <- model$self.statistics$mean.null
-  trainingCorrelation <- model$self.statistics$correlation
-  trainingRoc <- model$self.statistics$discrimination
-
-  ntrees <- model$gbm.call$best.trees
 
   ## stop the timers
   accEnd <- proc.time()
