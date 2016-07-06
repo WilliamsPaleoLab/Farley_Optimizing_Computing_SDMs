@@ -7,7 +7,7 @@ pw = keys.readlines()[0].replace("\n", "")
 dbParams = open('/host.txt', 'r')
 host = dbParams.readlines()[0].replace("\n", "")
 
-cnx = MySQLdb.connect(unix_socket=host, user='root', db='timeSDM', passwd=pw)
+cnx = MySQLdb.connect(host='localhost', user='Scripting', db='timeSDM', passwd='Thesis-Scripting123!')
 print "Connected."
 cursor = cnx.cursor()
 
@@ -33,9 +33,9 @@ for comp in configs:
                         g = comp[1]
                         expName =  "Experiement: ", cell, "(", catName, "). Running", core, " cores with ",g, "GB memory. Taxon is ", taxon, " training on: ",t, " examples at SR: ", s, " replicate #",i
                         print expName
-                        # data = (cell, i, core, g, taxon, t, s, catName, model)
-                        # sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, NULL,%s, 'NOT STARTED', DEFAULT, DEFAULT, DEFAULT, %s);"
-                        # cursor.execute(sql, data)
+                        data = (cell, i, core, g, taxon, t, s, catName, model)
+                        sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, NULL,%s, 'NOT STARTED', DEFAULT, DEFAULT, DEFAULT, %s);"
+                        cursor.execute(sql, data)
 
 
 # ##Super
@@ -102,4 +102,4 @@ for comp in configs:
 #             sql = "INSERT INTO Experiments VALUES(DEFAULT, -1, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'NOT STARTED', DEFAULT, DEFAULT, DEFAULT);"
 #             cursor.execute(sql, data)
 #
-# cnx.commit()
+cnx.commit()

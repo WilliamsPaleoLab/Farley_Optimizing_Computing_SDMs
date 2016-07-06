@@ -12,7 +12,7 @@ def masterNode(iters):
         nextConfig = requests.get("http://104.154.235.236:8080/nextconfig").json()
         cores = nextConfig['data'][0]['cores']
         memory = nextConfig['data'][0]['GBMemory']
-        createAndManageGroup(compute, PROJECT, ZONE, cores, memory, 3)
+        createAndManageGroup(compute, PROJECT, ZONE, cores, memory, 12)
         ## upload things to cloud storage
         for f in os.listdir(outputPath):
             img = f + "/" + outputPath
