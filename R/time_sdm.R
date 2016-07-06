@@ -53,11 +53,11 @@ RInfo <- getRVars()
 
 # ## initialization
 rows <- dbGetQuery(con, sql)
-# nodename <- Sys.info()['nodename']
-# nodeSplit <- strsplit(nodename, "-")
+nodename <- Sys.info()['nodename']
+nodeSplit <- strsplit(nodename, "-")
 globals.totalMemory = systemInfo[['totalMem']]
-# globals.experimentMemory = nodeSplit[['nodename']][3]
-# print(globals.experimentMemory)
+globals.experimentMemory = nodeSplit[['nodename']][3]
+print(globals.experimentMemory)
 globals.experimentMemory = 4
 globals.nreps = 10
 globals.saveThreshold = 0.25
