@@ -52,7 +52,7 @@ RInfo <- getRVars()
 
 
 # ## initialization
-rows <- dbGetQuery(con, sql)
+globals.ncores = detectCores()
 nodename <- Sys.info()['nodename']
 nodeSplit <- strsplit(nodename, "-")
 globals.totalMemory = systemInfo[['totalMem']]
