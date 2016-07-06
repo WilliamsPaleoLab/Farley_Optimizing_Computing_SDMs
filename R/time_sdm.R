@@ -384,7 +384,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 
   ## save the result
   if (save){
-    fullPath = saveLocation + "/" + imgName
+    fullPath = paste(saveLocation, "/", imgName, sep="")
     writeRaster(prediction, fullPath, overwrite=TRUE)
   }
 
