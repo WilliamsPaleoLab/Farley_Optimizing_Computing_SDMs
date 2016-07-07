@@ -210,7 +210,7 @@ sequoia_points <- read.csv(paste(occPath, "sequoia_ready.csv", sep=""))
 
 timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto',
   presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage', 
-  save=FALSE, saveLocation='/home/rstudio/thesis-scripts/model-output', imgName="rasterOutput", modelMethod='GBM-BRT'){
+  save=FALSE, saveLocation='/home/rstudio/thesis-scripts/modelOutput', imgName="rasterOutput", modelMethod='GBM-BRT'){
 
   startTime <- proc.time()
   ## get the right species points
