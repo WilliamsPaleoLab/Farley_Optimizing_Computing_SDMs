@@ -172,7 +172,7 @@ def createAndManageGroup(compute, project, zone, cores, gbMemory, groupSize):
     createInstanceTemplateAndGroup(compute, project, zone, cores, gbMemory, groupSize)
     percent = 0
     i = 0
-    while percent < 99:
+    while percent < 100:
         percent = getConfigCompletion(cores, gbMemory)
         print percent
         i += 1
