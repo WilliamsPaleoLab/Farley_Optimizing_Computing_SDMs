@@ -176,14 +176,14 @@ def createAndManageGroup(compute, project, zone, cores, gbMemory, groupSize):
         percent = getConfigCompletion(cores, gbMemory)
         print percent
         i += 1
-        # if i == 100: ## make sure we don't hang up on one or two experiments that get cut off
-        #     r = requests.post("http://104.154.235.236:8080/update")
-        #     response = r.json()
-        #     if response['success']:
-        #         print "Successfully reset interrupt."
-        #     else:
-        #         print 'Tried and failed to reset interrupt.'
-        #     i = 0
+        if i == 100: ## make sure we don't hang up on one or two experiments that get cut off
+            r = requests.post("http://104.154.235.236:8080/update")
+            response = r.json()
+            if response['success']:
+                print "Successfully reset interrupt."
+            else:
+                print 'Tried and failed to reset interrupt.'
+            i = 0
         time.sleep(30) ## wait one minute then poll again
     ## cleanup when operation is done
     groupName = "group-" + str(cores) + "-" + str(gbMemory)
