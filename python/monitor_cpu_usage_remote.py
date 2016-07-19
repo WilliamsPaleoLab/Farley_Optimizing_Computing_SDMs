@@ -1,13 +1,13 @@
 import psutil
 import time
-import mysql.connector
+import MySQLdb
 import datetime
 ## set globals
-computerName = 'Williams-Lab'
+computerName = 'SDM-Database'
 
-cnx = mysql.connector.connect(host="104.154.235.236", user="Scripting", 
-	password='Thesis-Scripting123!', dbname="timeSDM")
-cursor = cnx.cursor(buffered=True)
+cnx = MySQLdb.connect(host="104.154.235.236", user="Scripting", 
+	passwd='Thesis-Scripting123!', db="timeSDM")
+cursor = cnx.cursor()
 
 print "Time\tAverageCPU\tUsed Memory\tAvailable Memory\tNum Procs\tSeconds Since Boot\t\n"
 
