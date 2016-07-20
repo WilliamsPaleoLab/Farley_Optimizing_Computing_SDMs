@@ -25,7 +25,7 @@ for (opt in modelopts){
         print(paste("Running: ", opt, n, "#", rep))
       }
       if (db){
-        sql = paste("INSERT INTO OtherResults VALUES(default, '", r['Species'], "','", r['ModelMethod'], "','NA',", r['trainingexamples'], ",", r['spatialResolution'], ",",
+        sql = paste("INSERT INTO OtherResults2 VALUES(default, '", r['Species'], "','", r['ModelMethod'], "','NorthAmerica',", r['trainingexamples'], ",", r['spatialResolution'], ",",
                     r['cores'], ",", r['memory'], ",", r['totalTime'], ",", r['fitTime'], ",", r['predTime'], ",", r['accTime'], ",", r['startTime'], ",'", compID, "',default);", sep="")
         dbSendQuery(con, sql)
       }
