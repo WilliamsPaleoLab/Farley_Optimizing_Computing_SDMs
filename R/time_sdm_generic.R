@@ -13,7 +13,7 @@ library(parallel)
 ## predictor rasters
 ## HADGem 2100 monthly averages
 ## bioclimatic vars 2, 7, 8, 15, 18, 19
-setwd("C://Users/willlab/documents/scott/")
+setwd("/home/rstudio")
 predPath <- "thesis-scripts/data/predictors/standard_biovars/"
 
 pred_1deg <- stack(paste(predPath, "1_deg/", "standard_biovars_1_deg_2100.tif", sep=""))
@@ -40,7 +40,7 @@ sequoia_points <- read.csv(paste(occPath, "sequoia_ready.csv", sep=""))
 timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto',
                   presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage', 
                   save=FALSE, saveLocation='/home/rstudio/thesis-scripts/modelOutput', imgName="rasterOutput", modelMethod='GBM-BRT'){
-  startUnix <- as.POSIXct(Sys.time())
+  startUnix <- startUnix <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
   
   startTime <- proc.time()
   ## get the right species points
@@ -134,13 +134,13 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
     test_preds <- predict.gbm(model, testing_set, n.trees=model$gbm.call$best.trees, type='response') ## these are the predicted values from the gbm at the points held out as testing set
   }else if (modelMethod == 'MARS'){
     prediction <- predict(pred, model, type='response')
-    test_preds <- predict(model, testingSet, type='response')
+    test_preds <- predict(model, testing_set, type='response')
   }else if (modelMethod == 'SVM'){
     prediction <- predict(pred, model, type='response')
-    test_preds <- predict(model, testingSet, type='response')
+    test_preds <- predict(model, testing_set, type='response')
   }else if (modelMethod == 'GAM'){
     prediction <- predict(pred, model, type='response')
-    test_preds <- predict(model, testingSet, type='response')
+    test_preds <- predict(model, testing_set, type='response')
   }
   predEnd <- proc.time()
   predTime <- predEnd - predStart
@@ -220,7 +220,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   
   r <- c(species, modelMethod, "NA", nocc, sr, ncores, memory, totalTime['elapsed'], fitTime['elapsed'], predTime['elapsed'], accTime['elapsed'], accAUC, startUnix)
 
-  names(r) <- c("Species", "ModelMethod", "Location", "trainingexamples", "spatialResolution", "cores", "memory", "totalTime", 'fitTime', "predTime", "accTime", "startTime")
+  names(r) <- c("Species", "ModelMethod", "Location", "trainingexamples", "spatialResolution", "cores", "memory", "totalTime", 'fitTime', "predTime", "accTime", "AUC", "startTime")
   return(r)
 }## end timeSDM function
 

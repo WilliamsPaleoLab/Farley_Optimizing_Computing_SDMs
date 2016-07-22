@@ -3,7 +3,8 @@ import time
 import MySQLdb
 import datetime
 ## set globals
-computerName = 'SDM-Database'
+
+computerName = 'Instance-8-16'
 
 cnx = MySQLdb.connect(host="104.154.235.236", user="Scripting", 
 	passwd='Thesis-Scripting123!', db="timeSDM")
