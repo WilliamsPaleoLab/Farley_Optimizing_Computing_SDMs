@@ -225,10 +225,12 @@ sourceAreas <- c(25, 50, 75, 100, 150, 200)
 broadleaf_out <- data.frame(idw=vector(length=length(downloads)),idw2=vector(length=length(downloads)),simple=vector(length=length(downloads)), pollen=vector(length=length(downloads)), numGridcells = vector(length=length(downloads)), siteName = vector(length=length(downloads)),  SA=vector(length=length(downloads)))
 tree.cover_out <- data.frame(idw=vector(length=length(downloads)), idw2=vector(length=length(downloads)),simple=vector(length=length(downloads)),pollen=vector(length=length(downloads)), numGridcells = vector(length=length(downloads)), siteName = vector(length=length(downloads)), SA=vector(length=length(downloads)))
 needleleaf_out <- data.frame(idw=vector(length=length(downloads)), idw2=vector(length=length(downloads)),simple=vector(length=length(downloads)),pollen=vector(length=length(downloads)), numGridcells = vector(length=length(downloads)), siteName = vector(length=length(downloads)), SA=vector(length=length(downloads)))
+
+overAllInd <- 0
+SAInd <- 0
 for (area in sourceAreas){
-  print(area)
+  SAInd <- SAInd + 1
   for (ind in 1:length(downloads)){
-    print(paste("\t", ind))
     dataset <- downloads[[ind]]
     lat <- dataset$dataset$site.data$lat
     lng <- dataset$dataset$site.data$long
@@ -271,14 +273,111 @@ for (area in sourceAreas){
     
     
     numCells <- length(matches)
-    
+    # dfInd <- SAInd * ind
+    # print(dfInd)
+    overAllInd <- overAllInd + 1
     ## record the output
     treeV <- c(tree.cover.idw, tree.cover.idw2, tree.cover.simple, pollenTreeCover, numCells, siteName, area)
     broadleafV <- c(broadleaf.idw, broadleaf.idw2, broadleaf.simple, pollenBroadleaf, numCells, siteName, area)
     needleleafV <- c(needleleaf.idw, needleleaf.idw2, needleleaf.simple, pollenNeedleleaf, numCells, siteName, area)
-    
-    tree.cover_out[ind, ] <- treeV
-    broadleaf_out[ind, ] <- broadleafV
-    needleleaf_out[ind, ] <- needleleafV
+    print(overAllInd)
+    tree.cover_out[overAllInd, ] <- treeV
+    broadleaf_out[overAllInd, ] <- broadleafV
+    needleleaf_out[overAllInd, ] <- needleleafV
     }
 }
+
+tree.cover.25 <- tree.cover_out[which(tree.cover_out$SA == 25),]
+tree.cover.50 <- tree.cover_out[which(tree.cover_out$SA == 50), ]
+tree.cover.75 <- tree.cover_out[which(tree.cover_out$SA == 75), ]
+tree.cover.100 <- tree.cover_out[which(tree.cover_out$SA == 100), ]
+tree.cover.150 <- tree.cover_out[which(tree.cover_out$SA == 150), ]
+tree.cover.200 <- tree.cover_out[which(tree.cover_out$SA == 200), ]
+
+broadleaf.25 <- broadleaf_out[which(broadleaf_out$SA == 25), ]
+broadleaf.50 <- broadleaf_out[which(broadleaf_out$SA == 50), ]
+broadleaf.75 <- broadleaf_out[which(broadleaf_out$SA == 75), ]
+broadleaf.100 <- broadleaf_out[which(broadleaf_out$SA == 100), ]
+broadleaf.150 <- broadleaf_out[which(broadleaf_out$SA == 150), ]
+broadleaf.200 <- broadleaf_out[which(broadleaf_out$SA == 200), ]
+
+needleleaf.25 <- needleleaf_out[which(needleleaf_out$SA == 25), ]
+needleleaf.50 <- needleleaf_out[which(needleleaf_out$SA == 50), ]
+needleleaf.75 <- needleleaf_out[which(needleleaf_out$SA == 75), ]
+needleleaf.100 <- needleleaf_out[which(needleleaf_out$SA == 100), ]
+needleleaf.150 <- needleleaf_out[which(needleleaf_out$SA == 150), ]
+needleleaf.200 <- needleleaf_out[which(needleleaf_out$SA == 200), ]
+
+save(broadleaf_out, file="/Users/scottsfarley/documents/paleon/project/broadleaf.RData")
+save(needleleaf_out, file="/Users/scottsfarley/documents/paleon/project/needleleaf.RData")
+save(tree.cover_out, file="/Users/scottsfarley/documents/paleon/project/treecover.RData")
+
+par(mfrow=c(3, 2))
+plot(tree.cover.25$pollen, tree.cover.25$idw, col='red', main='Tree Cover: 25km', xlim=c(0,1), ylim=c(0, 1))
+points(tree.cover.25$pollen, tree.cover.25$idw2, col='green')
+points(tree.cover.25$pollen, tree.cover.25$simple, col='blue')
+
+plot(tree.cover.50$pollen, tree.cover.50$idw, col='red', main='Tree Cover: 50km', xlim=c(0,1), ylim=c(0, 1))
+points(tree.cover.50$pollen, tree.cover.50$idw2, col='green')
+points(tree.cover.50$pollen, tree.cover.50$simple, col='blue')
+
+plot(tree.cover.75$pollen, tree.cover.75$idw, col='red', main='Tree Cover: 75km', xlim=c(0,1), ylim=c(0, 1))
+points(tree.cover.75$pollen, tree.cover.75$idw2, col='green')
+points(tree.cover.75$pollen, tree.cover.75$simple, col='blue')
+
+plot(tree.cover.75$pollen, tree.cover.100$idw, col='red', main='Tree Cover: 100km', xlim=c(0,1), ylim=c(0, 1))
+points(tree.cover.75$pollen, tree.cover.100$idw2, col='green')
+points(tree.cover.75$pollen, tree.cover.100$simple, col='blue')
+
+plot(tree.cover.200$pollen, tree.cover.200$idw, col='red', main='Tree Cover: 200km', xlim=c(0,1), ylim=c(0, 1))
+points(tree.cover.200$pollen, tree.cover.200$idw2, col='green')
+points(tree.cover.200$pollen, tree.cover.200$simple, col='blue')
+
+plot(tree.cover, main="Tree Cover")
+
+title()
+
+par(mfrow=c(3, 2))
+plot(broadleaf.25$pollen, broadleaf.25$idw, col='red', main='Broadleaf Cover: 25km', xlim=c(0,1), ylim=c(0, 1))
+points(broadleaf.25$pollen, broadleaf.25$idw2, col='green')
+points(broadleaf.25$pollen, broadleaf.25$simple, col='blue')
+
+plot(broadleaf.50$pollen, broadleaf.50$idw, col='red', main='Broadleaf Cover: 50km', xlim=c(0,1), ylim=c(0, 1))
+points(broadleaf.50$pollen, broadleaf.50$idw2, col='green')
+points(broadleaf.50$pollen, broadleaf.50$simple, col='blue')
+
+plot(broadleaf.75$pollen, broadleaf.75$idw, col='red', main='Broadleaf Cover: 75km', xlim=c(0,1), ylim=c(0, 1))
+points(broadleaf.75$pollen, broadleaf.75$idw2, col='green')
+points(broadleaf.75$pollen, broadleaf.75$simple, col='blue')
+
+plot(broadleaf.100$pollen, broadleaf.100$idw, col='red', main='Broadleaf Cover: 100km', xlim=c(0,1), ylim=c(0, 1))
+points(broadleaf.100$pollen, broadleaf.100$idw2, col='green')
+points(broadleaf.100$pollen, broadleaf.100$simple, col='blue')
+
+plot(broadleaf.200$pollen, broadleaf.200$idw, col='red', main='Broadleaf Cover: 200km', xlim=c(0,1), ylim=c(0, 1))
+points(broadleaf.200$pollen, broadleaf.200$idw2, col='green')
+points(broadleaf.200$pollen, broadleaf.200$simple, col='blue')
+plot(broadleaf, main="Broadleaf")
+
+par(mfrow=c(3, 2))
+plot(needleleaf.25$pollen, needleleaf.25$idw, col='red', main='Needleleaf Cover: 25km', xlim=c(0,1), ylim=c(0, 1))
+points(needleleaf.25$pollen, needleleaf.25$idw2, col='green')
+points(needleleaf.25$pollen, needleleaf.25$simple, col='blue')
+
+plot(needleleaf.50$pollen, needleleaf.50$idw, col='red', main='Needleleaf Cover: 50km', xlim=c(0,1), ylim=c(0, 1))
+points(needleleaf.50$pollen, needleleaf.50$idw2, col='green')
+points(needleleaf.50$pollen, needleleaf.50$simple, col='blue')
+
+plot(needleleaf.75$pollen, needleleaf.75$idw, col='red', main='Needleleaf Cover: 75km', xlim=c(0,1), ylim=c(0, 1))
+points(needleleaf.75$pollen, needleleaf.75$idw2, col='green')
+points(needleleaf.75$pollen, needleleaf.75$simple, col='blue')
+
+plot(needleleaf.100$pollen, needleleaf.100$idw, col='red', main='Needleleaf Cover: 100km', xlim=c(0,1), ylim=c(0, 1))
+points(needleleaf.100$pollen, needleleaf.100$idw2, col='green')
+points(needleleaf.100$pollen, needleleaf.100$simple, col='blue')
+
+plot(needleleaf.200$pollen, needleleaf.200$idw, col='red', main='Needleleaf Cover: 200km', xlim=c(0,1), ylim=c(0, 1))
+points(needleleaf.200$pollen, needleleaf.200$idw2, col='green')
+points(needleleaf.200$pollen, needleleaf.200$simple, col='blue')
+plot(needleleaf, main="Needleleaf")
+
