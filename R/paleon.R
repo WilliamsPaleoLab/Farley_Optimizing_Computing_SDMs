@@ -102,21 +102,18 @@ aggregateToTypes <- function(df){
                         "Sarcobatus", "Saxifragaceae", "Sphaeralcea", "Prairie.Forbs")
   for (type in broadleafTypes){
     if(type %in% dfNames){
-      print(type)
       df['broadleaf'] = df['broadleaf'] + df[type] 
       df[type] <- NULL
     }
   }
   for (type in needleleafTypes){
     if(type %in% dfNames){
-      print(type)
       df['needleleaf'] = df['needleleaf'] + df[type]
       df[type] <- NULL
     }
   }
   for(type in nonArborealTypes){
     if(type %in% dfNames){
-      print(type)
       df['nonArboreal'] = df['nonArboreal'] + df[type]
       df[type] <- NULL
     }
@@ -153,7 +150,7 @@ tree.cover.locRound <- tree.cover.points.2
 broadleaf.locRound <- broadleaf.points.2
 needleleaf.locRound <- needleleaf.points.2
 
-decPlaces = 2
+decPlaces = 1
 
 tree.cover.locRound$x <- round(tree.cover.locRound$x, decPlaces)
 tree.cover.locRound$y <- round(tree.cover.locRound$y, decPlaces)
@@ -169,7 +166,7 @@ modernComp <- list()
 broadleaf_out <- data.frame(composition=vector(length=length(downloads)), pollen=vector(length=length(downloads)), numGridcells = vector(length=length(downloads)), siteName = vector(length=length(downloads)))
 tree.cover_out <- data.frame(composition=vector(length=length(downloads)), pollen=vector(length=length(downloads)), numGridcells = vector(length=length(downloads)), siteName = vector(length=length(downloads)))
 needleleaf_out <- data.frame(composition=vector(length=length(downloads)), pollen=vector(length=length(downloads)), numGridcells = vector(length=length(downloads)), siteName = vector(length=length(downloads)))
-for (ind in 1:length(downloads)){
+for (ind in 1:length(downloads{1:10})){
   download <- downloads[[ind]]
   counts <- download$counts
   theCounts[[ind]] <- counts
@@ -184,6 +181,10 @@ for (ind in 1:length(downloads)){
   pollenNeedleleaf <- aggregated$needleleaf
   latRound <- round(download$dataset$site.data$lat, decPlaces)
   lngRound <- round(download$dataset$site.data$long, decPlaces)
+  lat <- download$dataset$site.data$lat
+  lng <- download$dataset$site.data$long
+  point <- as.matrix(data.frame(x=lng, y=lat))
+  gridpoints <- as.matrix(tree.cover.points.2[c("x", "y")])
   near.tree.cover <- tree.cover.locRound[which(tree.cover.locRound$x == lngRound),]
   near.tree.cover <- near.tree.cover[which(near.tree.cover$y == latRound),]
   near.needleleaf <- needleleaf.locRound[which(needleleaf.locRound$x == lngRound),]
@@ -217,4 +218,67 @@ plot(needleleaf_out$pollen ~ needleleaf_out$composition, xlab=paste("AVHRR"), yl
 abline(lm(needleleaf_out$pollen~needleleaf_out$composition))
 plot(broadleaf_out$pollen ~ broadleaf_out$composition, xlab=paste("AVHRR"), ylab="Pollen", main="Broadleaf", xlim=c(0,1), ylim=c(0,1))
 abline(lm(broadleaf_out$pollen~broadleaf_out$composition))
+hist(broadleaf_out$numGridcells)
 
+
+sourceAreas <- c(25, 50, 75, 100, 150, 200)
+broadleaf_out <- data.frame(idw=vector(length=length(downloads)),idw2=vector(length=length(downloads)),simple=vector(length=length(downloads)), pollen=vector(length=length(downloads)), numGridcells = vector(length=length(downloads)), siteName = vector(length=length(downloads)),  SA=vector(length=length(downloads)))
+tree.cover_out <- data.frame(idw=vector(length=length(downloads)), idw2=vector(length=length(downloads)),simple=vector(length=length(downloads)),pollen=vector(length=length(downloads)), numGridcells = vector(length=length(downloads)), siteName = vector(length=length(downloads)), SA=vector(length=length(downloads)))
+needleleaf_out <- data.frame(idw=vector(length=length(downloads)), idw2=vector(length=length(downloads)),simple=vector(length=length(downloads)),pollen=vector(length=length(downloads)), numGridcells = vector(length=length(downloads)), siteName = vector(length=length(downloads)), SA=vector(length=length(downloads)))
+for (area in sourceAreas){
+  print(area)
+  for (ind in 1:length(downloads)){
+    print(paste("\t", ind))
+    dataset <- downloads[[ind]]
+    lat <- dataset$dataset$site.data$lat
+    lng <- dataset$dataset$site.data$long
+    siteName <- dataset$dataset$site.data$site.name
+    point <- as.matrix(data.frame(x=lng, y=lat))
+    gridpoints <- as.matrix(tree.cover.points.2[c("x", "y")])
+    counts <- dataset$counts
+    theCounts[[ind]] <- counts
+    compiled <- data.frame(compile_taxa(counts, "P25"))
+    compiled$total <- rowSums(compiled)
+    compiled <- compiled/compiled$total
+    theCompiled[[ind]] <- compiled
+    aggregated <- aggregateToTypes(compiled)
+    theAggregated[[ind]] <- aggregated
+    pollenTreeCover <- aggregated$tree.sum
+    pollenBroadleaf <- aggregated$broadleaf
+    pollenNeedleleaf <- aggregated$needleleaf
+    dist <- rdist.earth(point, gridpoints)
+    matches <- which(dist <= area)
+    distMatches <- dist[matches]
+    tcMatches <- tree.cover.points.2[matches,]
+    broadleafMatches <- broadleaf.points.2[matches,]
+    needleleafMatches <- needleleaf.points.2[matches,]
+    tree.cover.mesh <- data.frame(x=tcMatches$x, y=tcMatches$y, gridValue=tcMatches$na.latlong.treecover, dist=distMatches)
+    broadleaf.mesh <- data.frame(x=tcMatches$x, y=tcMatches$y, gridValue=broadleafMatches$na.latlong.broadleaf, dist=distMatches)
+    needleleaf.mesh <- data.frame(x=tcMatches$x, y=tcMatches$y, gridValue=needleleafMatches$na.latlong.needleleaf, dist=distMatches)
+    ##do simple averaging
+    tree.cover.simple <- mean(tree.cover.mesh$gridValue) / 100
+    broadleaf.simple <- mean(broadleaf.mesh$gridValue) / 100
+    needleleaf.simple <- mean(needleleaf.mesh$gridValue) / 100
+    ##do IDW
+    tree.cover.idw <- sum(tree.cover.mesh$gridValue/tree.cover.mesh$dist)/sum(1/tree.cover.mesh$dist)/100
+    broadleaf.idw <- sum(broadleaf.mesh$gridValue/broadleaf.mesh$dist)/sum(1/broadleaf.mesh$dist)/100
+    needleleaf.idw <- sum(needleleaf.mesh$gridValue/needleleaf.mesh$dist)/sum(1/needleleaf.mesh$dist)/100
+    
+    ##do IDW^2
+    tree.cover.idw2 <- sum(tree.cover.mesh$gridValue/(tree.cover.mesh$dist^2))/sum((1/tree.cover.mesh$dist^2))/100
+    broadleaf.idw2 <- sum(broadleaf.mesh$gridValue/(broadleaf.mesh$dist^2))/sum((1/broadleaf.mesh$dist^2))/100
+    needleleaf.idw2 <- sum(needleleaf.mesh$gridValue/(needleleaf.mesh$dist^2))/sum((1/needleleaf.mesh$dist^2))/100
+    
+    
+    numCells <- length(matches)
+    
+    ## record the output
+    treeV <- c(tree.cover.idw, tree.cover.idw2, tree.cover.simple, pollenTreeCover, numCells, siteName, area)
+    broadleafV <- c(broadleaf.idw, broadleaf.idw2, broadleaf.simple, pollenBroadleaf, numCells, siteName, area)
+    needleleafV <- c(needleleaf.idw, needleleaf.idw2, needleleaf.simple, pollenNeedleleaf, numCells, siteName, area)
+    
+    tree.cover_out[ind, ] <- treeV
+    broadleaf_out[ind, ] <- broadleafV
+    needleleaf_out[ind, ] <- needleleafV
+    }
+}
