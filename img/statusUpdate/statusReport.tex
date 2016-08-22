@@ -13,7 +13,7 @@
 \maketitle
 
 \begin{abstract}
-I've completed over 20\% of the proposed experiments in my thesis experimental protocol, yielding over 10,300 data points on which to do preliminary analysis. Early results show little to no correlation between computing configuration variables (vCPU and RAM) and model execution time.   The only clear relationship I've uncovered is the strong positive relationship between the number of training examples used to fit the model and the execution time.  Two predictive models, a linear model with multiple predictors, and a boosted regression tree model, were developed to predict execution time of future SDM scenarios.  The question now is whether to be patient and run the remaining (and more expensive) experiments, or refine the experimental protocol to one that responds better to the computer hardware variables.
+I've completed over 20\% of the proposed experiments in my thesis experimental protocol, yielding over 20,583 data points on which to do preliminary analysis. I have early results for three species distribution modeling methods on four training set sizes, four different spatial resolutions, and 44 different computing configurations. Preliminary data analysis show little to no correlation between computing configuration variables (vCPU and RAM) and model execution time.   The only clear relationship I've uncovered is the strong positive relationship between the number of training examples used to fit the model and the execution time.  Two predictive models for execution time, a linear model with multiple predictors, and a boosted regression tree model, were developed to estimate running time of future SDM scenarios.  The question now is whether to be patient and run the remaining (and more expensive) experiments, or refine the experimental protocol to one that responds better to the computer hardware variables.
 \end{abstract}
 
 \section{Methods}
@@ -92,7 +92,7 @@ The main reason for this choice is the ability to create 'custom' instance types
 \caption{A flowchart describing the way in which virtual infrastructure is managed to run SDM simulations.}\label{fig:flowchart}
 \end{figure}
 
-My setup draws on a bit on the design of larger systems like Hadoop, which create frameworks for massively large and distributed fault-tolerant systems. In short, I have one Master Node that hosts a database and a control script, and a pool of compute nodes that are fault-tolerant and designed only for computing. The compute nodes don?t have to know anything about the progress of the entire project and can handle being shut down mid-run, and the control node doesn?t have to know anything about the simulations being computed.  At any one time I will have one or many servers that will actually be doing the job of computing the species distribution models and assessing their time and accuracy (compute nodes). At the same time, I will have one server that hosts the database and the API, starts and stops the computing instances, and cleans up the workspace when necessary (Master Node). This approach allows me to use Google?s preemptible instances, which cost much less, but have the potential to be dropped due to system demand at any time. Figure \ref{fig:flowchart} shows a conceptual diagram of the platform logic.
+My setup draws on a bit on the design of larger systems like Hadoop, which create frameworks for massively large and distributed fault-tolerant systems. In short, I have one Master Node that hosts a database and a control script, and a pool of compute nodes that are fault-tolerant and designed only for computing. The compute nodes don?t have to know anything about the progress of the entire project and can handle being shut down mid-run, and the control node doesn?t have to know anything about the simulations being computed.  At any one time I will have one or many servers that will actually be doing the job of computing the species distribution models and assessing their time and accuracy (compute nodes). At the same time, I will have one server that hosts the database and the API, starts and stops the computing instances, and cleans up the workspace when necessary (Master Node). This approach allows me to use Google's preemptible instances, which cost much less, but have the potential to be dropped due to system demand at any time. Figure \ref{fig:flowchart} shows a conceptual diagram of the platform logic.
 
 \subsubsection{Configuring and building virtual instances}
 The steps to building and configuring the pool of computing nodes takes follows this general process: 
@@ -138,27 +138,10 @@ The paleo climatic predictor layers are downscaled North American CCSM 3 model s
 The future climatic layers, describing AD2100, for use as output predictors, were obtained from the CMIP project, HadCM3 climate model.  These layers model describe the model under the UN IPCC RCP 8.5 forcing scenario.  The layers were used to calculate bioclimatic variables, and were then resampled to various resolutions to facilitate their use as output layers in different experiments.
 
 \subsubsection{Modeling Methodology}
-The SDM simulations are run using the gradient boosted regression trees as implemented for SDM modeling by the 'dismo' R package.  The dismo package wraps an SDM-friendly set of functions around the gbm package, which includes lower level regression tree functionality. The input data is communicated by the central database to the computing node, and then passed to the gbm function.  The learning parameters of the function are held constant over all experiments.  There is no database I/O inside of the function, so results should not be slow-biased by network connection or context switching.  
+I have worked with three SDM algorithms that have shown competitive accuracy results in the literature: (1) multivariate adaptive regression splines (MARS), (2) gradient boosted regression trees (GBM-BRT), and (3) generalized additive models.  All of the models were fit using the R statistical environment with standard packages for these learning methods.
+The input data is communicated by the central database to the computing node, and then passed to the gbm function.  The learning parameters of the function are held constant over all experiments.  There is no database I/O inside of the function, so results should not be slow-biased by network connection or context switching.  
 
-
-\begin{table}
-\centering
-\begin{tabular}{l|l}
-Parameter & Value \\\hline
-data & The specified set of random training examples prescribed by the  experiment\\
-predictors & bio2, bio7, bio8, bio15, bio19\\
-y & "presence"\\
-tree.complexity & 5\\
-learning.rate & 0.001\\
-verbose & FALSE \\
-max.trees & Infinite\\
-plot.main & FALSE \\
-plot.folds & FALSE \\
-\end{tabular}
-\caption{\label{tab:params} The defined gbm.step parameters used in the SDM simulations.  All other parameters were left at the dismo package defaults.} 
-\end{table}
-
-The experiment parameters are first communicated from the database to the computing machine.  The computing node parses the database's response and starts a new experiment session.  The correct set of training examples is loaded from disk.  It is then randomly partitioned into a testing set of $\mathcal{N}$ random training examples and ~10,000 (20\% of total) testing examples that are excluded from the training set.  Examples are converted to binary presence absence values using the Nieto-Lugilde et al (2015) method for determining local presence from fossil pollen records.  The training set is sent to the gbm.step function where an SDM model is fit.  All models are fit on the five least correlated bioclimatic variables (bio2, bio7, bio8, bio15, bio19). The model is then projected onto the future predictor set.  The gridded output is then used to evaluate the accuracy of the model, using the testing set. Results of timing the total time, model fitting time, prediction time, and accuracy calculation time, as well as various measures of accuracy are then communicated back to the central database. Table \ref{tab:params} shows the arguments to the gbm.step function.
+The experiment parameters are first communicated from the database to the computing machine.  The computing node parses the database's response and starts a new experiment session.  The correct set of training examples is loaded from disk.  It is then randomly partitioned into a testing set of $\mathcal{N}$ random training examples and ~10,000 (20\% of total) testing examples that are excluded from the training set.  Examples are converted to binary presence absence values using the Nieto-Lugilde et al (2015) method for determining local presence from fossil pollen records.  The training set is sent to the learning function where an SDM model is fit.  All models are fit on the five least correlated bioclimatic variables (bio2, bio7, bio8, bio15, bio19). The model is then projected onto the future predictor set.  The gridded output is then used to evaluate the accuracy of the model, using the testing set. Results of timing the total time, model fitting time, prediction time, and accuracy calculation time, as well as various measures of accuracy are then communicated back to the central database. 
 
 \section{Status}
 
@@ -174,14 +157,14 @@ The experiment parameters are first communicated from the database to the comput
 \caption{\label{fig:completionByCategory}Percentage of experiment statuses currently in the database. }
 \end{figure}
 
-As of July 1, I've run 10,300 of the experiments as described above, which equates to approximately 20\% of the total.  Some of the models have been returning NULL, particularly at lower numbers of training examples.  I suspect that the model does not have sufficient information to fit the model with such few data points, and this has resulted in a sizable number of errors in the results set.  Figure \ref{fig:completionByCategory} shows the relative distribution of successful runs, errors, and runs yet to be started.  
+As of July 1, I've run 20,583 of the experiments as described above, which equates to approximately 20\% of the total.  Some of the models have been returning NULL, particularly at lower numbers of training examples.  I suspect that the model does not have sufficient information to fit the model with such few data points, and this has resulted in a sizable number of errors in the results set.  Figure \ref{fig:completionByCategory} shows the relative distribution of successful runs, errors, and runs yet to be started.  
 
 While my model has 'seen' relatively few of the more powerful computing configurations, it has been exposed to all of the training examples and spatial resolutions in my protocol, so I can be fairly sure of the affect of altering these variables. Figure \ref{fig:experimentByCategory} shows the percentage of discrete values completed for each experimental variable.  I am fairly certain of the effect of spatial resolution and number of training examples on the execution time of the model.  While not quite as complete, I have seen a large number of different computer cores and a decent amount of RAM configurations as well.  The completion portion of the computing variables are also clearly shown in Figure \ref{fig:conf_status}.
 
 I contend that, while a relatively small percentage of the total experiments have been completed, a sufficient number of runs have been done and a representative set of experimental variables have been seen to make claims about the validity of the these preliminary results.
 
 \section{Results}
-\subsection{Exploratory Analysis}
+\subsection{Exploratory Analysis of GBM-BRT Data}
 
 \begin{figure}
 \centering
@@ -274,7 +257,20 @@ I also used boosted regression trees to predict the execution time of boosted re
 
 Perhaps the only clear relationship I've uncovered so far is that fitting time increases exponentially with the addition of more training examples (Figure \ref{fig:nte_time}), but do the additional training examples yield better predictions?  Plotting the testing set AUC statistic against the number of training examples shows that predictive skill increases significantly between 100 to 10,000 input points, but then levels off.  From this data, it is clear that to obtain optimal results, at least 10,000 input training examples should be used.  Figure \ref{fig:acc_model} shows a non-linear regression tree model to predict the AUC statistic from number of training examples. A simple linear regression cannot capture the log-shaped curve that the data in Figure \ref{fig:acc_model} shows.  The stair stepping in the GBM model is due to the fact that I tested at discrete intervals, and not continuously between 0 and 30,000 examples.
 
+\subsection{ Other SDMs}
+The other two SDMs showed similar results to the GBM-BRT method.  The predictive accuracy of the execution time models were on par with the GBM-BRT models discussed above, however, nearly all of the predictive skill comes from the number of training examples rather than the computing configuration. 
 
+\begin{figure}
+\centering
+\includegraphics[width=0.85\textwidth]{CI_plot-I.png}
+\caption{Predictive skill of the predictive models on all SDM types.}\label{fig:all_models}
+\end{figure}
+
+Figure \ref{fig:all_models} shows the results of the predictive models compared to the observed testing set. In general, the boosted regression tree model approach significantly outperformed the linear models. Regression trees are able better capture the potential non-linearities of the experimental dataset and can remove the negative predictions forecast by the linear model. However, both sets of models consistently showed $r^2 > 0.8$ correlation between observed and predicted values with a mean prediction error of less than 4 seconds.  
+
+Of all six execution time models (2 models x 3 SDMs), the regression tree prediction model of the MARS SDM performed the best, with a mean error of $-0.457 \pm 1.895$ seconds and an $r^2$ value of 0.936. The regression tree models for GAM and GBM-BRT SDMs both performed well with r\textsuperscript{2} values of 0.892 and 0.880, respectively. The linear models all showed lower r\textsuperscript{2} correlation values and had larger prediction variance and mean prediction errors than their decision tree counterparts.  The best performing linear model was again for the MARS SDM, with an r\textsuperscript{2} correlation of 0.876, with a significantly larger mean error of $2.17 \pm 1.73$ seconds. Figure \ref{fig:all_models} shows the observed and predicted values for each SDM for both of the prediction models.
+
+Model interrogation using ANOVA (linear model) and partial dependency plots (GBM model) reveals that model execution time depends strongly on the number of training examples used to fit the SDM. In all cases, the number of training examples and spatial resolution of the output were shown to be highly significant ($p < 0.001$). Computer hardware variables were not shown to be significant predictors of execution time for these SDMs.  In some cases, additional memory was shown to reduce model speed, perhaps due to increased overhead of memory management. Runtime logs indicate that model execution was bounded by CPU processing capability, rather than main memory capacity, suggesting that SDM workflows could be improved if the algorithms were written to run in parallel, rather than sequentially.
 
 \subsection{Within-Cell Variance}
 
@@ -289,6 +285,15 @@ Perhaps the only clear relationship I've uncovered so far is that fitting time i
 
 
 One of the major questions raised by the computer science literature on this topic is that there may be stochastic variations due to unpredictable system processes and hardware design that will cause a predictive model to fail.  Here, I evaluate the within-cell variance of the preliminary results.  I have done ten (n=10) replicates of each combination of experimental variables, so I am relatively confident in evaluating the magnitude of the variations.  The median within-cell variance is 115 seconds, which is a significant amount of time. The standard deviation of the variance is 388 seconds.  Figure \ref{fig:var_hist} illustrates the distribution of the within-cell variance.  The variance also appears to increase as execution time increases, suggesting that predictions on longer-running models are less robust than on short-running processes. Figure \ref{fig:var_mean} shows a strong exponential increase in variance as cell mean execution time increases. 
+
+\subsection{Resource Utilization}
+\begin{figure}
+\begin{centering}
+\includegraphics[width=0.6\textwidth]{resource-usage.jpg}
+\caption{Resource utilization during modeling runs.}\label{fig:resource_usage}
+\end{centering}
+\end{figure}
+Flummoxed by the apparent lack of influence of the hardware variables on execution time, I monitored the runtime environment of the models and recorded CPU and memory utilization as the models were being executed.  These data show the models are bounded by sequential algorithm design, and thus CPU utilization, and have very modest memory requirements. Figure \ref{fig:resource_usage} shows the data.  Clearly, the models max out a single core (bottom, left side) but are unable to extend utilize more than this when given an additional core to work with (bottom, right side).  For memory, we see that all of the experiments use the same amount of memory (1.5 GB).  This amount of memory is less than the smallest memory configuration I tested on (2GB), so adding additional memory does not influence results.  The top panel in Figure \ref{resource_usage} shows the percentage used memory over different memory types.  As total memory increases, percent used decreases, hence the structure of the figure. 
 
 \section{Discussion}
 I am really surprised by the lack of trends due to the hardware variables.  Increasing memory actually shows a statistically significant increase in execution time.  I'm not sure what ti make of this, unless it's because I am not coming close to maxing out the memory.  This is possible -- the datasets are are only 20-25 MB each and the predictor variable stacks are between 5 and 15 MB, depending on spatial resolution.  The smallest memory configuration I used was 600MB, so perhaps it didn't fill up with this small of datasets. I have logs for some of the lower memory instances, and it does appear that a large portion of the memory remains free. In the future, I can better monitor the percentage of memory usage and match it to the computing time.
