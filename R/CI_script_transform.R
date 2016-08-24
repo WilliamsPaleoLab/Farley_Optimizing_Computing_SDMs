@@ -1,7 +1,9 @@
+library(plyr)
+
 con <- dbConnect(dbDriver("MySQL"), host='104.154.235.236', password = 'Thesis-Scripting123!', dbname='timeSDM', username='Scripting')
 ## get results from database
 r <- dbGetQuery(con, "Select * From Experiments Inner Join Results on Results.experimentID = Experiments.experimentID
-                  WHERE experimentStatus = 'DONE' AND cores < 8 AND model = 'GBM-BRT';")
+                  WHERE experimentStatus = 'DONE' AND cores < 8 AND model = 'GBM-BRT' OR model='GAM' OR model = 'MARS';")
 ## separate models
 r.brt <- r[which(r$model == 'GBM-BRT'), ]
 r.gam <- r[which(r$model == 'GAM'), ]
@@ -51,7 +53,7 @@ sd(r.brt.brt.delta)
 sd(r.gam.brt.delta)
 sd(r.mars.brt.delta)
 
-plot(r.brt.brt.predict ~ log(r.brt.testing$totalTime), main='Performance Model (GBM)', xlab='Observed Execution Time [Seconds]', ylab='Predicted Execution Time [Seconds]', xlim=c(-10, 175), ylim=c(-10, 175), pch=3, col='darkgreen')
+plot(r.brt.brt.predict ~ log(r.brt.testing$totalTime), main='Performance Model (GBM)', xlab='log(Observed Execution Time) [Seconds]', ylab='Predicted Execution Time [Seconds]', pch=3, col='darkgreen')
 points(r.gam.brt.predict ~ log(r.gam.testing$totalTime), pch=3, col='darkred')
 points(r.mars.brt.predict ~ log(r.mars.testing$totalTime), pch=3, col='dodgerblue')
 legend('bottomright', c('GBM-BRT', 'GAM', 'MARS'), col=c('darkgreen', 'darkred', 'dodgerblue'), pch=3)
@@ -68,9 +70,9 @@ r.gam.lm.predict = predict(r.gam.lm, r.gam.testing)
 r.mars.lm.predict = predict(r.mars.lm, r.mars.testing)
 
 ## evaluate the prediction
-cor(r.brt.lm.predict, r.brt.testing$totalTime)
-cor(r.gam.lm.predict, r.gam.testing$totalTime)
-cor(r.mars.lm.predict, r.mars.testing$totalTime)
+cor(r.brt.lm.predict, log(r.brt.testing$totalTime))
+cor(r.gam.lm.predict, log(r.gam.testing$totalTime))
+cor(r.mars.lm.predict, log(r.mars.testing$totalTime))
 
 r.brt.lm.delta <- r.brt.lm.predict - log(r.brt.testing$totalTime)
 r.gam.lm.delta <- r.gam.lm.predict - log(r.gam.testing$totalTime)
@@ -85,7 +87,7 @@ sd(r.gam.lm.delta)
 sd(r.mars.lm.delta)
 
 
-plot(r.brt.lm.predict ~ log(r.brt.testing$totalTime), main='Performance Model (Linear Model)', xlab='Observed Execution Time [Seconds]', ylab='Predicted Execution Time [Seconds]', xlim=c(-10, 175), ylim=c(-10, 175), pch=3, col='darkgreen')
+plot(r.brt.lm.predict ~ log(r.brt.testing$totalTime), main='Performance Model (Linear Model)', xlab='log(Observed Execution Time) [Seconds]', ylab='Predicted Execution Time [Seconds]', pch=3, col='darkgreen')
 points(r.gam.lm.predict ~ log(r.gam.testing$totalTime), pch=3, col='darkred')
 points(r.mars.lm.predict ~ log(r.mars.testing$totalTime), pch=3, col='dodgerblue')
 legend('bottomright', c('GBM-BRT', 'GAM', 'MARS'), col=c('darkgreen', 'darkred', 'dodgerblue'), pch=3)
