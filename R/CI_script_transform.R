@@ -111,3 +111,5 @@ plot(a.gbm, n.trees=a.gbm.bestIter, main='AUC Accuracy of GBM-BRT SDM', xlim=c(0
 points(a.training$testingAUC ~ a.training$trainingExamples, col=rgb(0.5, 0.5, 0, 0.5))
 #points(a.s$median ~ a.s$trainingExamples, col=rgb(0.5, 0.5, 0, 1))
 legend('bottomright', c('Observed Values', 'Predictive Model'), col=c(rgb(0.5, 0.5, 0), 'black'), lty=c(NA, 1), pch=c(1, NA))
+
+

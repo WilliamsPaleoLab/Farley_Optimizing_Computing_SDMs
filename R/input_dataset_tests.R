@@ -6,13 +6,12 @@ library(parallel)
 library(randomForest)
 library(RMySQL)
 
-setwd("/users/scottsfarley/documents")
 source("thesis-scripts/R/config.R")
 
 library(doMC)
 library('caret')
 
-
+setwd("/home/rstudio/")
 predPath <- "thesis-scripts/data/predictors/standard_biovars/"
 
 pred_1deg <- stack(paste(predPath, "1_deg/", "standard_biovars_1_deg_2100.tif", sep=""))
@@ -38,7 +37,7 @@ sequoia_points <- read.csv(paste(occPath, "sequoia_ready.csv", sep=""))
 timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto',
                   presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage', 
                   save=FALSE, saveLocation='/home/rstudio/thesis-scripts/modelOutput', imgName="rasterOutput", rfTrees = 25000,
-                  modelMethod='GBM-BRT'){
+                  modelMethod='GBM-BRT', pickMethod='random'){
   
   startTime <- proc.time()
   ## get the right species points
@@ -90,11 +89,16 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   testing_set <- points[sample(q, q_test), ] ## select q_test random rows from points
   
   ## now take a random sampling on nocc rows
-  if (nocc < q){
-    training_set <- points[sample(q, nocc), ] ## this is what we will build the model upon
+  if (pickMethod == 'random'){
+    if (nocc < q){
+      training_set <- points[sample(q, nocc), ] ## this is what we will build the model upon
+    }else{
+      training_set <- points[sample(q, q*0.8), ] ## hack around for debug on small files
+    }
   }else{
-    training_set <- points[sample(q, q*0.8), ] ## hack around for debug on small files
+    training_set <- points[1:nocc]
   }
+  
   
   training_set <- na.omit(training_set)
   
@@ -247,39 +251,34 @@ con <- dbConnect(drv, host=hostname, username=username, password=password, dbnam
 
 treeSeq <- seq(from=1000, to=1000, by=1000)
 for (ncores in 1:1){
-  print("NCores Outer Loop")
   registerDoMC(cores = ncores)
   for (numTrees in treeSeq){
-    print(numTrees)
     for (rep in 1:1){
-      print(rep)
-      p <- timeSDM("Picea", ncores, -1, 25000, 0.5, rfTrees = numTrees, modelMethod="PRF")
-      print("Parallel finished")
-      s <- timeSDM("Picea", ncores, -1, 25000, 0.5, rfTrees = numTrees, modelMethod = "SRF")
-      print("Sequential finished")
-      pSQL <- paste("INSERT INTO RandomForestRuns VALUES (DEFAULT,",
-                   p[3], "," ,
-                   p[4], "," ,
-                   p[5], "," , 
-                   p[6], "," , 
-                   p[7], "," ,
-                   numTrees, ",",
-                   ncores, ",",
-                   -1, ",", 
-                   "'Picea',",
-                   "'PARALLEL', DEFAULT);"
+      rand <- timeSDM("Picea", ncores, -1, 25000, 0.5, modelMethod="GBM-BRT", pickMethod='random')
+      unif <- timeSDM("Picea", ncores, -1, 25000, 0.5, modelMethod = "GBM-BRT")
+      pSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
+                    rand[3], "," ,
+                    rand[4], "," ,
+                    rand[5], "," , 
+                    rand[6], "," , 
+                    rand[7], "," ,
+                    numTrees, ",",
+                    ncores, ",",
+                    -1, ",", 
+                    "'Picea',",
+                    "'RANDOM', DEFAULT);"
       )
-      sSQL <- paste("INSERT INTO RandomForestRuns VALUES (DEFAULT,",
-                              s[3], "," ,
-                              s[4], "," ,
-                              s[5], "," , 
-                              s[6], "," , 
-                              s[7], "," ,
-                              numTrees, ",",
-                              ncores, ",",
-                              -1, ",", 
-                              "'Picea',",
-                              "'SERIAL', DEFAULT);"
+      sSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
+                    unif[3], "," ,
+                    unif[4], "," ,
+                    unif[5], "," , 
+                    unif[6], "," , 
+                    unif[7], "," ,
+                    numTrees, ",",
+                    ncores, ",",
+                    -1, ",", 
+                    "'Picea',",
+                    "'CONSTANT', DEFAULT);"
       )
       dbSendQuery(con, pSQL) ## results query
       dbSendQuery(con, sSQL) ## results query
