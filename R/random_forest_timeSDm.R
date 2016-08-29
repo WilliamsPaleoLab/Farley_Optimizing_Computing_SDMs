@@ -245,13 +245,13 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
-treeSeq <- seq(from=1000, to=1000, by=1000)
-for (ncores in 1:1){
+treeSeq <- seq(from=1000, to=30000, by=1000)
+for (ncores in 1:8){
   print("NCores Outer Loop")
   registerDoMC(cores = ncores)
   for (numTrees in treeSeq){
     print(numTrees)
-    for (rep in 1:1){
+    for (rep in 1:10){
       print(rep)
       p <- timeSDM("Picea", ncores, -1, 25000, 0.5, rfTrees = numTrees, modelMethod="PRF")
       print("Parallel finished")
