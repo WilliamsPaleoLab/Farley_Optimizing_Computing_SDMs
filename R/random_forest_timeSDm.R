@@ -6,7 +6,7 @@ library(parallel)
 library(randomForest)
 library(RMySQL)
 
-setwd("/users/scottsfarley/documents")
+setwd("/home/rstudio")
 source("thesis-scripts/R/config.R")
 
 library(doMC)
@@ -245,44 +245,48 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
-treeSeq <- seq(from=1000, to=30000, by=1000)
+treeSeq <- seq(from=1000, to=31000, by=1000)
+TexSeq <- seq(from=1000, to=31000, b =10000)
 for (ncores in 1:8){
-  print("NCores Outer Loop")
+  print(paste("Cores = ", ncores))
   registerDoMC(cores = ncores)
-  for (numTrees in treeSeq){
-    print(numTrees)
-    for (rep in 1:10){
-      print(rep)
-      p <- timeSDM("Picea", ncores, -1, 25000, 0.5, rfTrees = numTrees, modelMethod="PRF")
-      print("Parallel finished")
-      s <- timeSDM("Picea", ncores, -1, 25000, 0.5, rfTrees = numTrees, modelMethod = "SRF")
-      print("Sequential finished")
-      pSQL <- paste("INSERT INTO RandomForestRuns VALUES (DEFAULT,",
-                   p[3], "," ,
-                   p[4], "," ,
-                   p[5], "," , 
-                   p[6], "," , 
-                   p[7], "," ,
-                   numTrees, ",",
-                   ncores, ",",
-                   -1, ",", 
-                   "'Picea',",
-                   "'PARALLEL', DEFAULT);"
-      )
-      sSQL <- paste("INSERT INTO RandomForestRuns VALUES (DEFAULT,",
-                              s[3], "," ,
-                              s[4], "," ,
-                              s[5], "," , 
-                              s[6], "," , 
-                              s[7], "," ,
-                              numTrees, ",",
-                              ncores, ",",
-                              -1, ",", 
-                              "'Picea',",
-                              "'SERIAL', DEFAULT);"
-      )
-      dbSendQuery(con, pSQL) ## results query
-      dbSendQuery(con, sSQL) ## results query
+  print(paste("Registered parallel backend with # workers = ", getDoParWorkers()))
+  for (numTex in TexSeq){
+    for (numTrees in treeSeq){
+      print(paste("Loping with numTrees = ", numTrees))
+      for (rep in 1:10){
+        print(paste("This rep is #", rep, "for cores=", ncores, "and numTrees=",numTrees ))
+        p <- timeSDM("Picea", ncores, -1, numTex, 0.5, rfTrees = numTrees, modelMethod="PRF")
+        print("Parallel finished")
+        s <- timeSDM("Picea", ncores, -1, numTex, 0.5, rfTrees = numTrees, modelMethod = "SRF")
+        print("Sequential finished")
+        pSQL <- paste("INSERT INTO RandomForestRuns VALUES (DEFAULT,",
+                      p[3], "," ,
+                      p[4], "," ,
+                      p[5], "," ,
+                      p[6], "," ,
+                      p[7], "," ,
+                      numTrees, ",",
+                      ncores, ",",
+                      -1, ",",
+                      "'Picea',",
+                      "'PARALLEL', DEFAULT, ", numTex, ");"
+        )
+        sSQL <- paste("INSERT INTO RandomForestRuns VALUES (DEFAULT,",
+                      s[3], "," ,
+                      s[4], "," ,
+                      s[5], "," ,
+                      s[6], "," ,
+                      s[7], "," ,
+                      numTrees, ",",
+                      ncores, ",",
+                      -1, ",",
+                      "'Picea',",
+                      "'SERIAL', DEFAULT, ", numTex, ");"
+        )
+        dbSendQuery(con, pSQL) ## results query
+        dbSendQuery(con, sSQL) ## results query
+      }
     }
   }
 }
