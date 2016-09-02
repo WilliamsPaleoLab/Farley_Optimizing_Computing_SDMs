@@ -3,6 +3,93 @@
 ### Master's Thesis Living Document
 ### Advisor John W. Williams
 
+
+
+# Table of Contents
+1.  Introduction
+  * Paleoecological data and models are Big, they're in demand, they're super popular these days
+  * Models and data are really important to global change prediction
+  * Paleodata and it's application to these Questions
+  * Cloud computing is an important new tech
+  * Prediction is important to support future workflows
+  * Hint at framework and optimization of costs/time/accuracy
+2.  Research Questions
+  * Might need to revise?
+    <pre>
+    i.	To what degree are the assumptions and logical steps in the framework supported by real world data?
+    ii.	Is it possible to make a good prediction of future optimal costs (and thus resource levels) based on a specific user’s goals using a predictive modeling approach? Specifically, can a model with the ability to prescribe cloud-based and client server architectures do statistically better than a null model where all researchers purchase a single desktop computer?
+    iii.	Where are the clear breakpoints in user activity, resource level, and cost?
+      i.	Are there clear natural breaks in the set of potential users that translate to switches from traditional computing to cloud solutions?
+      ii.	What modeling activities would benefit from a shift to cloud computing?
+      iii.	Who are the real users that are affected by this breakpoint, if any?
+    </pre>
+3.  Justify ecological data as big data
+  * Use the 4xV framework as developed in blog post
+  * Use examples from Neotoma and GBIF
+  * Need to supplement with more data
+4.  Selected literature review
+  * This will need some serious revision from last spring
+  * Focus more on the ecological dimensions of why this is important
+  * Then connect to computing, machine learning, etc
+  * Finally, review algorithms and optimization techniques
+  1. Species distribution models
+    1. What are they? (brief)
+    2. Ecological foundations, niches, use of paleodata to improve accuracy
+      * Data availability
+    3. Machine learning and species distribution models
+      * Models used to be simple (boxcar models)
+      * Now they're very complex
+      * High variance, low bias
+      * Low variance, high bias
+      * Look at cited AUC/accuracy metrics
+      * No clear winner for all tasks
+      * All methods are still widely used
+      * Maxent and its popularity
+    4. Prediction and hindcasting using models as a key way to understand the past and future
+      * Cite land manager uses here (this is more than just hypotheses for ecological testing)
+      * These are real issues that need support (invasive species)
+    5.  Meta-analysis/results of targeted reading
+      * Other papers commenting on the growth of the field
+      * This will flow nicely from the review of what people actually use these models for
+  2.  Cloud computing as a technology to support researchers
+    1.  Support for machine learning
+    2.  Designed for big data and distributed processing
+      * We've already clarified that ecological data is Big Data, so this will be easy to reinforce here
+    3.  The cloud as a research tool, rather than a market device
+      * Not too much on this, but note the economic underpinnings of the computing as a service
+      * Cite NSF/NASA/others that require cloud computing for research
+  3.  Benchmarking, timing, and why it matters
+    1. Systems evaluation and benchmarking
+      * Overview of types of benchmarks
+      * Application level benchmarks are the best
+      * Need for repeated measurements
+      * Point of section: stochastic variance in benchmarks
+        * Non-linear, complex, hard to model
+        * But it's okay
+      * Potentially, consequences of using virtual instances --> few, using monitor scripts
+    2.  Algorithms Optimization
+      1.  What affect's an empirical/theoretical runtime?
+        * Introduce my experimental variables
+        * Need to read more on the theoretical underpinnings of memory/paging/CPU/etc
+        * Briefly touch on theoretical runtime complexity
+      2. Other attempts at empirical runtime modeling
+        * Need to read more on this
+        * We extend this away from just algorithm inputs to hardware inputs too.
+      3. Sensitivity analysis vs. optimization analysis
+        * Maybe we need to change some terminology here,
+        * I think with the alg. opt. literature I can still call it optimization and prediction.
+  5.  Problem Formulation
+    * Do I need to update this? Probably more or less close to being done
+  6.  Specific components of the framework to address in the thesis
+    * The framework introduces six components involved in the optimization
+    * I just look at one of the central components (time to compute, and address the others tangentially)
+    * Demonstrate the proof of concept of the framework, leave the other components to other researchers
+  7. Methods
+    1.  Data collection
+      1. Species distribution modeling inputs 
+
+
+
 ### Introduction
 I propose the development of a framework for predicting the optimal computing resource provisioning strategy for scientific workflows, using species distribution models as a case study.  Advanced computing resources have become ubiquitously available in recent years, and many scientific workflows are based wholly or partially on the application of sophisticated modeling algorithms to reveal structures and insights in scientific data. In my thesis, I will examine Species Distribution Models, a broad class of ecological models that use a learning algorithm to relate climatology and other environmental predictors to species presence.  These models rely on large amounts of environmental data and utilize computationally intensive techniques to characterize a species’ presence over environmental gradients (Franklin 2010, Elith and Leathwick 2009, Svenning et al 2011).  Scientific computing generally involves the application of high performance computing resources to cut down the computational complexity of scientific numerical and simulation models into a reasonable time (Vecchiola et al 2009), and has been used extensively in the geosciences (Yang and Raskin 2009, Yang at al 2010). Species distribution models are not typically grouped with as scientific computing models; however, because of the computational- and data- intensity of these tools, it can be challenging for researchers to determine the optimal amount and configuration of computing resources to apply to the problem.  Provision too few, and the model will crash or fail to run efficiently; provision too many, and the workflow may exceed the allotted time and budget.
 
