@@ -11,7 +11,7 @@ setwd("/users/scottsfarley/documents")
 source("thesis-scripts/R/config.R")
 
 library(doMC)
-library('caret')
+library('caret')sudo supervisotctl
 
 
 predPath <- "thesis-scripts/data/predictors/standard_biovars/"
@@ -274,4 +274,34 @@ for (lr in lrSeq){
       }
     }
   }
+}
+
+
+
+neotoma_uncert <- data.frame(ageUncertMean=vector('numeric', length=length(neotoma_datasets)), 
+                             ageUncertMax =vector('numeric', length=length(neotoma_datasets)),
+                             ageUncertMin =vector('numeric', length=length(neotoma_datasets)),
+                             date =vector('numeric', length=length(neotoma_datasets)), 
+                             dsID =vector('numeric', length=length(neotoma_datasets)),
+                             numControls =vector('numeric', length=length(neotoma_datasets)),
+                             dsType = vector('numeric', length=length(neotoma_datasets)))
+for (dsidx in 1:length(neotoma_datasets)){
+  ds <- neotoma_datasets[[dsidx]]
+  thisDate <- ds$submission$submission.date[[1]]
+  thisType <- ds$dataset.meta$dataset.type
+  dsid <- ds$dataset.meta$dataset.id
+  chron <- get_chroncontrol(dsid)
+  chronControls <- chron$chron.control
+  ageYoung <- chronControls$age.young
+  ageOld <-  chronControls$age.old
+  ageDelta <- ageOld - ageYoung
+  AUmean <- mean(ageDelta)
+  AUmin <- min(ageDelta)
+  AUmax <- max(ageDelta)
+  numControls <- length(ageYoung)
+  try({
+    v <- c(AUmean, AUmax, AUmin, thisDate, dsid, numControls, thisType)
+    neotoma_uncert[dsidx,] <- v
+  })
+  print(dsidx)
 }
