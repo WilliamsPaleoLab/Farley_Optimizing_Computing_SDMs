@@ -45,6 +45,7 @@
       * No clear winner for all tasks
       * All methods are still widely used
       * Maxent and its popularity
+      * Ensemble and parallel methods and their application/accuracy
     4. Prediction and hindcasting using models as a key way to understand the past and future
       * Cite land manager uses here (this is more than just hypotheses for ecological testing)
       * These are real issues that need support (invasive species)
@@ -86,7 +87,74 @@
     * Demonstrate the proof of concept of the framework, leave the other components to other researchers
   7. Methods
     1.  Data collection
-      1. Species distribution modeling inputs 
+      1. Species distribution modeling inputs
+        * GBIF and Neotoma
+        * Climate model output
+        * Data preparation and cleaning
+      2. Simulated data for large memory experiments
+        * Do I need to do this? Maybe GBIF would let me do a real species.
+        * Simulated data would make more sense from a computing standpoint
+        * Real data would make more sense from a user/thesis standpoint
+      3. Cost model data
+        * Does this go in data? probably
+    2.  Computing experiments
+      1.  Computing set up
+        * Flowchart framework
+        * Google cloud description
+      2. Serial SDM experiments
+        1. Inter-model differences
+        2. Taxonomic differences
+        3. Parameter sensitivity
+        4. Training example sensitivity
+        5. Serial SDMs with large memory requirements
+        * I think this will be a nice flow of experiment descriptions
+      3.  Parallel SDM experiments
+        * Need to specifically introduce that these need to be considered separately in my framework, because they respond to differences in cores
+        * Might have less accuracy or cost more than methods above,
+        * Might have more accuracy than methods above, and can be executed on a single core
+        * Just random forests
+          * Parallel machine learning methods are a topic of active CS research,
+            * This probably needs to go into literature review, or could go into discussion/conclussion
+    3. Predictive Modeling Building
+      1.  Runtime prediction
+        1. Linear model
+          * Do I even need to show results of LM?
+          * Ref: comments from CI
+        2.  GBM
+          * Able to capture non-linearities
+      2.  Accuracy prediction
+        * Build one accuracy model for each SDM class
+        * Can we test this from the literature too?
+      4. Cost optimization model building
+  8. Discussion and Results
+    1. Computational runtime prediction accuracy assessment
+        * Should formalize this
+          * Least squares?
+    2.  Accuracy prediction assessment
+      * Parallel methods and their accuracy
+    3. Cost optimization assessment
+      * This will be tricky to assess quantitatively
+      * Need to think about this more
+      * Qualitatively, we can do this fairly easily
+    4. Case study
+        * Need to find a good case study
+      * Illustrate model results and utility
+      * Discuss limitations and uncertainties
+      * Discuss confidence in results
+    5.  Limitations of current approach
+      * How much will the additional components of the framework influence the results?
+      * Modeling expertise can do more than predictive modeling
+      * Stress uncertainties and lack of predictive skill
+      * Scientific realities over modeled optima
+        * we should try to find some literature about compromising workflows to meet computational demands.
+  9. Conclusion
+    1. Reiterate and answer research questions
+    2. Next steps to reduce uncertainty remaining in the model
+    3. Areas where additional research is needed
+      * Parallel machine learning methods
+  10. Bibliography 
+
+
 
 
 
