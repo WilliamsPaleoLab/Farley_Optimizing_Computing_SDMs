@@ -1,4 +1,4 @@
-install.packages(c("randomForest", "doMC", "foreach"), repos='http://cran.mtu.edu/')
+install.packages(c("randomForest", "doMC", "foreach", "dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth"), repos='http://cran.mtu.edu/')
 library(foreach)
 library(raster)
 library(dismo)
