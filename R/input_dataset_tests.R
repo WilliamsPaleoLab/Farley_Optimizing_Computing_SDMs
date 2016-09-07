@@ -6,13 +6,12 @@ library(SDMTools)
 library(parallel)
 library(randomForest)
 library(RMySQL)
+library(doMC)
+
+setwd("/home/rstudio/")
 
 source("thesis-scripts/R/config.R")
 
-library(doMC)
-library('caret')
-
-setwd("/home/rstudio/")
 predPath <- "thesis-scripts/data/predictors/standard_biovars/"
 
 pred_1deg <- stack(paste(predPath, "1_deg/", "standard_biovars_1_deg_2100.tif", sep=""))
