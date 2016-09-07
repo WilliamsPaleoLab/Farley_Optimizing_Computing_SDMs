@@ -1,3 +1,5 @@
+
+install.packages(c("randomForest", "doMC", "foreach", "dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth"), repos='http://cran.mtu.edu/')
 library(foreach)
 library(raster)
 library(dismo)
@@ -11,7 +13,7 @@ setwd("/users/scottsfarley/documents")
 source("thesis-scripts/R/config.R")
 
 library(doMC)
-library('caret')sudo supervisotctl
+
 
 
 predPath <- "thesis-scripts/data/predictors/standard_biovars/"
