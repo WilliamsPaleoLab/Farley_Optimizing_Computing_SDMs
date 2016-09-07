@@ -246,9 +246,9 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
-tcSeq <- seq(from=1, to=10, by=1)
-lrSeq <- c(0.0001, 0.005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1)
-TexSeq <- seq(from=1000, to=31000, b =10000)
+tcSeq <- seq(from=1, to=5, by=1)
+lrSeq <- c(0.005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1)
+TexSeq <- seq(from=1000, to=11000, b = 5000)
 
 for (lr in lrSeq){
   for(tc in tcSeq){
@@ -276,32 +276,4 @@ for (lr in lrSeq){
   }
 }
 
-
-
-neotoma_uncert <- data.frame(ageUncertMean=vector('numeric', length=length(neotoma_datasets)), 
-                             ageUncertMax =vector('numeric', length=length(neotoma_datasets)),
-                             ageUncertMin =vector('numeric', length=length(neotoma_datasets)),
-                             date =vector('numeric', length=length(neotoma_datasets)), 
-                             dsID =vector('numeric', length=length(neotoma_datasets)),
-                             numControls =vector('numeric', length=length(neotoma_datasets)),
-                             dsType = vector('numeric', length=length(neotoma_datasets)))
-for (dsidx in 1:length(neotoma_datasets)){
-  ds <- neotoma_datasets[[dsidx]]
-  thisDate <- ds$submission$submission.date[[1]]
-  thisType <- ds$dataset.meta$dataset.type
-  dsid <- ds$dataset.meta$dataset.id
-  chron <- get_chroncontrol(dsid)
-  chronControls <- chron$chron.control
-  ageYoung <- chronControls$age.young
-  ageOld <-  chronControls$age.old
-  ageDelta <- ageOld - ageYoung
-  AUmean <- mean(ageDelta)
-  AUmin <- min(ageDelta)
-  AUmax <- max(ageDelta)
-  numControls <- length(ageYoung)
-  try({
-    v <- c(AUmean, AUmax, AUmin, thisDate, dsid, numControls, thisType)
-    neotoma_uncert[dsidx,] <- v
-  })
-  print(dsidx)
-}
+system("shutdown")
