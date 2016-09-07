@@ -249,40 +249,38 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
-treeSeq <- seq(from=1000, to=1000, by=1000)
-for (ncores in 1:1){
-  registerDoMC(cores = ncores)
-  for (numTrees in treeSeq){
-    for (rep in 1:1){
-      rand <- timeSDM("Picea", ncores, -1, 25000, 0.5, modelMethod="GBM-BRT", pickMethod='random')
-      unif <- timeSDM("Picea", ncores, -1, 25000, 0.5, modelMethod = "GBM-BRT")
-      pSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
-                    rand[3], "," ,
-                    rand[4], "," ,
-                    rand[5], "," , 
-                    rand[6], "," , 
-                    rand[7], "," ,
-                    numTrees, ",",
-                    ncores, ",",
-                    -1, ",", 
-                    "'Picea',",
-                    "'RANDOM', DEFAULT);"
-      )
-      sSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
-                    unif[3], "," ,
-                    unif[4], "," ,
-                    unif[5], "," , 
-                    unif[6], "," , 
-                    unif[7], "," ,
-                    numTrees, ",",
-                    ncores, ",",
-                    -1, ",", 
-                    "'Picea',",
-                    "'CONSTANT', DEFAULT);"
-      )
-      dbSendQuery(con, pSQL) ## results query
-      dbSendQuery(con, sSQL) ## results query
-    }
+treeSeq <- seq(from=1000, to=11000, by=5000)
+for (numTrees in treeSeq){
+  for (rep in 1:5){
+    print(paste("This is replicate #", rep, " for numTrees = ", numTrees))
+    rand <- timeSDM("Picea", ncores, -1, 25000, 0.5, modelMethod="GBM-BRT", pickMethod='random')
+    unif <- timeSDM("Picea", ncores, -1, 25000, 0.5, modelMethod = "GBM-BRT")
+    pSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
+                  rand[3], "," ,
+                  rand[4], "," ,
+                  rand[5], "," , 
+                  rand[6], "," , 
+                  rand[7], "," ,
+                  numTrees, ",",
+                  ncores, ",",
+                  -1, ",", 
+                  "'Picea',",
+                  "'RANDOM', DEFAULT);"
+    )
+    sSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
+                  unif[3], "," ,
+                  unif[4], "," ,
+                  unif[5], "," , 
+                  unif[6], "," , 
+                  unif[7], "," ,
+                  numTrees, ",",
+                  ncores, ",",
+                  -1, ",", 
+                  "'Picea',",
+                  "'CONSTANT', DEFAULT);"
+    )
+    dbSendQuery(con, pSQL) ## results query
+    dbSendQuery(con, sSQL) ## results query
   }
 }
 
