@@ -9,7 +9,7 @@ library(randomForest)
 library(RMySQL)
 library(gbm)
 
-setwd("/users/scottsfarley/documents")
+setwd("/home/rstudio")
 source("thesis-scripts/R/config.R")
 
 library(doMC)
