@@ -1,3 +1,4 @@
+install.packages(c("randomForest", "doMC", "foreach")
 library(foreach)
 library(raster)
 library(dismo)
@@ -10,7 +11,6 @@ setwd("/home/rstudio")
 source("thesis-scripts/R/config.R")
 
 library(doMC)
-library('caret')
 
 
 predPath <- "thesis-scripts/data/predictors/standard_biovars/"
@@ -245,8 +245,8 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
-treeSeq <- seq(from=1000, to=31000, by=1000)
-TexSeq <- seq(from=1000, to=31000, b =10000)
+treeSeq <- seq(from=1000, to=11000, by=5000)
+TexSeq <- seq(from=1000, to=11000, b =5000)
 for (ncores in 1:8){
   print(paste("Cores = ", ncores))
   registerDoMC(cores = ncores)
@@ -254,39 +254,41 @@ for (ncores in 1:8){
   for (numTex in TexSeq){
     for (numTrees in treeSeq){
       print(paste("Loping with numTrees = ", numTrees))
-      for (rep in 1:10){
-        print(paste("This rep is #", rep, "for cores=", ncores, "and numTrees=",numTrees ))
-        p <- timeSDM("Picea", ncores, -1, numTex, 0.5, rfTrees = numTrees, modelMethod="PRF")
-        print("Parallel finished")
-        s <- timeSDM("Picea", ncores, -1, numTex, 0.5, rfTrees = numTrees, modelMethod = "SRF")
-        print("Sequential finished")
-        pSQL <- paste("INSERT INTO RandomForestRuns VALUES (DEFAULT,",
-                      p[3], "," ,
-                      p[4], "," ,
-                      p[5], "," ,
-                      p[6], "," ,
-                      p[7], "," ,
-                      numTrees, ",",
-                      ncores, ",",
-                      -1, ",",
-                      "'Picea',",
-                      "'PARALLEL', DEFAULT, ", numTex, ");"
-        )
-        sSQL <- paste("INSERT INTO RandomForestRuns VALUES (DEFAULT,",
-                      s[3], "," ,
-                      s[4], "," ,
-                      s[5], "," ,
-                      s[6], "," ,
-                      s[7], "," ,
-                      numTrees, ",",
-                      ncores, ",",
-                      -1, ",",
-                      "'Picea',",
-                      "'SERIAL', DEFAULT, ", numTex, ");"
-        )
-        dbSendQuery(con, pSQL) ## results query
-        dbSendQuery(con, sSQL) ## results query
+      # for (rep in 1:5){
+      #   print(paste("This rep is #", rep, "for cores=", ncores, "and numTrees=",numTrees ))
+      #   p <- timeSDM("Picea", ncores, -1, numTex, 0.5, rfTrees = numTrees, modelMethod="PRF")
+      #   print("Parallel finished")
+      #   s <- timeSDM("Picea", ncores, -1, numTex, 0.5, rfTrees = numTrees, modelMethod = "SRF")
+      #   print("Sequential finished")
+      #   pSQL <- paste("INSERT INTO RandomForestRuns VALUES (DEFAULT,",
+      #                 p[3], "," ,
+      #                 p[4], "," ,
+      #                 p[5], "," ,
+      #                 p[6], "," ,
+      #                 p[7], "," ,
+      #                 numTrees, ",",
+      #                 ncores, ",",
+      #                 -1, ",",
+      #                 "'Picea',",
+      #                 "'PARALLEL', DEFAULT, ", numTex, ");"
+      #   )
+      #   sSQL <- paste("INSERT INTO RandomForestRuns VALUES (DEFAULT,",
+      #                 s[3], "," ,
+      #                 s[4], "," ,
+      #                 s[5], "," ,
+      #                 s[6], "," ,
+      #                 s[7], "," ,
+      #                 numTrees, ",",
+      #                 ncores, ",",
+      #                 -1, ",",
+      #                 "'Picea',",
+      #                 "'SERIAL', DEFAULT, ", numTex, ");"
+      #   )
+      #   dbSendQuery(con, pSQL) ## results query
+      #   dbSendQuery(con, sSQL) ## results query
       }
     }
   }
 }
+
+system("shutdown")
