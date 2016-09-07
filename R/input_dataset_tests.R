@@ -286,3 +286,6 @@ for (ncores in 1:1){
     }
   }
 }
+
+
+system("shutdown")
