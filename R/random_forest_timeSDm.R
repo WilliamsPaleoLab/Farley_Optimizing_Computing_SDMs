@@ -1,4 +1,4 @@
-install.packages(c("randomForest", "doMC", "foreach")
+install.packages(c("randomForest", "doMC", "foreach"))
 library(foreach)
 library(raster)
 library(dismo)
