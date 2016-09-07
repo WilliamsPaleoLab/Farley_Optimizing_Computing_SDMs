@@ -253,8 +253,10 @@ treeSeq <- seq(from=1000, to=11000, by=5000)
 for (numTrees in treeSeq){
   for (rep in 1:5){
     print(paste("This is replicate #", rep, " for numTrees = ", numTrees))
-    rand <- timeSDM("Picea", ncores, -1, 10000, 0.5, modelMethod="GBM-BRT", pickMethod='random')
-    unif <- timeSDM("Picea", ncores, -1, 10000, 0.5, modelMethod = "GBM-BRT")
+    rand <- timeSDM("Picea", ncores, -1, 5000, 0.5, modelMethod="GBM-BRT", pickMethod='random')
+    print("Finished Random")
+    unif <- timeSDM("Picea", ncores, -1, 5000, 0.5, modelMethod = "GBM-BRT")
+    print("Finished Uniform")
     pSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
                   rand[3], "," ,
                   rand[4], "," ,
