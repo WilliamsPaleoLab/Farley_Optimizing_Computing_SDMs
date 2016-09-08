@@ -256,7 +256,7 @@ for (ncores in 3:totalCores){
     for (numTrees in treeSeq){
       print(paste("Loping with numTrees = ", numTrees))
       for (rep in 1:5){
-        print(paste("This rep is #", rep, "for cores=", ncores, "and numTrees=",numTrees ))
+        print(paste("This rep is #", rep, "for cores=", ncores, "and numTrees=",numTrees, "and training examples=", numTex))
         p <- timeSDM("Picea", ncores, -1, numTex, 0.5, rfTrees = numTrees, modelMethod="PRF")
         print("Parallel finished")
         s <- timeSDM("Picea", ncores, -1, numTex, 0.5, rfTrees = numTrees, modelMethod = "SRF")
