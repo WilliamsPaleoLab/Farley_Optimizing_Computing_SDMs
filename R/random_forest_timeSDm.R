@@ -245,10 +245,10 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
-treeSeq <- seq(from=1000, to=11000, by=5000)
-TexSeq <- seq(from=11000, to=11000, b =5000)
+treeSeq <- seq(from=1000, to=6000, by=5000)
+TexSeq <- seq(from=11000, to=6000, b =5000)
 totalCores <- detectCores()
-for (ncores in 3:totalCores){
+for (ncores in 4:totalCores){
   print(paste("Cores = ", ncores))
   registerDoMC(cores = ncores)
   print(paste("Registered parallel backend with # workers = ", getDoParWorkers()))
