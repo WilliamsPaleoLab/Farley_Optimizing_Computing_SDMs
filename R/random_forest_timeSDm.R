@@ -8,7 +8,7 @@ library(randomForest)
 library(RMySQL)
 library(devtools)
 devtools::install_github("krlmlr/ulimit")
-
+library(ulimit)
 ##Set memory limit to 6GB
 ## TODO: make this more programatically
 memory_limit(size = 6000)
