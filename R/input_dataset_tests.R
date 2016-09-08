@@ -9,7 +9,7 @@ library(RMySQL)
 library(doMC)
 library(gbm)
 
-setwd("/users/scottsfarley/documents")
+setwd("/home/rstudio")
 
 source("thesis-scripts/R/config.R")
 
