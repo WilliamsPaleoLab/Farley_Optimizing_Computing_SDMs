@@ -246,7 +246,7 @@ drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
 treeSeq <- seq(from=1000, to=6000, by=5000)
-TexSeq <- seq(from=11000, to=6000, b =5000)
+TexSeq <- seq(from=11000, to=6000, by =5000)
 totalCores <- detectCores()
 for (ncores in 4:totalCores){
   print(paste("Cores = ", ncores))
