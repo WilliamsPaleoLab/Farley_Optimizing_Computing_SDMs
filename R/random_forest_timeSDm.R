@@ -1,4 +1,4 @@
-install.packages(c("randomForest", "doMC", "foreach", "dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth"), repos='http://cran.mtu.edu/')
+install.packages(c("randomForest", "doMC", "foreach", "dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth", "devtools"), repos='http://cran.mtu.edu/')
 library(foreach)
 library(raster)
 library(dismo)
@@ -6,6 +6,12 @@ library(SDMTools)
 library(parallel)
 library(randomForest)
 library(RMySQL)
+library(devtools)
+devtools::install_github("krlmlr/ulimit")
+
+##Set memory limit to 6GB
+## TODO: make this more programatically
+memory_limit(size = 6000)
 
 setwd("/home/rstudio")
 source("thesis-scripts/R/config.R")
@@ -287,6 +293,8 @@ for (ncores in 4:totalCores){
         )
         dbSendQuery(con, pSQL) ## results query
         dbSendQuery(con, sSQL) ## results query
+        gc()
+        gcinfo(verbose=T)
       }
     }
   }
