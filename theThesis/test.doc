@@ -1,0 +1,678 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<h2 id="a-user-centered-approach-to-computing-optimization-in-ecological-modeling-workflows">A User-Centered Approach to Computing Optimization in Ecological Modeling Workflows</h2>
+<h3 id="scott-sherwin-farley">Scott Sherwin Farley</h3>
+<h3 id="masters-thesis-living-document">Master’s Thesis Living Document</h3>
+<h3 id="advisor-john-w.-williams">Advisor John W. Williams</h3>
+<h1 id="table-of-contents">Table of Contents</h1>
+<ol style="list-style-type: decimal">
+<li>Introduction</li>
+</ol>
+<ul>
+<li>Paleoecological data and models are Big, they’re in demand, they’re super popular these days</li>
+<li>Models and data are really important to global change prediction</li>
+<li>Paleodata and it’s application to these Questions</li>
+<li>Cloud computing is an important new tech</li>
+<li>Prediction is important to support future workflows</li>
+<li>Hint at framework and optimization of costs/time/accuracy</li>
+</ul>
+<p>Global environmental change, specifically climate warming and anthropogenic land use change threatens to severely alter biodiversity patterns worldwide. Rates of extinction are increasing and habitat fragmentation and change is likely to be a major factor in determining changes in species occurrence over the foreseeable future. Species ranges are thought to be primarily climate-induced, though other factors, such as other species, may also have significant influence. Using statistical methods, ecologists often forecast the distribution of plant and animal species into the future under different warming scenarios.</p>
+<p>Though climate change is threatening to dramatically alter the distribution of species on the earth, scientists are in a good position to forecast and adapt to the coming changes. Environmental monitoring efforts, such as the Long Term Ecological Research Network (LTERN), National Ecological Observatory Network (NEON), and the Paleocological Observatory Network (PalEON), community curated databases, like the Neotoma Paleoecological Database and the Paleobiology Database (PBDB), and modern biodiversity occurrence databases, such as the Global Biodiversity Information Facility (GBIF), are coming to fruition to support global scale environmental change synthesis efforts. New information storage facilities provide a tremendous amount of information to researchers attempting to understand how the earth system will change during the next century. However, as the volume and variety of data increases, so do the challenges associated with dealing with what can now be considered Big Data. While ecological data may in the past have not been considered Big Data, the massive influx of new data clearly requires new techniques to derive insight from the data.</p>
+<p>Insight in Big Data is derived from statistical modeling or ‘data mining’ of the dataset. As datasets grow, the statistical methods used to mine them grow in complexity. Massive datasets, like the popular microblogging service Twitter, require distributed, parallel, streaming models to determine trending topics and other important factors of the real time data stream. Ecologists have begun to apply some sophisticated machine learning techniques to ecological forecasting techniques, and have seen excellent predictive ability in applying these methods. However, traditional methods in ecology, even those methods at the contemporary cutting edge of the field, are not suited to the large influx of data coming into databases each year. Ecological modelers need to look ahead to a time when there will be over a billion occurrence records in repositories like GBIF, an event that is likely to occur by 2020 [check exact date on this, and cite]. With so many records to work with, ecologists will need to adopt techniques more often associated with fields like geonomics, including distributed processing, ensemble methods, and cloud computing.</p>
+<p>Data on paleoenvironmental proxies, including fossil pollen, macrofossils, and freshwater and marine diatoms, add additional information to ecological data collected in the modern era. The addition of paleodata to questions of biogeography and species niches can help researchers come closer to approximating a species’ fundamental niche rather than its realized niche <span class="citation">(Veloz et al., 2012)</span>, which is characterized by the modern data. Furthermore, including paleodata can shed light on species responses to climates that do not currently persist on the globe today. Williams and Jackson <span class="citation">(Williams &amp; Jackson, 2007)</span>, not the high probability of encountering novel and no modern analog climates in the near future.</p>
+<p>Climate-driven ecological forecasting models, also known as species distribution models (SDMs) have seen extensive use in the ecological discipline, including global change biology, evolutionary biogeography(<span class="citation">Thuiller et al. (2008)</span>, <span class="citation">(Araújo, Whittaker, Ladle, &amp; Erhard, 2005)</span>), reserve selection <span class="citation">(Guisan et al., 2013)</span>, and invasive species management <span class="citation">(Ficetola, Thuiller, &amp; Miaud, 2007)</span>. These models are used by ecologists, land managers, and biologists to characterize a species’ biospatial patterns over environmental gradients <span class="citation">(Franklin, 2010)</span>. These models use model-driven (statistical) or data-driven (machine-learning) techniques to develop a functional approximation of the way in which a species responds to a climatic gradient. A trend towards computationally intensive modeling approaches, including Bayesian methods that rely on repeated sampling of full joint probability distributions <span class="citation">(Dawson et al., 2016)</span>, is apparent in recent years. These methods utilize occurrence data – places where a species presence was recorded – and the environmental covariates to those places as input into the model, regardless of the algorithm chosen to develop the response surface. As more occurrence data becomes available through portals such as GBIF and Neotoma, these models become increasingly complex. Sequential learning methods, while seeing widespread use in the literature and have demonstrated high predictive accuracy, are not scalable to very large datasets. To date, it has often been acceptable to cut back on amount of modeling, or focus of a study, to comply with computational limitations. However, as more data becomes available to modelers, this will no longer be a viable option [NEED TO CITE].</p>
+<p>Cloud computing offers a technological solution to some of the problems posed by the increasing Bigness of ecological data. Cloud computing refers to a broad category of computer architectural design patterns that enable “ubiquitous, convenient, and on-demand network access to a shared pool of configurable computing resources that can be rapidly provisioned and released with minimal management effort” (<span class="citation">(Mell &amp; Grance, 2012)</span>, <span class="citation">(Hassan, 2011)</span>, <span class="citation">(Vaquero, Rodero-Merino, Caceres, &amp; Lindner, 2008)</span>). With the rapid commercialization and popularization of cloud computing, scientists have, in practice, an unlimited supply of configurable computing resources at their disposal, with the only practical barrier to their use being the ability to afford to ‘rent’ the resources. The Cloud has been advertised by many of Silicon Valley’s biggest players as the net big thing in the technology industry. It has been credited with Obama’s 2012 presidential election win, Netflix’s ability to provide streaming entertainment to millions of consumers, and Amazon’s massive success in online retailing (<span class="citation">(Mosco, 2014)</span>). The National Aeronautics and Space Administration (NASA) and the National Science Foundation (NSF) have both officially endorsed the updating of constituent computing system to include Cloud technology <span class="citation">(Mosco, 2014)</span>. In the geospatial sciences specifically, the cloud has been posited as the future of geospatial computing and modeling <span class="citation">(Yang et al., 2011)</span>.</p>
+<p>Although the cloud seems promising to supports ecology’s entry into the Big Data world, it is not a pancea, as there is to-date little guidance on when the benefits, in reduced computing time, outweigh the costs of a cloud-based solution. The Cloud works on an entire different model of computing cost than traditional scientific computing. Transitioning to the cloud comes with a transition away from large, up front captial expenses to a model of monthly usage fees – an operational expense model <span class="citation">(Hassan, 2011)</span>. In the captial expense model, the computing power must be determined in advance, and users are locked into the level of performance they choose at the time of purchase. Under the cloud model, on the other hand, users may scale up or scale down the number and quality of computing resource they have, or even configure the system to automatically scale the number of resources to the task at hand using a computer algorithm as the load on the server changes. Along with a transition away from traditional desktop computing to cloud solutions comes a marked increase in the complexity of the solutions. Cloud-based solutions are exceptionally complex to set up and maintain, especially for those not experienced in using virtual instances, shell scripting, and IT management. While the complexity costs of engineering and implementing a cloud based solution are difficult to estimate, the computational time gains achieved by running models on faster computers can be measured empirically and combined with estimates of cost per hour to provide guidance on when a cloud based solution would be economically rational.</p>
+<p>In this thesis, I develop a theoretical framework to determine the optimal computing solution for a given species distribution modeling workflow. I treat the workflow characteristics as model parameters, and then build a theoretical predictive model that minimizes the time cost of running a computational model while simulaneously minimizes the financial cost of provisioning the computational resources for that run. I gather data on empirical runtimes of four different classes of species distribution models, and then fit a gradient boosted regression tree model to the training data. The fitted model is capable of predicting the execution time of future modeling scenarios, even if the particular combination has not yet been seen. I evaluate the model’s predictive skill and evaluate it on a SDM case study.</p>
+<p>My findings suggest that if SDMs, and ecology more generally, is to benefit from Cloud computing, future effort must be directed towards developing models that more explicitly take advantage of parallelism and distributed processing frameworks. Currently modeling trends are mostly sequential, and do not leverage more than one computing core. [ADD STUFF ABOUT MEMORY WHEN WE HAVE IT]. The models I have are capable of guiding future modeling efforts in the field.</p>
+<p>The remainder of this thesis proceeds as follows: in the following section I introduce my research questions, motivated by the tension between a potential decrease algorithm runtime and an associated increase in computational cost. Section 3 works with the “Four V’s Framework” of Big Data to justify ecological datasets as Big Data. Section 4 reviews relevant background literature on system benchmarking, runtime modeling, species distribution modeling, and cloud computing. In Section 5, I present a theoretical framework for predicting the optimal computing solution for a given ecological forecasting modeling. Section 6 describes the methodology used to collect runtime and accuracy data on four different SDM instances. Section 7 presents the results of the experiments and comments on their implications. Conclusions and future work is discussed in Section 8.</p>
+<ol start="2" style="list-style-type: decimal">
+<li>Research Questions</li>
+</ol>
+<ul>
+<li>Might need to revise?
+<pre></li>
+</ul>
+<ol style="list-style-type: lower-roman">
+<li><pre><code>To what degree are the assumptions and logical steps in the framework supported by real world data?</code></pre></li>
+<li>Is it possible to make a good prediction of future optimal costs (and thus resource levels) based on a specific user’s goals using a predictive modeling approach? Specifically, can a model with the ability to prescribe cloud-based and client server architectures do statistically better than a null model where all researchers purchase a single desktop computer?</li>
+<li>Where are the clear breakpoints in user activity, resource level, and cost?
+<ol style="list-style-type: lower-roman">
+<li>Are there clear natural breaks in the set of potential users that translate to switches from traditional computing to cloud solutions?</li>
+<li>What modeling activities would benefit from a shift to cloud computing?</li>
+<li><pre><code>Who are the real users that are affected by this breakpoint, if any?</code></pre>
+</pre></li>
+</ol></li>
+</ol>
+<ol start="3" style="list-style-type: decimal">
+<li>Justify ecological data as big data</li>
+</ol>
+<ul>
+<li>Use the 4xV framework as developed in blog post</li>
+<li>Use examples from Neotoma and GBIF</li>
+<li>Need to supplement with more data</li>
+</ul>
+<ol start="4" style="list-style-type: decimal">
+<li>Selected literature review</li>
+</ol>
+<ul>
+<li>This will need some serious revision from last spring</li>
+<li>Focus more on the ecological dimensions of why this is important</li>
+<li>Then connect to computing, machine learning, etc</li>
+<li>Finally, review algorithms and optimization techniques</li>
+</ul>
+<ol style="list-style-type: decimal">
+<li>Species distribution models</li>
+<li>What are they? (brief)</li>
+<li>Ecological foundations, niches, use of paleodata to improve accuracy
+<ul>
+<li>Data availability</li>
+</ul></li>
+<li>Machine learning and species distribution models
+<ul>
+<li>Models used to be simple (boxcar models)</li>
+<li>Now they’re very complex</li>
+<li>High variance, low bias</li>
+<li>Low variance, high bias</li>
+<li>Look at cited AUC/accuracy metrics</li>
+<li>No clear winner for all tasks</li>
+<li>All methods are still widely used</li>
+<li>Maxent and its popularity</li>
+<li>Ensemble and parallel methods and their application/accuracy</li>
+</ul></li>
+<li>Prediction and hindcasting using models as a key way to understand the past and future
+<ul>
+<li>Cite land manager uses here (this is more than just hypotheses for ecological testing)</li>
+<li>These are real issues that need support (invasive species)</li>
+</ul></li>
+<li>Meta-analysis/results of targeted reading
+<ul>
+<li>Other papers commenting on the growth of the field</li>
+<li>This will flow nicely from the review of what people actually use these models for</li>
+</ul></li>
+<li>Cloud computing as a technology to support researchers</li>
+<li>Support for machine learning</li>
+<li>Designed for big data and distributed processing
+<ul>
+<li>We’ve already clarified that ecological data is Big Data, so this will be easy to reinforce here</li>
+</ul></li>
+<li>The cloud as a research tool, rather than a market device
+<ul>
+<li>Not too much on this, but note the economic underpinnings of the computing as a service</li>
+<li>Cite NSF/NASA/others that require cloud computing for research</li>
+</ul></li>
+<li>Benchmarking, timing, and why it matters</li>
+<li>Systems evaluation and benchmarking
+<ul>
+<li>Overview of types of benchmarks</li>
+<li>Application level benchmarks are the best</li>
+<li>Need for repeated measurements</li>
+<li>Point of section: stochastic variance in benchmarks</li>
+<li>Non-linear, complex, hard to model</li>
+<li>But it’s okay</li>
+<li>Potentially, consequences of using virtual instances –&gt; few, using monitor scripts</li>
+</ul></li>
+<li>Algorithms Optimization
+<ol style="list-style-type: decimal">
+<li>What affect’s an empirical/theoretical runtime?</li>
+</ol>
+<ul>
+<li>Introduce my experimental variables</li>
+<li>Need to read more on the theoretical underpinnings of memory/paging/CPU/etc</li>
+<li>Briefly touch on theoretical runtime complexity</li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>Other attempts at empirical runtime modeling</li>
+</ol>
+<ul>
+<li>Need to read more on this</li>
+<li>We extend this away from just algorithm inputs to hardware inputs too.</li>
+</ul>
+<ol start="3" style="list-style-type: decimal">
+<li>Sensitivity analysis vs. optimization analysis</li>
+</ol>
+<ul>
+<li>Maybe we need to change some terminology here,</li>
+<li>I think with the alg. opt. literature I can still call it optimization and prediction.</li>
+</ul></li>
+<li>Problem Formulation</li>
+</ol>
+<ul>
+<li>Do I need to update this? Probably more or less close to being done</li>
+</ul>
+<ol start="6" style="list-style-type: decimal">
+<li>Specific components of the framework to address in the thesis</li>
+</ol>
+<ul>
+<li>The framework introduces six components involved in the optimization</li>
+<li>I just look at one of the central components (time to compute, and address the others tangentially)</li>
+<li>Demonstrate the proof of concept of the framework, leave the other components to other researchers</li>
+</ul>
+<ol start="7" style="list-style-type: decimal">
+<li>Methods</li>
+<li>Data collection
+<ol style="list-style-type: decimal">
+<li>Species distribution modeling inputs</li>
+</ol>
+<ul>
+<li>GBIF and Neotoma</li>
+<li>Climate model output</li>
+<li>Data preparation and cleaning</li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>Simulated data for large memory experiments</li>
+</ol>
+<ul>
+<li>Do I need to do this? Maybe GBIF would let me do a real species.</li>
+<li>Simulated data would make more sense from a computing standpoint</li>
+<li>Real data would make more sense from a user/thesis standpoint</li>
+</ul>
+<ol start="3" style="list-style-type: decimal">
+<li>Cost model data</li>
+</ol>
+<ul>
+<li>Does this go in data? probably</li>
+</ul></li>
+<li>Computing experiments
+<ol style="list-style-type: decimal">
+<li>Computing set up</li>
+</ol>
+<ul>
+<li>Flowchart framework</li>
+<li>Google cloud description</li>
+</ul>
+<ol start="2" style="list-style-type: decimal">
+<li>Serial SDM experiments</li>
+<li>Inter-model differences</li>
+<li>Taxonomic differences</li>
+<li>Parameter sensitivity</li>
+<li>Training example sensitivity</li>
+<li>Serial SDMs with large memory requirements</li>
+</ol>
+<ul>
+<li>I think this will be a nice flow of experiment descriptions</li>
+</ul>
+<ol start="3" style="list-style-type: decimal">
+<li>Parallel SDM experiments</li>
+</ol>
+<ul>
+<li>Need to specifically introduce that these need to be considered separately in my framework, because they respond to differences in cores</li>
+<li>Might have less accuracy or cost more than methods above,</li>
+<li>Might have more accuracy than methods above, and can be executed on a single core</li>
+<li>Just random forests
+<ul>
+<li>Parallel machine learning methods are a topic of active CS research,</li>
+<li>This probably needs to go into literature review, or could go into discussion/conclussion</li>
+</ul></li>
+</ul></li>
+<li>Predictive Modeling Building
+<ol style="list-style-type: decimal">
+<li>Runtime prediction</li>
+<li>Linear model
+<ul>
+<li>Do I even need to show results of LM?</li>
+<li>Ref: comments from CI</li>
+</ul></li>
+<li>GBM
+<ul>
+<li>Able to capture non-linearities</li>
+</ul></li>
+<li>Accuracy prediction</li>
+</ol>
+<ul>
+<li>Build one accuracy model for each SDM class</li>
+<li>Can we test this from the literature too?</li>
+</ul>
+<ol start="4" style="list-style-type: decimal">
+<li>Cost optimization model building</li>
+</ol></li>
+<li>Discussion and Results</li>
+<li>Computational runtime prediction accuracy assessment
+<ul>
+<li>Should formalize this
+<ul>
+<li>Least squares?</li>
+</ul></li>
+</ul></li>
+<li>Accuracy prediction assessment
+<ul>
+<li>Parallel methods and their accuracy</li>
+</ul></li>
+<li>Cost optimization assessment
+<ul>
+<li>This will be tricky to assess quantitatively</li>
+<li>Need to think about this more</li>
+<li>Qualitatively, we can do this fairly easily</li>
+</ul></li>
+<li>Case study
+<ul>
+<li>Need to find a good case study</li>
+<li>Illustrate model results and utility</li>
+<li>Discuss limitations and uncertainties</li>
+<li>Discuss confidence in results</li>
+</ul></li>
+<li>Limitations of current approach
+<ul>
+<li>How much will the additional components of the framework influence the results?</li>
+<li>Modeling expertise can do more than predictive modeling</li>
+<li>Stress uncertainties and lack of predictive skill</li>
+<li>Scientific realities over modeled optima</li>
+<li>we should try to find some literature about compromising workflows to meet computational demands.</li>
+</ul></li>
+<li>Conclusion</li>
+<li>Reiterate and answer research questions</li>
+<li>Next steps to reduce uncertainty remaining in the model</li>
+<li>Areas where additional research is needed
+<ul>
+<li>Parallel machine learning methods</li>
+</ul></li>
+<li>Bibliography</li>
+</ol>
+<h3 id="introduction">Introduction</h3>
+<p>I propose the development of a framework for predicting the optimal computing resource provisioning strategy for scientific workflows, using species distribution models as a case study. Advanced computing resources have become ubiquitously available in recent years, and many scientific workflows are based wholly or partially on the application of sophisticated modeling algorithms to reveal structures and insights in scientific data. In my thesis, I will examine Species Distribution Models, a broad class of ecological models that use a learning algorithm to relate climatology and other environmental predictors to species presence. These models rely on large amounts of environmental data and utilize computationally intensive techniques to characterize a species’ presence over environmental gradients (Franklin 2010, Elith and Leathwick 2009, Svenning et al 2011). Scientific computing generally involves the application of high performance computing resources to cut down the computational complexity of scientific numerical and simulation models into a reasonable time (Vecchiola et al 2009), and has been used extensively in the geosciences (Yang and Raskin 2009, Yang at al 2010). Species distribution models are not typically grouped with as scientific computing models; however, because of the computational- and data- intensity of these tools, it can be challenging for researchers to determine the optimal amount and configuration of computing resources to apply to the problem. Provision too few, and the model will crash or fail to run efficiently; provision too many, and the workflow may exceed the allotted time and budget.</p>
+<p>With the recent growth of cloud computing, scientists have, in practice, an unlimited supply of configurable computing resources at their disposal, with the only practical barrier to their use being the ability to afford their cost. Incorporating these resources – processors, memory, network bandwidth, etc – into a scientific workflow can decrease algorithm execution time significantly. However, the speedup is not infinite: a lower bound on algorithm execution time is imposed by the amount of parallel computing that can be included in the implementation of the algorithm, known as Amdhal’s Law (Gustafson 1988). Cloud computing refers to a broad category of computer architectural design patterns that enable “ubiquitous, convenient, and on-demand network access to a shared pool of configurable computing resources that can be rapidly provisioned and released with minimal management effort” (Mell and Grance 2012, Hassan, 2011, Vaquero et al 2009). The Cloud has been advertised by many of Silicon Valley’s biggest companies as the next big thing in the technology industry. It been credited with Obama’s 2012 presidential election win, Netflix’s ability to provide streaming entertainment to millions of consumers, and Amazon’s massive success in online retaining (Mosco 2014). The National Aeronautics and Space Administration (NASA) and the National Science Foundation (NSF) have both officially endorsed the updating of computing systems to include Cloud technology (Mosco 2014). In the geospatial sciences specifically, the cloud has been posited as the future of geospatial computing and modeling (Yang and Huang 2014).</p>
+<p>With access to cloud-based resources, users now have three different tiers of computing at their disposal. First, a user can employ standard, self-contained, desktop applications, on a single desktop machine, which remains the standard method for most scientific computing, for example, when using the R statistical programming environment. This paradigm is gradually being replaced with the second tier, consisting of distributed client-server (C/S) systems that consolidate the computing in a centralized server and share the results with distributed clients via the use of the Internet (Granell 2010). Third, the user can ‘rent’ cloud-based resources, which allows distributed clients and distributed processing on multiple servers – possibly located in geographically distributed datacenters. With the transition from desktop computer to the cloud comes an increase in available computational power, but also comes an increase in cost and an increase in the complexity of the solution.</p>
+<p>Some scientific applications clearly need more computing power than others. ‘Big Data’ workflows often require Cloud architecture, which allows analytical procedures to be done closer to the data, reducing the need for moving massively large datasets (Schnase et al, 2014). These workflows include peta- to exa-bytes of data and intensive simulations, such as those employed in climate modeling (Schnase et al, 2014), remote sensing and space science (Naqvi et al 2013), and genomics research (Stein 2010). In the cloud, these applications employ special software and hardware to enable fast, parallel, and distributed processing. Most scientific workflow applications, however, are unlikely to require the scale and throughput demonstrated by these applications. However, there is little formal guidance on provisioning the optimal configuration of computing resources for a given workflow.<br />
+Species distribution models are used by ecologists, land managers, and biologists to characterize a species’ biospatial patterns over environmental gradients (Franklin 2010). The specific techniques vary, with both model driven (statistical) and data-driven (machine-learning) approaches seeing widespread use in the literature. While some ecologists debate the relative merits of the approach (e.g., Warren 2012, McInerny and Etienne 2013), these models can be used to predict species distributions under past or future climates, and have seen extensive popularity in a variety of fields, including global change biology, evolutionary biogeography (e.g., Thuiller et al 2008, Aruajo et al 2005), reserve selection (e.g., Guisan et al 2013), and invasive species management (e.g., Ficetola et al 2015). With the fossil record acting as a check on model output, SDMs have been used in paleoecology for ecological hypothesis testing and investigation of model performance under novel and no-analog climate scenarios (Maguire et al 2015, Veloz et al 2012). Contemporary SDM workflows typically utilize a desktop environment, such as R, to implement complex modeling algorithms that may include regression trees, neural networks, or generalized linear models, among others (Hijmans and Elith, 2016). While working in a desktop environment like R gives scientists access to complex functionality, relies on open source code, and promotes active model development (R Core Development Team, 2016), it creates substantial data management challenges and may not be optimal for applications requiring vast amounts of processing power. Distributed processing and cloud computing offer the opportunity of additional network-provisioned resources, automatic data management, and enhanced user interfaces (Foster 2005), and their employment may decrease running time of models. However, it is unclear how much SDMs or other scientific workflows will gain from a decision to switch to these models of computing.</p>
+<h2 id="ecological-data-as-big-data">### Ecological Data as Big Data</h2>
+<p>We’ve all heard the term ‘Big Data’, though it’s often thrown around as a techy buzzword, along with others, like ‘The Cloud’, without a clear meaning. In the Williams Lab, we’re working with datasets that are sometimes called ‘Big Data’ in talks by <span class="citation">(<span class="citeproc-not-found" data-reference-id="iceageecolgist"><strong>???</strong></span>)</span>(https://twitter.com/iceageecologist) and others, housed in databases like <a href="http://neotomadb.org">Neotoma</a>, <a href="http://gbif.org">the Global Biodiversity Information Facility</a>, and the <a href="http://paleobiodb.org">Paleobiology Database</a>. Today, I ask, what characteristics of our data make it ‘Big Data’?</p>
+<h3 id="problem-and-scope">Problem and Scope</h3>
+<blockquote>
+<p>Question: Can ecological biodiversity data fit under the rubric of Big Data? If so, what are the characteristics that make it Big?</p>
+</blockquote>
+<p>First, let’s put a limit on the scope of the problem. Ecology generally has many different subfields, each with their own data and data types. Some of these may be particularly large, as in the case of ecological modelers, and some may be smaller. For the sake of argument today, I’ll limit the discussion to ecological biodiversity data documenting <em>occurrences</em>. Each occurrence comes with metadata describing what species (typically, but could also be to another taxonomic grouping) was encountered, where it was encountered, and when it was encountered. This type of data is pervasive in the field, and can be used in a host of analyses, including modeling, climate change assessment, and hypotheses testing. Recently, there have been large international campaigns to aggregate these records into large, structured databases that facilitate global biodiversity syntheses. Three that are commonly encountered are Neotoma (Quaternary), GBIF (modern and instrumental period), and PBDB (deep time). Since PBDB’s <code>R</code> package was hard to use, I investigate the question today using data from Neotoma and GBIF.</p>
+<h3 id="definitions-of-big-data">Definitions of Big Data</h3>
+<p>There are two often-encountered, decidedly non-technical, designations of Big Data. The first comes from Wikipedia</p>
+<blockquote>
+<p>Big data is a term for data sets that are so large or complex that traditional data processing applications are inadequate.</p>
+<p>(Wikipedia)</p>
+</blockquote>
+<p>This is commonly seen in the marketing materials surrounding big computation and the cloud, though it’s really not a definition at all. It doesn’t say much about what it is, just that ‘traditional’ means are not capable of processing it, pointing towards distributed computing, cloud computing, and other recent technological advances as its facilitator. We do get a couple things from this definition though. We know that we’re looking at discrete data sets, partitioned, presumably, in a logical manner. We’re looking for data sets that ‘traditional’ data processing applications are not feasible. By using these words, ‘large’ and ‘traditional’, in particular, we can see that ‘Big Data’ is in the eye of the beholder, so to speak, and it depends on your tradition of data processing whether a new dataset is Big or not. Guterman (2009) suggests, “for some organizations, facing hundreds of gigabytes of data for the first time may trigger a need to reconsider data management options. For others, it may take tens or hundreds of terabytes before data size becomes a significant consideration.” From Guterman’s perspective, the focus is really on the number of bytes a dataset has, but as we’ll see in a minute, there can be other important factors that comprise a data set’s Bigness.</p>
+<p>The second defintion comes from Yang and Huang’s 2013 book Spatial Cloud Computing: &gt;Big Data refers to the four V’s: volume, velocity, veracity, and variety. &gt; &gt;(Yang and Huang, 2013)</p>
+<p>A varient of this definition can be traced back to an early IBM report on the topic, and can be seen in a variety of cheesy infographics, <a href="http://www.ibmbigdatahub.com/infographic/four-vs-big-data">like this one</a>. Yang and Huang go on to further describe the meaning of the four V’s, noting that “volume refers to the size of the data; velocity indicates that big data are sensitive to time, variety means big data comprise various types of data with complicated relationships, and veracity indicates the trustworthiness of the data” (p 276). Here we get a bit more structure than the wikipedia definition gives us, and with the two together, we have a pretty good rubric on which to look at biodiversity datasets.</p>
+<h2 id="evaluation">Evaluation</h2>
+<h4 id="wikipedia">Wikipedia</h4>
+<p>I argue that the very existence of complex relational databases, like GBIF, Neotoma and PBDB, suggest that biodiversity data do fall under the category of Big Data, as the traditional means of analyzing these data are possible anymore. Of course, ‘complex’ in the context of the wikipedia statement typically refers to the preponderance of unstructured data, like videos and photos, and ‘large’ usually means too big to fit into a computer’s memory and/or storage drives. From this perspective, our data is not complex, rather it’s stored in really organized relational tables, and fairly small (the entire Neotoma SQL dump can be downloaded at only 43MB).</p>
+<p>But, if we keep in mind that big data can mean different things to different people, then from our perspective in ecology, our data is Big. Consider the complexity of the relationships between different data records, for example. Figure 1 shows the Neotoma relational table structure, and the complicated web of relationships between each entity. The data is both spatial and temporal, requiring these attributes, which are known to be messy (see “Veracity”), along with sample data and metadata. Now, consider keeping track of this for tens of thousands (Neotoma) or hundreds of millions (GBIF) or records, among thousands of independent researchers, and we see why non-traditional techniques like these databases have been developed. Further developments, like APIs and R packages, are even more recent developments to further simplify the tasks of accessing, filtering and working with the datasets. No, ecological biodiversity data does not meet the scale and extent of YouTube, Twitter, or Amazon, but it does require new, custom built tools to store, analyze, and use.</p>
+<p><a href="http://www.neotomadb.org/uploads/NeotomaDMD.pdf"><img src="/assets/bigData/Neotoma_ER.jpg" alt="Neotoma_ER" /></a> <em>Figure 1: Neotoma’s Relational Table Structure</em></p>
+<h4 id="volume">Volume</h4>
+<p>Of the four V’s, the one that most comes to mind when considering what is, or is not, Big Data is volume: how much data is there? As the quote from Guterman (2009) suggests, some experts consider this to be the only factor in determining what makes data Big. Our datasets are not on the scale of billions of hours of YouTube videos or hundreds of billions of Tweets, but the scale of biodiversity data has exploded in recent years, bringing it to a place where the volume alone is challenging to manage.</p>
+<p>Since the late 1990s, biodiversity databases have quickly and decisively increased the amount of data available to ecologists. Consider Figures 2 and 3, tracking the growth in collections of Neotoma and GBIF through time. In 1990, only 2 of the records now stored in Neotoma were in digitized collections. Today, there are over 14,000 datasets. Each dataset is comprised of spatial and temporal metadata, along with one or more samples with data and associated metadata. The growth rate averages out to about 1.4 datasets every single day for over 26 years. Considering the time, effort, and money that goes into working up a sediment core (or any of the other data types in Neotoma) this is a really impressive growth rate. For an interesting perspective on ecological Big Data’s reliance on blood, sweat, and tears, take a look at this (Blog Post)[https://contemplativemammoth.com/2013/07/10/is-pollen-analysis-dead-paleoecology-in-the-era-of-big-data/] by former Williams Labber Jacquelyn Gill.</p>
+<p><img src="/assets/bigData/Neotoma_Growth.png" alt="Neotoma_Growth" /> <em>Figure 2: Cumulative number of datasets in Neotoma</em></p>
+<p>The scale of GBIF is on an entirely different level than Neotoma (perhaps because some of the data gathering challenges faced in getting paleo data don’t apply as strongly to modern data collection). Today, GBIF houses digital records of well over 500 million observations, recorded specimens (both fossil and living), and occurrences noted in the scientific literature. GBIF’s records are largely comprised of museum collections, which allow their digital collection to date back to before 1900. The facility itself was introduced in 1999 and officially launched in 2001. Since 2001, the facility’s holdings have grown nearly 300%, from about 180 million in 2001 to just shy of 614 million occurrence records today. Managing 613+ million records and associated metadata, and comping with such a fast growth rate, is, without a doubt, a data management challenge worthy of Big Data classification. Figure 3 shows the exponential growth in GBIF’s holdings since AD 1500, and Figure 4 is an interactive map showing the changes in spatial distribution of their observed data since the late 1800’s.</p>
+<p><img src="/assets/bigData/GBIF_Growth.png" alt="GBIF_Growth" /> <em>Figure 4: Exponential growth of occurrence records in GBIF</em></p>
+<link rel="stylesheet" href="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.css" />
+<script src="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.js"></script>
+<script   src="https://code.jquery.com/jquery-3.1.0.slim.min.js"   integrity="sha256-cRpWjoSOw5KcyIOaZNo4i6fZ9tKPhYYb6i5T9RSVJG8="   crossorigin="anonymous"></script>
+<div id="map" style="height:500px;">
+
+</div>
+1890<input type='range' min='1890' max='2016' step='1' style='width:50%; display:inline-block; vertical-align:middle'
+id='gbif_range' />2016
+<script src="/assets/gbif_map.js"></script>
+<p><em>Figure 4: Interactive – Spatial Distribution of GBIF Holdings Through Time</em></p>
+<h4 id="variety">Variety</h4>
+<p>The second characteristic of Big Data in the four V’s framework is the Variety of the data, and its ‘various types with complicated relationships’ (Yang and Huang). Biodiversity data is highly diverse with many very complicated relationships and interrelationships.</p>
+<p>Neotoma’s holdings range from XRF measurements, to geochronologic data, to fossil vertebrates, to modern pollen surface samples. In total, there are 23 dataset categories in the database, with more being added from time to time. Though it is structured similarly in the database tables, each of these data types comes from a different community of researchers, using different methods and instruments. Figure 5 shows the breakdown of dataset types in the database.</p>
+<p><img src="/assets/bigData/Neotoma_types.png" alt="Neotoma_Record_types" /> <em>Figure 5: Dataset Type Breakdown of Neotoma’s Holdings</em></p>
+<p>GBIF has 9 defined record type categories, including human observation, living specimen, literature review, and machine measurements. As with the Neotoma dataset types, these are wildly different from each other. A living specimen is clearly a totally different type of data to work with than something was derived from a literature review. Yet all of these types coexist together in these large biodiversity datasets. Figure 6 shows how GBIF’s records are distributed amongst these nine types.</p>
+<p><img src="/assets/bigData/gbif_types.png" alt="GBIF" /> <em>Figure 6: Dataset Type Breakdown of GBIF Holdings</em></p>
+<p>To further add to the variety and complexity of our data, it is both spatial and temporal in nature, causing complicated interrelationships between data entities. 87.6 % of GBIF’s records are georeferenced to a real place in the world. 100% of Neotoma’s datasets have spatial information. In these databases, the spatial information is compounded by other fields that describe the location of the observation. For example, Neotoma has fields describing the site where the fossil was found – it’s altitude, environment, area. PBDB has extensive metadata for depositional environment, giving additional context to fossil occurrences. GBIF often notes somewhat colloquial location descriptions in addition to geographic coordinates. And, of course, there are the relationships between the spatial coordinates themselves – are these things in the same place? do they overlap?</p>
+<p>Managing data with a spatial component is nearly always more challenging than managing data without it. Figure 7 shows how the spatial locations of the datasets contained in Neotoma have changed through time. Note the expansion in Europe and eastern Asia, and the lack of datasets in Africa.</p>
+<p><a href="/assets/bigData/neotoma_spatial_dist.png"><img src="/assets/bigData/neotoma_spatial_dist.png" alt="Neotoma_Maps" /></a> <em>Figure 7: Spatial distribution of additions in Neotoma since 1990</em></p>
+<p>A final point on variety is that each record, though now cleanly structured and easily accessed as a record in a database, represents the work of an individual researcher. The controlled vocabularies and organization policies enforced by the databases have helped to efficiently aggregate the data, however, nearly every record was collected, worked up, and published by a unique individual. Figure 8 shows the number of datasets attributed to each PI in Neotoma. Yes the names are too small to read. The point, though, is that while a couple researchers have a very large number of datasets credited to them (John T Andrews has the most with 335), most have many fewer. The median number of datasets contributed is 2, and the 3rd quartile value is just 7. Each researcher will use different equipment, in a different way, call things different names, and generally just do things slightly differently – yielding a highly variable dataset.</p>
+<p><a href="/assets/bigData/Neotoma_PIs.png"><img src="/assets/bigData/Neotoma_PIs.png" alt="GBIF" /></a> <em>Figure 8: Neotoma dataset submissions by principle investigator</em></p>
+<h4 id="veracity">Veracity</h4>
+<p>Ecological data has high levels of uncertainty associated with it. Some can be estimated, like temporal and spatial uncertainty. Others are less amenable to being quantified, for example inter-researcher identification differences, measurement errors, and data lost in the transition from field to lab to database. See <a href="http://www.sciencedirect.com/science/article/pii/S0277379116300142#appsec1">this paper</a> for a Paleon project that used expert elicitation to quantify the differences between the dates assigned to European settlement horizon, a process they argue varies between sites, and depends on the “temporal density of pollen samples, time-averaging of sediments, the rapidity of forest clearance and landscape transformation, the pollen representation of dominant trees, which can dampen or amplify the ragweed signal, and expert knowledge of the region and the late-Holocene history of the site.” The raw data from the expert elicitation is included as supplementary information in their paper, and can be seen to vary pretty significantly between the four experts.</p>
+<p>Some information will be lost in the process of going from a field site through a lab workflow to being aggregated in the dataset. Not all process details can be incorporated into database metadata fields, and probably more importantly, contextual details essential to proper interpretation of the data often gets lost on aggregation.</p>
+<p>Coincidentally, when I start working on my PhD here at UW, I’ll be working to tackle some of these uncertainty issues.</p>
+<p>To illustrate the veracity (or lack thereof) of the biodiversity data, let’s look at spatial coordinate uncertainty in GBIF and temporal uncertainty of chronological control points in Neotoma. The GBIF database, in addition to recording the geographic coordiantes of an occurrence, also includes a field for uncertainty in spatial location, though this field is optional. I downloaded 10,000 records of the genus <em>Picea</em>, of which over half did not include this field (though all were georeferenced). This means that even if I am able include and propagate uncertainty in my models (as in Bayesian Hierarchical Models), I would be unable to do so really effectively, because few researchers even report this field. Of the 4,519 records that did report <code>coordinateUncertaintyInMeters</code>, the average uncertainty was 305m (if you exclude zero, which seems reasonable to do). The maximum uncertainty in this dataset was 1,970m. From this brief, and admittedly flawed, assessment, we can see there are some pretty serious problems with using the coordinates without considering their uncertainty first. If, for example, you’re using 800m gridded climate model output to look at environmental covariates to species presence (which I do), a 300m uncertainty in species location could cause significant deviations due to gridcell mis-assignment, particularly in mountainous regions like the Western U.S.</p>
+<p>On the temporal side of things, we can do a similar assessment, this time using the Neotoma data. Neotoma samples are assigned an age using age controls (like radiocarbon dates or varve counts) or an age model, which interpolates between the age controls. The age model issue is a challenging one, and there’s a lot of literature out there about it, as well as software to improve from simple linear models. Every age model is based on a set of age controls, which often have uncertainty associated with them. Neotoma records an minimum and maximum age for each age control for each dataset. Out of a sample of 32,341 age controls in the database, only 5,722 reported age uncertainty. Some record types, like varves, can perhaps be assigned an uncertainty of zero, so we can safely ignore 2,830 more controls, leaving us with 2,892 that report values for minimum and maximum age. The summary statistics for these age controls suggest that the median age model tie point has a temporal uncertainty of 260.0 years. The 25% percentile is an uncertainty of 137.5 years and the 75% 751.2 years. Using the mean of 260.0 years, I suggest that we can only identify down to ± 130 years of the actual date. Considering sediment mixing, laboratory precision, and other processes at work, maybe this isn’t that big of a deal, but it definitely is something to be aware of and contributes to biodiversity data’s lack of absolute veracity.</p>
+<h4 id="velocity">Velocity</h4>
+<p>The final piece of the framework is the data’s velocity – how time sensitive is the data. Data’s velocity important because high velocity data must be analyzed as a stream. Tweets, for example, must be analyzed for trends as they are posted. Knowing the trending topics of two weeks ago might be interesting to me, but the real draw of a Big Data platform like twitter is that I can participate in the trending topics of <em>right now</em>. To do such an analysis, one must use sophisticated sampling techniques and algorithms to detect clusters and trends in real time, for example (this paper)[http://jmlr.csail.mit.edu/proceedings/papers/v17/bifet11a/bifet11a.pdf], which comments on sampling strategies used for trend detection.</p>
+<p>This is the one area where I would suggest that ecological biodiversity data is not Big Data. Biodiversity analyses, like species distribution models, at least the ones I am familiar with, usually take between a few minutes and a few days to complete and are not especially time sensitive. The rate of increase in data volume in both Neotoma and GBIF is not fast enough to invalidate the results from previous analyses. Neotoma gets approximately 1.4 new datasets each day (1990-2016 average). GBIF gets about 59,000 new occurrences each day (2000-2015 average). Sure, that’s a lot of new datasets, but the likelihood you would actually use the new data in a given analysis is low, and the likelihood that its immediately inclusion into a new model would significantly change your conclusions is even lower.</p>
+<p>The velocity of data coming into the databases, particularly into GBIF, is staggering, no doubt about it. Nonetheless, I don’t think it it warrants the use of specialized streaming algorithms for extracting information from the new data points. I have not seen anyone attempt to do such a thing (though maybe this would be an interesting experiment?). Moreover, there is little incentive to immediately analyze the data, because there is next to nothing to be gained from modeling biodiversity faster than you can report your results in publications.</p>
+<h3 id="so-is-it">So, is it?</h3>
+<p>Velocity notwithstanding, biodiversity occurrence data passes four of five facets of the Big Data, so I conclude that, <strong>yes, it is big data.</strong> It requires specialized databases and software to interact with it, it has large numbers of records, it is extremely diverse, and it has high levels of uncertainty with which to deal.</p>
+<p>Looking forward, I suspect Big Data will continue to challenge those involved in synthetic research. Perhaps one of the most challenging aspects is the relatively short period of time in which these data became Big. Figures 9 and 10 show the annual increase in holdings for Neotoma (Fig. 9) and GBIF (Fig 10) through time (top) and the rate of change of annual increase (bottom). While Neotoma’s rate of increase as remained relatively steady through time (clear from the near-linear trend in Figure 2), GBIF’s rate shows a significant upward trend in the last several years.</p>
+<p><a href="/assets/bigData/Neotoma_growth_diff.png"><img src="/assets/bigData/Neotoma_growth_diff.png" alt="Neotoma_Delta" /></a></p>
+<p><em>Figure 9: Neotoma holdings, Annual Change and Rate of Change of Annual Change</em></p>
+<p><a href="/assets/bigData/gif_growth_diff.png"><img src="/assets/bigData/gif_growth_diff.png" alt="GBIF_Delta" /></a></p>
+<p><em>Figure 10: GBIF holdings, Annual Change and Rate of Change of Annual Change</em></p>
+<h3 id="background-and-literature-review">background and Literature Review</h3>
+<h4 id="modern-computing">Modern Computing</h4>
+<p>Computing in its current form is made possible by the Internet, a massive network of interconnected networks that connects millions of computers worldwide. The World Wide Web (the Web) is a system of interlinked documents and programs that can be accessed via the Internet (Fu and Sun 2011). The first generation of the Web, released in 1993, was a tool for viewing, not modifying or creating, static content. Web 2.0 emerged by early 2004, affording users the ability to interact, collaborate, and coordinate with each other, creating, editing, and manipulating dynamic content and programs in addition to static webpages (Yang and Huang 2014). Web services are programs that run on a web server and expose programming interfaces to other programs on the Web using an established set of Internet standards (Fu and Sun 2011), and are a key component to Web 2.0. Web services make it possible to modularize and flexibly combine different models and tools to construct tailor-made workflows, potentially underpinning much richer and more interactive systems. The coupling of web services is facilitated by the development of internet standards that define patterns of orchestration and service connection (Vitolo et al 2014). By outsourcing complex tasks to a remote server, web services can be used for a wide variety of modeling activities, including distributed geographic information processing (DGIP), and have become an important and routinely used tool in supporting scientific research workflows (Gouble and De Roure 2008). DGIP, or geoprocessing, on remote resources often comes in the form of stateless functions that transform a user-specified set of data into a set of outputs. These functions most often represent primitive actions, for example, a polygon buffering routine, are implemented and packaged in an interoperable and reusable way, facilitating their ability to be easily embedded in many different scientific workflows (Muller 2015). The linking of geoprocessing services is known as the Geoprocessing Web (Zhao et al 2012) or the Model Web (Guerra and Oliveira 2013), and is a topic of ongoing research (e.g., Granell et al 2013). One of the most active areas of DGIP research is in its application to cloud-based computing. Cloud computing exposes a configurable set of networked computing resources to an application user in a way that appears unlimited and seamless. The resources are owned and maintained by a large company, such as Google or Amazon, and are provisioned to the user through the internet for a fee for use. The consumer’s illusion of an infinite pool of resources from which to draw from is made possible through the virtualization of physical computers and the implementation of distributed and parallel processing (Yang and Huang, 2014). Virtualization is accomplished by a hardware or software element known as a hypervisor that enables multiple virtual systems to be run on a single hardware machine, promoting efficiency by allowing multiple users to use a single machine rather than each purchasing their own machine. Moreover, this technique provides massive application scalability because it allows users to add or remove one or more virtual machines to their application within only a few minutes. Distributed and parallel file systems, like Google File System and Hadoop (Yang and Huang, 2013, Naqvi et al 2013), are also an important component to cloud computing because they allow processing systems to be composed of many individual hardware nodes and to continue processing even when one of these nodes fails.</p>
+<h4 id="estimating-computing-cost">Estimating Computing Cost</h4>
+<p>Computing resources are expensive, and their value can usually be tied to their performance. Nordhaus (2001) argues that two methods exist for characterizing the price of computing performance: (i) measures of the inputs that derive performance or (ii) directly associating cost and performance. He notes that economic approaches to computing cost estimation have traditionally focused on the first approach, while most computer scientists and those in the computing sector have focused on the performance metrics.<br />
+Examining models of cost per unit performance (for processors) or per byte (for disk drives and memory) shows that more performance is linearly related to the resulting cost . Figure 1 shows the clear link between RAM and cost for several models of memory between 2010 and 2016.</p>
+<p>The transition to cloud-based computing solution comes with a transition from a capital cost model to an operational expense model (Hassan 2011). Desktop and client-server computing paradigms cause users undertake a capital expenditure to purchase desired computing resources before their use. A bigger capital investment may lead to a higher performance model of computer, however, there is no dynamic scalability, in other words, users are limited to the level of performance they choose at the time of purchase. In a cloud-based paradigm, on the other hand, users ‘rent’ computing resources. Rather than a large upfront purchase, they pay monthly based on the resources actually used. Computing resources are scaled up and down with the application need, and can be configured to automatically scale (add or subtract additional resources) as the load on the servers changes. Estimating the cost of a physical computing solution can be accomplished by assessing the fixed and variable costs of the solution’s components (Alfonso et al 2013). Here, fixed costs include the purchase of the computing resources themselves, server racks, cooling systems, and other auxiliary components, and administrative costs, while variable costs include the cost of software licenses, operation and maintenance costs, and the cost of supplying the resources with electricity.</p>
+<h4 id="system-evaluation-and-benchmarking">System Evaluation and Benchmarking</h4>
+<p>Analyzing the constantly evolving and multifaceted dimensions of computer performance has posed problems for analysts and scholars since the advent of modern computing (Nordhaus 2001). Because of this, it is difficult to effectively and meaningfully quantify computer Many programs are available to test and measure system performance. These programs, often referred to as benchmarks, are designed to be indicative of system performance under real use. Many different benchmarking techniques exist, extending from the minutest level of the computational system (e.g., the time taken to execute a single instruction) to high level application suites that test a computers ability to solve high performance scientific simulation problems. High level benchmarks are extremely large and time consuming programs to run, so it often tempting to skip these benchmarks in favor of a smaller and faster one. These ‘toy’ benchmarks, however, may be too small to accurately characterize the expected system performance of the target application (Lilja 2000). The execution time of a program depends on the complexity of the algorithm and its input data, the static hardware configuration of the resource, and the dynamic system state (Wu and Datla 2011). Concurrently running programs, operating system tasks, and other factors may affect the execution speed of the benchmark or real program at any point in time. Various scholars have noted that dynamic changes in state are stochastic, and cause unpredictable, non-linear, and non-additive changes to benchmark results (Kalibera et al 2013, Lilja 2000). Figure 2 shows the high degree of variance between replicate runs of a short benchmarking routine on my MacBook Air laptop in March 2016. This stochastic term makes it difficult to characterize the relationship between resources and algorithm execution time. Lilja (2000) suggest that variations are often due to the way in which memory access patterns differ in space and time when small changes are made in the operating system state, timer, or algorithm. However, Lee et al (2007) note that models of computer performance may be capable of capturing high-level trends, though may poorly predict variation in lower level space due to random variation. Kalibera et al (2013) suggest that if the upper bound on performance (e.g., slowest time) for a given algorithm is the metric of importance, benchmarking may be an appropriate tool. I follow on this and contend that if the stochastic forcing of the system is far below the scale of magnitude we wish to model at we can effectively ignore this term and treat execution time as a deterministic function of system hardware at any point in time. In the example above, the bulk of the variations fall within 0.06 seconds, less than 10% of the total running time for the benchmarking routine. Similarly, high-level pieces of code, such as entire applications, should be only minimally affected by the slow-bias incurred while switching between program contexts while timing program execution. The most intuitive method of measuring run speed is to simply clock the run time with a stopwatch (Lilja 2000). However, this ‘interval timer’ will actively take up some of the system resources, and thus slow-bias the results of the measurement. To remedy this, some experts suggest that it is better to measure in terms of CPU time, which denotes the time that the processor(s) actually spent working on the program being measured, ignoring the time it spent on the timer and switching between program contexts. Because of this variation, which can be up between one and several hundred clock cycles, benchmarking and profiling tools typically report both measurements. However, contemporary personal computers average well over three billion clock cycles per second, resulting in a trivial amount of time being spent on context switching. The proper measurement and reporting of benchmarks is important and a point of disagreement in computer science. There is no universal performance metric that answers all performance evaluation questions, and poorly applied performance metrics can be worse than no evaluation at all. Failure to properly characterize the workload, running benchmark tasks in inconsistent environments, and selecting benchmarks that are too simplistic are all errors that can lead to meaningless results (Dongarra et al 2013). Kalibera et al (2013) note that benchmarking requires repetition and proper experimental design to yield meaningful results, and suggest that analysis of variance and central tendency is much more important than reporting a lower bound in performance when attempting a rigorous benchmarking routine.</p>
+<h4 id="estimating-resource-use">Estimating Resource Use</h4>
+<p>There are several techniques for optimizing the number and configuration of computing resources under a given set of constraints. These techniques are often applied to cloud computing in the context of datacenter optimization, where large warehouses of servers must be dynamically balanced to optimally respond to changing loads. To optimize the datacenter’s efficiency, models are used to predict an algorithm’s execution time given a computing node’s hardware and software state. When a new client request arrives, it must be mapped to available computing resources in an efficient manner. A scheme that can direct this request to the server that will complete it in the smallest amount of time can improve scientific productivity and the utilization of computing resources (Wu and Datla 2011). A computing system includes many components – everything from CPU components and memory allotment, to display components and networking capabilities. To effectively model resource utilization, this array of characteristics is typically reduced to a small subset that captures most of the system’s performance. Sadjadi et al (2008) suggest that the resource components fall into three categories: communication, computation, and storage, and that execution time can usually be estimated using the CPU clock speed and the number of processors available to the application. Wu and Datla (2011) rely on a hardware profile describing processor architecture and speed, memory, buffer, and cache, arguing that RAM can provide information regarding the amount of concurrent work being done on a machine while buffer and cache control the speed of I/O (input &amp; output) operations. They suggest that these measurements are the most significant in determining performance because they capture most of the variability in estimating both computation time and I/O time.</p>
+<p>Different methods exist for modeling an empirical relationship between hardware and execution. In most cases, when measuring execution time, we assume that the software portion of the system is held constant, and thus that the number of cycles needed to run the program will remain fixed for a given input size (Wu and Datla 2011), allowing the result to only depend on the provisioned hardware. Sadjadi et al (2008) model execution time as the product of all individual resource contributions. By estimating individual components with linear terms and expanding, the product function becomes a rather simple linear equation. Wu and Datla (2011) argue that the execution time of a module should be modeled as a multivariate nonlinear system depending on the software complexity and the hardware profile. Formulating the problem in this way allows the estimation of the effect of a single input parameter, both when acting alone and in combination with other variables. Both of these studies obtained highly accurate estimates of module execution time. I aim to follow on these results and apply similar methods to scientific computing and species distribution models specifically. Some work has been done to evaluate the differences in algorithm run time due to changes in input parameters. For example, Hsu et al (2002) evaluate the effectiveness of benchmarking procedures using different data sizes as input to a suite of different computationally intensive algorithms. However, most computing literature that deals with the time complexity of algorithms tends to report results in asymptotic behavior or Big O notation (Knuth 1976). This is a method of characterizing how the algorithm asymptotically changes with input, but abstracts away the complexities of the hardware profile. For example, if an algorithm’s time complexity is O(n), the execution time will increase linearly with input, but the exact execution time is not known. Since the purpose of my study is to characterize the differences in hardware configurations, I will have only a passing interest in describing the algorithm’s asymptotic behavior.</p>
+<h4 id="species-distribution-modeling-fundamental-concepts-and-practice">Species Distribution Modeling: Fundamental Concepts and Practice</h4>
+<p>Species Distribution Models quantify the relationship between a species and its environmental range determinants through statistical methods (Svenning et al, 2011). While in a broad sense, this term can include mechanistic or process models, I will strictly focus on the correlative models in this thesis (after Elith and Leathwick 2009). SDMs have been employed in their current form since at least the early 1980s (Vincent and Haworth 1983); however, the utilization of the technique has grown substantially with the rapidly increasing availability of environmental data, species distributional data, and computing resources (Svenning et al 2011, Franklin 2010).<br />
+Species distribution models draw heavily on the niche concept. Hutchinson (1957) characterized a species’ fundamental niche as an n-dimensional hypervolume that defines the environmental space where the intrinsic population growth rates of the species is positive (Williams and Jackson 2007). The realized niche describes the subset of the environmental space that the species actually occupies at some point in time. The realized niche is always smaller than the fundamental niche because of the biotic interactions that might limit the species niche at any point in time. The correct interpretation of the species distribution model has been debated in the literature, though most scholars agree that the models approximate the realized niche of a species (Guisan and Zimmerman 2000, Soberon and Peterson 2005, Miller 2010). Much of the contention surrounding SDM arises from the ambiguities in the formulation of the niche concept, and the differing interpretations of the Hutchinson niche framework (Araujo and Guisan 2006, Araujo and Peterson 2012), rather than the modeling technique itself.</p>
+<p>The application of SDMs relies on several important assumptions. First, it assumes that the niche of a species remains unchanged through space and time (Pearman et al 2008). This assumption is known as niche conservatism, is a fundamental justification for applying predictions across space and time. Several authors note that the fossil record supports the hypothesis of niche conservatism in a climate change context (in Thuiller 2008).<br />
+Second, SDMs assume that species are at equilibrium with their environment. Environmental equilibrium occurs when a species occurs in all climatically suitable areas whilst being absent from all unsuitable ones (Nogues-Bravo 2009). Given dispersal limitations and biotic interactions between species, this is rarely the case. For example, many European species are still strongly limited by postglacial migrational lag (Svenning et al 2008).<br />
+Third, SDMs must deal with extrapolation to novel and no-analog climates. SDMs are strongly limited by the climatic data they are trained on. As with all inductive learning algorithms, these algorithms are fitted with a set of target examples, in this case, species abundance with environmental covariate information. The goal of learning how the function that defines abundance through multivariate covariate space is made more difficult when we attempt to project the model onto scenarios completely unlike anything in the training set. Williams and Jackson (2007) note the high likelihood of encountering novel and no modern analog climates in the near future. By 2100, large portions of the earth may experience climatic assemblages that do not currently exist, and other assemblages currently present may cease to exist (Williams et al 2007). Fitting the model with fossil data pooled from past time periods increases the likelihood of capturing the species fundamental niche (Veloz et al 2012), and is a way to limit the number of climates not included in the training example set. However, the problem of projecting onto novel climates still exists given rapid contemporary climate change.<br />
+SDMs have many applications in global change biology and paleobiology and are complemented by the fossil record. The paleorecord provides a well-documented set of species and community responses to large, rapid, and/or persistent environmental changes at spatial extents ranging from local to global and at temporal resolutions ranging from subannual to millennial (Maguire et al 2015, Nogues-Bravo 2009). While niche models that are fitted with paleodata face a number of challenges, they have the potential to harness additional training data and enable hypothesis testing regarding species distributions and their determinants (Svenning et al 2011). Moreover, fitting species distribution models with paleodata increases the likelihood that the calibration dataset captures the species’ fundamental niche (Veloz et al 2012). SDMs have been used for a variety of paleogeographic studies including supporting hypotheses for the extinction of Eurasian mega-fauna (Nogues-Bravo et al 2008), identifying glacial refugia in the Pleistocene (Waltari et al 2007, Keppel et al 2011, Fløjgaard et al 2009), and to assess the effect of post-glacial distribution limitations and biodiversity changes (Svenning et al 2011). Recently, SDMs have been combined with genetic, phylogeographic, and other methods for a more complete assessment of biogeographical assessments (e,g., Fritz et al 2013). A search in Web of Science in March 2016 revealed over 4,000 citations since December of 2013 for the search ((species distribution model<em>) OR (habitat suitability model</em>) OR (ecological niche model*)).<br />
+SDM algorithms can be roughly divided into two camps: parametric and non-parametric (Franklin 2010). Early SDM studies typically focused on the parametric or ‘model-driven’ approaches, which fit parametric statistical models to a dataset, and have continued to see widespread use because of their strong statistical foundations and ability to realistically model ecological relationships (Austin 2002). Some of the earliest algorithms fit simple multidimensional bounding boxes (‘climate envelope’) around species presences in environmental covariate space (Guisan and Zimmerman 2000). Other model-driven techniques that continue to see widespread use are generalized linear models (GLM; Vincent and Haworth 1983) and their nonparametric extension, generalized additive models (GAM; Yee and Mitchell 1991). The increase in available computing power has spurred the use of non-parametric or ‘data-driven’ (also referred to as machine learning) SDMs. These models have, in some cases, been shown to significantly outperform their statistical counterparts (Elith et al 2006). Typical data driven models include genetic algorithms (Franklin 2009), classification and regression trees (Elith et al 2006, Miller 2010), artificial neural networks (Hastie et al 2009), and support vector machines. In 2006, a maximum entropy, ‘MaxEnt’, approach was introduced, an algorithm which has been shown to consistently perform well on small sample sizes and presences only records (Phillips and Dudik 2008). Because of these characteristics, MaxEnt has become by far the most popular method for SDM. However, recent evaluations of MaxEnt suggest that its performance, especially on small presence-only datasets, may be questionable when compared with other SDM algorithms (Fitzpatrick et al 2013). No class of model consistently outperforms any other (Veloz et al 2012, Elith et al 2006, Araujo and New 2006), however, scholars have noted variations between model classes (Araujo and Guisan 2006, Elith 2006) as well as between different parameterizations of individual models (Thuiller 2008, Araujo and New 2006, Veloz et al 2006). Therefore, it is important for workflows to include several different model classes and parameterizations (Araujo and Guisan 2006), and/or employ ensemble-forecasting techniques (Araujo and New 2006, Miller 2010). The choice of model class is dependent on a number of factors. Model users should consider the region in which they are working (Elith et al 2006, Hernandez and Graham 2006), the number of records they have to work with (Wisz et al 2008), the type of record (presence/absence or presence-only) (Franklin 2009), the ecological implications of the model output (Austin 2002, Austin 2007), and the user’s competency with the chosen model. Additionally, Franklin (2010) points out the tradeoff between model precision and generality (data-driven vs. model driven approaches), response function estimates, multicolinearity and autocorrelation between model predictors. Once fitted and projected, SDM results can be evaluated in a number of ways that describe the characteristic performance of the routine. However, reducing model results into a single statistic can hide important insights about model performance (Franklin 2010, Lobo et al. 2008). By doing so, the spatial pattern of model error is lost. Furthermore, most discrimination metrics require that continuous estimates of probability of species presence be transformed into binary estimates of presence and absence, so are thus sensitive to the choice of threshold, and can mask nuances in the predicted response (Lobo et al 2008, Austin 2002, Miller 2010).<br />
+A common metric for model comparison is the area under the receiver operator curve (AUC). The receiver operator curve (ROC) plots the sensitivity (correctly classified presences) against the fraction of commission errors (falsely predicted presences). Calculating the area underneath this curve provides a measure of success across all possible ranges of thresholds, equivalent to a non-parametric Wilcoxon test (Hanley and McNeil 1982), where the rank of all possible pairs for presence and absence probabilities is compared (Lobo et al 2008). Other important statistics for model evaluation include the Cohen’s kappa statistic, percent correctly classified, and the true skill statistic, all of which are based on the confusion matrix that compares observed discrete cases to predicted discrete cases (Miller 2010). In response to critiques on these methods, other evaluation methods, such as the true skill statistic, have been shown to perform well in an ecological setting (Miller 2010). The choice of model evaluation techniques should reflect the modeling study’s objectives (Miller 2010, Araujo and Guisan 2006).</p>
+<h3 id="problem-formulation">Problem Formulation</h3>
+<p>I present a framework for linking the ideas of model user goals with modeling execution time and computing resources that leads into my research questions. My thesis research will attempt to lend support to this theoretical framework with empirical data. 1. First, let us consider a single computer or pool of computing resources, H. At any time t, the effective processing power of H is related to both static and dynamic configuration of its hardware and software (Wu and Datla 2001). We can characterize the available resources as: H(t)=H_static+H_dynamic+ ζ Where Hstatic represents the static capabilities of the machine that do not change with time, and Hdynamic represent the capabilities of the machine that do. We know that execution times can vary non-deterministically with hardware due to the random effects of small changes in system state, so we add ζ as a stochastic component that accounts for the random variance in H(t) at any time t. The random term may cause some amount of unexplained variance in a predictive model. Through experimentation, we can estimate the computation time, Tcompute of a given algorithm with a given set of resources on a given H(t), as well as the magnitude and distribution of ζ.</p>
+<ol start="2" style="list-style-type: decimal">
+<li><p>Assume that the cost of a given set of computing resources is a stepwise function of H, the provisioned computing resources. C_compute=f(H) In an academic environment, many of the terms in Alfonso et al (2013) computing cost model are not applicable. For example, most research laboratories do not pay directly for electricity, already have an existing physical space, and have departmental or university IT staff to assist with maintenance and operation. Furthermore, many software packages are provisioned for free to academic entities, and many other widely used packages, such as R, are free and open source software. Thus, in the university setting, we can simplify the cost model for non-cloud based computing to just depend on the purchase price of the computing components. Figure 3 shows an idealized set of computing cost curves.</p></li>
+<li><p>Now let us consider the user of the computer application. Every user of an application has a particular set of goals for using that interface in the first place (Norman 1984). Using techniques from Scenario-Based Design (Carroll 1999, Rosson 2002), we can come up with a finite number of use cases for a given application that fall within the bounds of existing or expected use. For example purposes let us define a scenario typical of a species distribution model user:</p></li>
+</ol>
+<p>Jessica Smith is a land manager at a Yellowstone National Park, interested in understanding how her park will be affected by Mountain Pine Beetle infestations under different anthropogenic climate change scenarios. Ms. Smith primarily wishes to characterize how the beetle range might change under the three most likely IPCC emissions pathways. She does not care about the differences between algorithms or uncertainties that may arise in the modeling process, as long as he can present his results to her colleagues.</p>
+<p>From this brief scenario, we can formalize Ms. Smith’s goals with the SDM application. He wishes to model one species (Dendroctonus ponderosae), in one area of known size (Yellowstone National Park, ~3,500 mi2), under three different climate scenarios. She only requires the use of a single SDM, that his accuracy requirements are fairly low, and his budget may be limited. Using brief user-based scenarios like this, we can begin to formulate the concept of a User, U. Let U be a vector of characteristics that formalizes the scenario’s goals. The components of U are: a vector of experiments (discussed below), as well as user traits such as experience, interface used, motivation, skill, accuracy required, etc. The experiment vector holds a list of experiments that specify the number and character of the modeling work the user wants to accomplish. Each element in Experiments can be expressed as a vector of model characteristics that contain enough information to specify the runtime behavior of a single model at a single time period, including spatial resolution, number of input training examples, number of input predictor/covariate layers, number of time periods to project onto, and type and number of algorithms to utilize. 4. Let us now turn to estimating the total time required to run a modeling experiment. The time to actually compute a given algorithm with some set of input data, TCompute, is a function of H(t); however, several other terms can contribute to the total time spent by a user. We can express the total time taken by an experiment as T_Model= T_Input+ T_Prep+ T_Compute+ T_Output+ T_(Interp.) Where TInput represents the portion of time that is spent by the user gathering the resources needed to model. In a species distribution modeling context, this term represents the time needed to find and download occurrence points, time needed to find and download predictor variables, and time needed to setup and configure the algorithms (i.e., download and install R packages). We will consider TInput a function of the computing resources available to the user (how fast can the data be downloaded?), and the experiment (what is the data and how big is it?). TPrep is the time required by the modeler to prepare the data for entry into the algorithm. In our case, this time might be spent deleting erroneous points, projecting data into new spatial references, or converting between data formats. We will characterize TPrep as a function of the experiment (what is the data?), the user (how skilled are they?), and the interface (how easily can the tasks be completed?). TCompute is the time needed by the computer to run an algorithm on a given set of data and will be considered a function of H(t) (how fast is the computer?) and the experiment (how much work does the computer have to do?). TOutput is the time it takes to return the output from the computation to the user. While this time is often minimal, an experiment with a large data output that is run on remote resources might need a non-trivial amount of time to download to a user’s client over a network. Let us only consider TOutput in terms of H(t). Finally, TInterp. is a function of the user and the interface that represents the time required by the user to evaluate the model output and determine whether his/her goals were met. Thus, TModel can be expressed as a function that depends on the user, the experiment, and H(t).</p>
+<ol start="5" style="list-style-type: decimal">
+<li><p>Now that we have characterized the time it takes to run a single experiment, it follows that the time to model all experiments in a user’s goal is the sum of all modeling experiments, so a user’s time-to-goal is expressed as: MATH</p></li>
+<li>Combining equations from (2) and (5), we can estimate the total ‘cost’ of a modeling workflow as the sum of the total time spent modeling and the cost of the provisioned computing resources. We can represent our cost function as a multidimensional function that takes into account both the time spent modeling and the cost of the provisioned resources: MATH</li>
+<li><p>Now let us take a defined, single, discrete user (like Ms. Smith introduced earlier) and call this user U<em>. By holding U constant at U</em>, we can now obtain a unique cost function for this individual’s modeling activities that is now only a function of H(t). C is defined for all real computing solutions greater than 0 however, we can define the optimal solution, C<em>, for provisioning resources to U</em>’s activities as the multidimensional minimum MATH</p></li>
+</ol>
+<p>which suggests an cost optimum at C* and an associated resource optimum at some profile Y*. The minimization routine should be such that: MATH</p>
+<p>After building up this theoretical framework, there are three logical extensions that will be examined in more detail in this thesis: i. To what degree are the assumptions and logical steps in the framework supported by real world data? ii. Is it possible to make a good prediction of future optimal costs (and thus resource levels) based on a specific user’s goals using a predictive modeling approach? Specifically, can a model with the ability to prescribe cloud-based and client server architectures do statistically better than a null model where all researchers purchase a single desktop computer? iii. Where are the clear breakpoints in user activity, resource level, and cost? i. Are there clear natural breaks in the set of potential users that translate to switches from traditional computing to cloud solutions? ii. What modeling activities would benefit from a shift to cloud computing? iii. Who are the real users that are affected by this breakpoint, if any?</p>
+<p>This study will focus heavily on the case study of species distribution modeling, and will work specifically on optimizing the resources for these ecological problems. However, some portions of this framework might be extended to other situations.</p>
+<h3 id="methods">Methods</h3>
+<ol style="list-style-type: decimal">
+<li><p>Characterizing Users: I will systematically review the species distribution modeling literature to understand the range of use cases for species distribution models. To systematically review, I will download the last 4,000 citations in the Web of Science returned with the keyword search “(Species Distribution Model<em>) OR (Ecological Niche Model</em>) OR (Habitat Suitability Model*). I will then use a random number generator to randomly sample these citations to yield a list of 150 citations. I will then review these papers looking for key criteria that explain how the authors will be using species distribution models. I will collect the following fields: year, number of model classes, number of predictor variables, number of occurrence points, number of evaluation metrics, number of species, spatial extent and resolution of study, number of climate models, number of different time periods, model classes used, and evaluation metrics used. This meta-analysis will be used to evaluate clusters and patterns that may be apparent in the data. I will use multi-dimensional cluster analysis (k-means) to determine clusters of similar users.</p></li>
+<li><p>Cost Model: I will develop a theoretical cost model for cost of computing time. I will base this model by looking at a sampling of computer prices from well-known vendors, including Dell, Apple, and HP. I will evaluate the cloud subspace of this model by reviewing the hourly compute rates for different virtual instances on Amazon, Rackspace, and Google, all of which provide IaaS capabilities (Yang and Huang 2014). After this step, I will be able to compute the hourly cost of computation on any given computer. This process essentially accounts for the upfront costs of purchasing physical machines versus renting cloud and virtual machines.</p></li>
+</ol>
+<h2 id="experimental-variables">Experimental Variables</h2>
+<h3 id="cpu-cores">CPU Cores</h3>
+<p>Virtual CPU cores (vCPU) are included as an experimental variable, because their addition to a problem is the only way to to directly increase the number of instructions being executed by the machine. With a single processor machine, instructions must be sequentially executed. If there are multiple processes running on a machine at one time, the instructions must be interleaved to give the illusion of simultaneous execution. If one or more cores are added, the workload can be split across these processors to execute the instructions in parallel. If a modeling algorithm is a serial algorithm (most SDMs are), adding multiple cores can improve its speed by offloading system processes and other work to other processors, leaving one processor for model execution. If the model is designed for parallel execution, adding cores can speed up the execution of the algorithm proportionally to the percentage of the program that can execute in parallel (Amdhal’s Law). Most programs require at least a small amount of serial code (to synchronize results or initialize runs), so infinite speedup is not possible. The algorithm I’m using (boosted regression trees in the gbm R package) is designed with a small portion of parallel code, so should demonstrate at least a small speedup with the addition of multiple processor cores.</p>
+<h3 id="memory">Memory</h3>
+<p>Adding virtual memory (RAM) to a process can increase its execution time by reducing the number of times the computer must retrieve data from the physical storage device (e.g., the hard disk). Operating on data from the hard disk, especially a traditional mechanical one) is orders of magnitude slower than operating on instructions that are already stored in the computer’s main memory. If the size of the data to be executed on exceeds the size of the RAM, the computer will automatically chunk it up, and go back and forth between the hard drive and main memory. By increasing the size of the memory, we reduce the need to go to the hard disk, thus increasing execution time.</p>
+<h3 id="training-examples">Training Examples</h3>
+<p>All of the competitive species distribution models (generalized linear models, regression trees, adaptive splines, etc) are instances of supervised learning. Supervised learning methods required a set of tagged training examples that show the ’correct’ answer, along with that answer’s input conditions. The goal of the learning method is then to learn the function <em>h(x)</em> that approximates the mapping between input conditions to answer. More tagged examples gives the learner more data with which to work, and, in theory, should demonstrate higher accuracy. However, giving the learner more data means that it will need to fit a more complicated response surface. I hypothesize that giving the modeling algorithm more training examples will increase the time it takes to learn <em>h(x)</em>.</p>
+<h3 id="spatial-resolution">Spatial Resolution</h3>
+<p>The fitting of the models is essentially non-spatial: the environmental covariates are pre-extracted from the predictor layers, processed, and fed to the model. Once the model is fit, however, the response <em>h(x)</em> is projected onto the RPC8.5 scenario for AD2100. A low spatial resolution prediction grid will have only a relatively small number of grid cells to project onto. As spatial resolution increases, the number of cells on which to project increases exponentially. Thus, while the fitting time of the model is unlikely to be affected by the spatial resolution of the response, the time it takes to produce a gridded output will likely increase significantly at higher resolutions.</p>
+<h2 id="experimental-design">Experimental Design</h2>
+<p>In an ideal world, I would run carefully controlled experiments in a full factorial design for each of these experimental variables, with a suitable number of replicates per cell for robust inference. However, there are a couple reasons this is not possible in my case.</p>
+<ol style="list-style-type: decimal">
+<li><p><strong>Cost</strong> It is prohibitively expensive to test every combination of the variables, particularly with replicates.</p></li>
+<li><p><strong>Time</strong> I am also limited in the time I have to run these experiments, and do not have the thousands of hours needed to run all of these simulations.</p></li>
+<li><p><strong>Platform</strong> Cloud platform providers do not allow unconstrained creation of arbitrary machine types.</p></li>
+</ol>
+<div class="figure">
+<img src="config_status.png" alt="Distribution of experiments across computing types. Experiments in green have been completed to-date." style="width:60.0%" />
+<p class="caption">Distribution of experiments across computing types. Experiments in green have been completed to-date.<span data-label="fig:conf_status"></span></p>
+</div>
+<p>Because I can’t run all of the experiments, I came up with a compromise scheme that attempts to balance capturing the within-variable variance (more replicates) with the interactions between the variables (more cells) . I do this by running one main series of experiments with a selected subset of algorithm inputs (training examples and spatial resolution) on a wide variety of computer types (vCPU and memory), and then a couple of sensitivity analyses that capture the response of the algorithm to a change in a particular input.</p>
+<h3 id="main-series">Main Series</h3>
+<p>The goal of the main series is to capture the interactions within variables, and to capture the contribution of running the algorithms on increasingly more powerful machine types. Because execution time can demonstrate non-linear and/or non-additive responses when run on alternate hardware, it’s important to test as many combinations of the two computing variables as possible. On each computer type, I have a standard set of 160 experiments to run (4 spatial resolutions x 4 training example sets x 10 replicates). All of these experiments are done on the <em>Picea</em> pooled niche data set. Figure [fig:conf_status] shows the computing instances that I use in the main series.</p>
+<h3 id="taxa-sensitivity">Taxa Sensitivity</h3>
+<table>
+<caption>Computing configurations in the taxa sensitivity experiments.<span data-label="tab:tSensitivity"></span></caption>
+<thead>
+<tr class="header">
+<th align="left">vCPU</th>
+<th align="right">Memory</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">1</td>
+<td align="right">3</td>
+</tr>
+<tr class="even">
+<td align="left">2</td>
+<td align="right">8</td>
+</tr>
+<tr class="odd">
+<td align="left">3</td>
+<td align="right">15</td>
+</tr>
+<tr class="even">
+<td align="left">8</td>
+<td align="right">30</td>
+</tr>
+<tr class="odd">
+<td align="left">16</td>
+<td align="right">60</td>
+</tr>
+<tr class="even">
+<td align="left">32</td>
+<td align="right">208</td>
+</tr>
+</tbody>
+</table>
+<p>There is not a clear reason why the execution times should vary between different taxa, because the model will fit with the same number of training examples and project onto the same spatial grid. But, to evaluate whether differences among taxa do occur, and if so, to the magnitude of the variation, I have a series of experiments that test on four different taxa. These taxa are <em>Picea</em>, <em>Tsuga</em>, <em>Quercus</em>, and <em>Betula</em>. The tSensitivty set is run on 6 instance types, as shown in Table [tab:tSensitivity].</p>
+<h3 id="training-example-sensitivity">Training Example Sensitivity</h3>
+<div class="figure">
+<img src="tSensitivity.png" alt="[fig:tSensitivty]Number of training examples included in the training example sensitivity set of experiments." style="width:50.0%" />
+<p class="caption">[fig:tSensitivty]Number of training examples included in the training example sensitivity set of experiments.</p>
+</div>
+<p>To test the affect of adding training examples on the fitting time of the algorithm, I have a set of measurements to evaluate this effect on a single computing type for more examples than I have in the main series of experiments. Different numbers of training examples between 100 and 30,000 are examined, as shown in Figure [fig:tSensitivty].</p>
+<h3 id="spatial-resolution-sensitivity">Spatial Resolution Sensitivity</h3>
+<p>To evaluate the hypothesis of an exponential increase in model projection time with a proportional decrease in spatial resolution of the output grid, I have planned a sensitivity test for spatial resolution. Fitting a standard model, I will evaluate the projection time at between 0.1 and 1 degrees resolution by 0.1 degree step size.</p>
+<h2 id="platform">Platform</h2>
+<p>I am using the Google cloud platform (a.k.a Google Compute Engine) to complete all of my experiments. On this platform, Google rents out isolated portions (e.g., instances or nodes) of its massive computing infrastructure to consumers. The consumers, like me, pay per minute for the resources that they use. These nodes can be very basic (1 vCPU and 0.6 GB RAM) or exceptionally powerful (32 vCPU and 208GB RAM), or nearly anywhere in between. Along with the platform, Google has developed a set of APIs for automated control of the virtual computing instances, as well as a GUI console for interactive control.</p>
+<p>The main reason for this choice is the ability to create ’custom’ instance types. Other notable cloud providers (e.g., Amazon Web Services) provide a large number of predefined instance types, some even more powerful than Google’s top-end, but do not allow you to create an instance with an arbitrary number of vCPU cores and memory. Google allows you to do this, which fits well into my experimental framework.</p>
+<div class="figure">
+<img src="file-page1.jpg" alt="A flowchart describing the way in which virtual infrastructure is managed to run SDM simulations." style="width:110.0%" />
+<p class="caption">A flowchart describing the way in which virtual infrastructure is managed to run SDM simulations.<span data-label="fig:flowchart"></span></p>
+</div>
+<p>My setup draws on a bit on the design of larger systems like Hadoop, which create frameworks for massively large and distributed fault-tolerant systems. In short, I have one Master Node that hosts a database and a control script, and a pool of compute nodes that are fault-tolerant and designed only for computing. The compute nodes don?t have to know anything about the progress of the entire project and can handle being shut down mid-run, and the control node doesn?t have to know anything about the simulations being computed. At any one time I will have one or many servers that will actually be doing the job of computing the species distribution models and assessing their time and accuracy (compute nodes). At the same time, I will have one server that hosts the database and the API, starts and stops the computing instances, and cleans up the workspace when necessary (Master Node). This approach allows me to use Google’s preemptible instances, which cost much less, but have the potential to be dropped due to system demand at any time. Figure [fig:flowchart] shows a conceptual diagram of the platform logic.</p>
+<h3 id="configuring-and-building-virtual-instances">Configuring and building virtual instances</h3>
+<p>The steps to building and configuring the pool of computing nodes takes follows this general process:</p>
+<ol style="list-style-type: decimal">
+<li><p>The MasterNode.py script uses the (daemonized [always running]) node.js web backend to query the database to ask ’What experiments have not yet been marked as DONE?’. The computing script could also mark experiments as “LEGACY”, “INTERRUPTED”, or “ERROR” depending on the conditions at runtime. If they have not yet been computed, they are marked in the database as “NOT STARTED”. So MasterNode asks for everything that?s not “DONE”, and forces a re-compute if a simulation errored or was cut short.</p></li>
+<li><p>The central database, via the API, responds with a JSON object that contains the number of cores and memory needed for the next experiment (but not the other experimental parameters like number of training examples or spatial resolution).</p></li>
+<li><p>MasterNode parses the JSON and then uses the gcloud tools to create a pool of computers that have the memory and number of cores specified by the database response. This pool of virtual instances is automatically created with a startup script that installs the necessary software and files to run the computing experiments.</p></li>
+</ol>
+<h3 id="running-the-simulations-and-reporting-the-results">Running the simulations and reporting the results</h3>
+<p>Now that I have the pool of virtual instances at my disposal, I can use them to run the SDM simulations, time their execution, and report back to the central database. There are typically between 160 and 400 simulations to be done for every computing configuration, so on each node is an inner loop that looks like this:</p>
+<ol style="list-style-type: decimal">
+<li><p>Startup script installs git, mysql, and R. Git clones the most recent version of the project repository which has all of the files needed for the computation. R starts execution of the timeSDM.R script which controls the flow of execution for this node.</p></li>
+<li><p>RScript queries the central database to ask ’I am a compute of x cores and y GB memory, what experiments can I do?’.</p></li>
+<li><p>The database responds with a single JSON row that contains all of the necessary parameters to actually run the SDM simulation (spatial resolution, taxon, number of training examples, etc).</p></li>
+<li><p>RSCript parses the database response and loads the correct set of variables, then runs the SDM model.</p></li>
+<li><p>RScript reports results back to the database and marks that experiment as “DONE”.</p></li>
+<li><p>Repeat until no experiments that are not “DONE” remain to be completed by a computer of this number cores and amount of memory.</p></li>
+</ol>
+<p>If an instance gets shut down due to preemption (or my incompetence) a shutdown script will be fired. This script records in the database that the experiment was cut off (INTERRUPTED) at some point before successful completion, and that it should be completed again in the future.</p>
+<h3 id="managing-virtual-infrastructure">Managing virtual infrastructure</h3>
+<p>Because Google charges you by the minute as you use their servers, and because I have to do a lot of different experiments and don?t have that much time do them, it is ideal to automatically tear down the servers and start a new pool as soon as one computing configuration has finished. So, while the computing nodes are doing their computing thing, the MasterNode repeatedly polls the central database to determine the current position within the experiment grid.</p>
+<ol style="list-style-type: decimal">
+<li><p>MasterNode uses the API to ask the database ’What percentage of the experiments in this group have been completed?’</p></li>
+<li><p>The database responds with a percentage (“DONE” / total).</p></li>
+<li><p>If the percentage is 100 (all experiments have been completed within the current configuration setup):</p></li>
+<li><p>MasterNode will use gcloud to delete the individual server instances, the instance group pool the they are part of, and the template used to create the instances. After this, only the Master Compute Node server with the database on it still remains in my pool of Google resources.</p></li>
+<li><p>Repeat. Configure and build a new pool of instances for the next memory/cores combination.</p></li>
+<li><p>Otherwise, continue polling.</p></li>
+</ol>
+<h2 id="modeling-protocol">Modeling Protocol</h2>
+<h3 id="data-origin-preparation">Data Origin &amp; Preparation</h3>
+<p>The taxon occurrence data is from the Neotoma Paleoecological Database. All records for the given taxon were downloaded from Neotoma, using the API. A python script was used to identify all of the sites with that taxon. For each site, the entire dataset was then downloaded, and the values for the taxon extracted. The age, latitude, longitude, site identification information, and the relative abundance was stored for each Neotoma occurrence as a comma separated value file.</p>
+<p>For each occurrence record from Neotoma for my chosen species, I extracted the bioclimatic variables at the given latitude, longitude, and years BP. The extraction was done using a python script, and the results were then stored as CSV files.</p>
+<p>The paleo climatic predictor layers are downscaled North American CCSM 3 model simulations (Lorenz et al 2016). The model data was obtained in netCDF format, and manipulated in python. Bioclimatic variables were calculated from these native layers using the O’Donnell (2012) methodology, using the biovars function from the dismo R code package. These layers have a native resolution of 0.5 degrees.</p>
+<p>The future climatic layers, describing AD2100, for use as output predictors, were obtained from the CMIP project, HadCM3 climate model. These layers model describe the model under the UN IPCC RCP 8.5 forcing scenario. The layers were used to calculate bioclimatic variables, and were then resampled to various resolutions to facilitate their use as output layers in different experiments.</p>
+<h3 id="modeling-methodology">Modeling Methodology</h3>
+<p>I have worked with three SDM algorithms that have shown competitive accuracy results in the literature: (1) multivariate adaptive regression splines (MARS), (2) gradient boosted regression trees (GBM-BRT), and (3) generalized additive models. All of the models were fit using the R statistical environment with standard packages for these learning methods. The input data is communicated by the central database to the computing node, and then passed to the gbm function. The learning parameters of the function are held constant over all experiments. There is no database I/O inside of the function, so results should not be slow-biased by network connection or context switching.</p>
+<p>The experiment parameters are first communicated from the database to the computing machine. The computing node parses the database’s response and starts a new experiment session. The correct set of training examples is loaded from disk. It is then randomly partitioned into a testing set of <span class="math inline">𝒩</span> random training examples and  10,000 (20% of total) testing examples that are excluded from the training set. Examples are converted to binary presence absence values using the Nieto-Lugilde et al (2015) method for determining local presence from fossil pollen records. The training set is sent to the learning function where an SDM model is fit. All models are fit on the five least correlated bioclimatic variables (bio2, bio7, bio8, bio15, bio19). The model is then projected onto the future predictor set. The gridded output is then used to evaluate the accuracy of the model, using the testing set. Results of timing the total time, model fitting time, prediction time, and accuracy calculation time, as well as various measures of accuracy are then communicated back to the central database.</p>
+<h1 id="status">Status</h1>
+<div class="figure">
+<img src="CompletionByType.png" alt="[fig:experimentByCategory]Percentage of experimental variables that have been ’seen’ by the SDM simulations." style="width:50.0%" />
+<p class="caption">[fig:experimentByCategory]Percentage of experimental variables that have been ’seen’ by the SDM simulations.</p>
+</div>
+<div class="figure">
+<img src="experimentByCategory.png" alt="[fig:completionByCategory]Percentage of experiment statuses currently in the database." style="width:60.0%" />
+<p class="caption">[fig:completionByCategory]Percentage of experiment statuses currently in the database.</p>
+</div>
+<p>As of July 1, I’ve run 20,583 of the experiments as described above, which equates to approximately 20% of the total. Some of the models have been returning NULL, particularly at lower numbers of training examples. I suspect that the model does not have sufficient information to fit the model with such few data points, and this has resulted in a sizable number of errors in the results set. Figure [fig:completionByCategory] shows the relative distribution of successful runs, errors, and runs yet to be started.</p>
+<p>While my model has ’seen’ relatively few of the more powerful computing configurations, it has been exposed to all of the training examples and spatial resolutions in my protocol, so I can be fairly sure of the affect of altering these variables. Figure [fig:experimentByCategory] shows the percentage of discrete values completed for each experimental variable. I am fairly certain of the effect of spatial resolution and number of training examples on the execution time of the model. While not quite as complete, I have seen a large number of different computer cores and a decent amount of RAM configurations as well. The completion portion of the computing variables are also clearly shown in Figure [fig:conf_status].</p>
+<p>I contend that, while a relatively small percentage of the total experiments have been completed, a sufficient number of runs have been done and a representative set of experimental variables have been seen to make claims about the validity of the these preliminary results.</p>
+<h1 id="results">Results</h1>
+<h2 id="exploratory-analysis-of-gbm-brt-data">Exploratory Analysis of GBM-BRT Data</h2>
+<div class="figure">
+<img src="all_vars.png" alt="Relationships between individual experimental variables and total time in seconds." style="width:75.0%" />
+<p class="caption">Relationships between individual experimental variables and total time in seconds.<span data-label="fig:all_vars"></span></p>
+</div>
+<p>Exploring the data leads to the surprising initial conclusion that neither the number of vCPU cores nor the amount of memory a computer significantly and consistently affects the speed performance of the model. Over all experiments in the main series, the r<sup>2</sup> correlation coefficients are 0.001 and 0.042 for vCPU and memory, respectively. While these predictors do very little to influence the response, the number of training examples used to fit the model appears to be a very important factor in the total running time of the model (r<sup>2</sup> = 0.85). Spatial resolution shows a moderate negative correlation with time (r<sup>2</sup> = -0.26). Figure [fig:all_vars] shows the relationships between the experimental variables and model execution time, clearly showing the strong influence of the algorithm inputs, and lack of influence of the hardware variables.</p>
+<div class="figure">
+<img src="Cores_and_memory.png" alt="Effect on time of adding additional vCPU cores. Series are memory amounts. Evaluated by taking the median time of each combination of cores and memory." style="width:65.0%" />
+<p class="caption">Effect on time of adding additional vCPU cores. Series are memory amounts. Evaluated by taking the median time of each combination of cores and memory.<span data-label="fig:cores_vs_memory"></span></p>
+</div>
+<div class="figure">
+<img src="Cores_by_memory.png" alt="Effect on time of adding additional memory. Series are number of vCPU cores. Evaluated by taking the median time of each combination of cores and memory." style="width:65.0%" />
+<p class="caption">Effect on time of adding additional memory. Series are number of vCPU cores. Evaluated by taking the median time of each combination of cores and memory.<span data-label="fig:memory_vs_cores"></span></p>
+</div>
+<p>Figure [fig:memory_vs_cores] shows demonstrates a confounding upward trend in execution time as memory increases, suggesting that adding more memory to the problem can actually slow down the execution. Perhaps this is due to the increased overhead of maintaining a larger main memory. Figure [fig:cores_vs_memory] shows the lack of response in either direction stimulated by adding additional cores.</p>
+<h2 id="predicting-execution-time">Predicting Execution Time</h2>
+<h3 id="multiple-regression">Multiple Regression</h3>
+<p>Using a linear model with four predictors, I developed a simple predictive model for execution time. This assessment shows that the model does a decent job at predicting an independent testing set. The model is an additive combination of all four of the variables and takes the form:</p>
+<p><br /><span class="math display"><em>t</em><em>o</em><em>t</em><em>a</em><em>l</em><em>T</em><em>i</em><em>m</em><em>e</em> = 1.901 − 1.885<em>C</em><em>o</em><em>r</em><em>e</em> + 2.012<em>G</em><em>B</em><em>M</em><em>e</em><em>m</em><em>o</em><em>r</em><em>y</em> + 1.025<em>N</em><em>T</em><em>E</em> − 3.870<em>S</em><em>R</em></span><br /></p>
+<p>Where <span class="math inline"><em>t</em><em>o</em><em>t</em><em>a</em><em>l</em><em>T</em><em>i</em><em>m</em><em>e</em></span> is the full model execution time, in seconds, <span class="math inline"><em>C</em><em>o</em><em>r</em><em>e</em></span> is the number of vCPU cores, <span class="math inline"><em>G</em><em>B</em><em>M</em><em>e</em><em>m</em><em>o</em><em>r</em><em>y</em></span> is the number of gigabytes of main memory, <span class="math inline"><em>N</em><em>T</em><em>E</em></span> is the nmber of training examples used to fit the model and <span class="math inline"><em>S</em><em>R</em></span> is the spatial resolution of the output grid.</p>
+<div class="figure">
+<img src="residuals_and_QQ.png" alt="[fig:modelStats]Linear model residual structure and Q-Q plot." style="width:75.0%" />
+<p class="caption">[fig:modelStats]Linear model residual structure and Q-Q plot.</p>
+</div>
+<table>
+<caption>[tab:anova]Analysis of variance for the full linear model.</caption>
+<thead>
+<tr class="header">
+<th align="left">Predictor</th>
+<th align="left">FStatistic</th>
+<th align="left">pvalue</th>
+<th align="left">Significant</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">cores</td>
+<td align="left">0.1075</td>
+<td align="left">0.7431</td>
+<td align="left">F</td>
+</tr>
+<tr class="even">
+<td align="left">GBMemory</td>
+<td align="left">100.1390</td>
+<td align="left">0</td>
+<td align="left">T</td>
+</tr>
+<tr class="odd">
+<td align="left">trainingExamples</td>
+<td align="left">21701.4452</td>
+<td align="left">0</td>
+<td align="left">T</td>
+</tr>
+<tr class="even">
+<td align="left">spatialResolution</td>
+<td align="left">2326.5653</td>
+<td align="left">0</td>
+<td align="left">T</td>
+</tr>
+</tbody>
+</table>
+<p>The model shows a multiple r<sup>2</sup> of 0.7426, demonstrating that much of the variance in the response is captured by the input predictor variables. As Figure [fig:modelStats] shows, the model residuals show significant structure, and deviate far from a normal distribution. To further evaluate the contribution of each predictor, I used an anova on the linear model <span class="math inline">ℳ</span>. The ANOVA table (Table [tab:anova]) shows that all of the variables are statistically very significant predictors, with the exception of vCPU. Surprisingly, memory is shown to be a significant predictor, even though it does not appear to be when evaluating it on its own. As expected, by far the strongest predictor is the number of training examples.</p>
+<p>I evaluated the predictive skill and accuracy of the full linear model using an independent testing set of 1,000 records. I predicted the model using the ’predict’ function in R. I then compared the predicted values from the model the the observed values from the database. Figure [fig:full_hist] shows a histogram of the model error and how the two datasets line up (r<sup>2</sup> = 0.87). The linear model has a root mean square error of 23.73 seconds and has a mean overprediction of 1.04 seconds.</p>
+<p><img src="full_hist.png" title="fig:" alt="[fig:full_hist]Histogram of full linear model error." style="width:35.0%" /> <img src="full_model_accuracy.png" title="fig:" alt="[fig:full_hist]Histogram of full linear model error." style="width:35.0%" /></p>
+<h3 id="boosted-regression-trees">Boosted Regression Trees</h3>
+<p>I also used boosted regression trees to predict the execution time of boosted regression trees (inception?). The GBM tree model performed slightly better than the simple linear model. The regression tree model shows a RMS error of 19.45 ( 3 less than linear regression), with around 0.88 seconds mean overprediction (.2 seconds less than linear model). Figure [fig:gbm_hist] shows the gbm model prediction errors and the histogram distribution of these errors. Again, there appears to be clear structure in the residuals, though the residuals are slightly more stratified that in the linear model, probably due to the discrete structure of the tree-based model.</p>
+<p><img src="gbm_hist.png" title="fig:" alt="[fig:gbm_hist] Evalutation of GBM model error." style="width:35.0%" /> <img src="GBM_acc.png" title="fig:" alt="[fig:gbm_hist] Evalutation of GBM model error." style="width:35.0%" /></p>
+<h2 id="more-training-examples-more-accuracy">More training examples, more accuracy?</h2>
+<div class="figure">
+<img src="nte_time.png" alt="Relationship between number of training examples and the time needed to fit the species distribution model simulation." style="width:50.0%" />
+<p class="caption">Relationship between number of training examples and the time needed to fit the species distribution model simulation.<span data-label="fig:nte_time"></span></p>
+</div>
+<p><img src="training_vs_ac_abline.png" title="fig:" alt="(1) Training examples vs. model AUC, (2) Boosted regression model of testing AUC score as a function of number of training examples.." style="width:35.0%" /> <img src="nte_accuracy_gbm.png" title="fig:" alt="(1) Training examples vs. model AUC, (2) Boosted regression model of testing AUC score as a function of number of training examples.." style="width:35.0%" /></p>
+<p>Perhaps the only clear relationship I’ve uncovered so far is that fitting time increases exponentially with the addition of more training examples (Figure [fig:nte_time]), but do the additional training examples yield better predictions? Plotting the testing set AUC statistic against the number of training examples shows that predictive skill increases significantly between 100 to 10,000 input points, but then levels off. From this data, it is clear that to obtain optimal results, at least 10,000 input training examples should be used. Figure [fig:acc_model] shows a non-linear regression tree model to predict the AUC statistic from number of training examples. A simple linear regression cannot capture the log-shaped curve that the data in Figure [fig:acc_model] shows. The stair stepping in the GBM model is due to the fact that I tested at discrete intervals, and not continuously between 0 and 30,000 examples.</p>
+<h2 id="other-sdms">Other SDMs</h2>
+<p>The other two SDMs showed similar results to the GBM-BRT method. The predictive accuracy of the execution time models were on par with the GBM-BRT models discussed above, however, nearly all of the predictive skill comes from the number of training examples rather than the computing configuration.</p>
+<div class="figure">
+<img src="CI_plot-I.png" alt="Predictive skill of the predictive models on all SDM types." style="width:85.0%" />
+<p class="caption">Predictive skill of the predictive models on all SDM types.<span data-label="fig:all_models"></span></p>
+</div>
+<p>Figure [fig:all_models] shows the results of the predictive models compared to the observed testing set. In general, the boosted regression tree model approach significantly outperformed the linear models. Regression trees are able better capture the potential non-linearities of the experimental dataset and can remove the negative predictions forecast by the linear model. However, both sets of models consistently showed <span class="math inline"><em>r</em><sup>2</sup> &gt; 0.8</span> correlation between observed and predicted values with a mean prediction error of less than 4 seconds.</p>
+<p>Of all six execution time models (2 models x 3 SDMs), the regression tree prediction model of the MARS SDM performed the best, with a mean error of <span class="math inline">−0.457 ± 1.895</span> seconds and an <span class="math inline"><em>r</em><sup>2</sup></span> value of 0.936. The regression tree models for GAM and GBM-BRT SDMs both performed well with r<sup>2</sup> values of 0.892 and 0.880, respectively. The linear models all showed lower r<sup>2</sup> correlation values and had larger prediction variance and mean prediction errors than their decision tree counterparts. The best performing linear model was again for the MARS SDM, with an r<sup>2</sup> correlation of 0.876, with a significantly larger mean error of <span class="math inline">2.17 ± 1.73</span> seconds. Figure [fig:all_models] shows the observed and predicted values for each SDM for both of the prediction models.</p>
+<p>Model interrogation using ANOVA (linear model) and partial dependency plots (GBM model) reveals that model execution time depends strongly on the number of training examples used to fit the SDM. In all cases, the number of training examples and spatial resolution of the output were shown to be highly significant (<span class="math inline"><em>p</em> &lt; 0.001</span>). Computer hardware variables were not shown to be significant predictors of execution time for these SDMs. In some cases, additional memory was shown to reduce model speed, perhaps due to increased overhead of memory management. Runtime logs indicate that model execution was bounded by CPU processing capability, rather than main memory capacity, suggesting that SDM workflows could be improved if the algorithms were written to run in parallel, rather than sequentially.</p>
+<h2 id="within-cell-variance">Within-Cell Variance</h2>
+<div class="figure">
+<img src="var_hist.png" alt="Within cell variance as a function of mean cell execution time. Note the exponential increase in variance as the execution time increases." style="width:60.0%" />
+<p class="caption">Within cell variance as a function of mean cell execution time. Note the exponential increase in variance as the execution time increases.<span data-label="fig:var_mean"></span></p>
+</div>
+<div class="figure">
+<img src="var_mean.png" alt="Within cell variance as a function of mean cell execution time. Note the exponential increase in variance as the execution time increases." style="width:60.0%" />
+<p class="caption">Within cell variance as a function of mean cell execution time. Note the exponential increase in variance as the execution time increases.<span data-label="fig:var_mean"></span></p>
+</div>
+<p>One of the major questions raised by the computer science literature on this topic is that there may be stochastic variations due to unpredictable system processes and hardware design that will cause a predictive model to fail. Here, I evaluate the within-cell variance of the preliminary results. I have done ten (n=10) replicates of each combination of experimental variables, so I am relatively confident in evaluating the magnitude of the variations. The median within-cell variance is 115 seconds, which is a significant amount of time. The standard deviation of the variance is 388 seconds. Figure [fig:var_hist] illustrates the distribution of the within-cell variance. The variance also appears to increase as execution time increases, suggesting that predictions on longer-running models are less robust than on short-running processes. Figure [fig:var_mean] shows a strong exponential increase in variance as cell mean execution time increases.</p>
+<h2 id="resource-utilization">Resource Utilization</h2>
+<div class="figure">
+<img src="resource-usage.jpg" alt="Resource utilization during modeling runs." style="width:60.0%" />
+<p class="caption">Resource utilization during modeling runs.<span data-label="fig:resource_usage"></span></p>
+</div>
+<p>Flummoxed by the apparent lack of influence of the hardware variables on execution time, I monitored the runtime environment of the models and recorded CPU and memory utilization as the models were being executed. These data show the models are bounded by sequential algorithm design, and thus CPU utilization, and have very modest memory requirements. Figure [fig:resource_usage] shows the data. Clearly, the models max out a single core (bottom, left side) but are unable to extend utilize more than this when given an additional core to work with (bottom, right side). For memory, we see that all of the experiments use the same amount of memory (1.5 GB). This amount of memory is less than the smallest memory configuration I tested on (2GB), so adding additional memory does not influence results. The top panel in Figure [resource_usage] shows the percentage used memory over different memory types. As total memory increases, percent used decreases, hence the structure of the figure.</p>
+<h1 id="discussion">Discussion</h1>
+<p>I am really surprised by the lack of trends due to the hardware variables. Increasing memory actually shows a statistically significant increase in execution time. I’m not sure what ti make of this, unless it’s because I am not coming close to maxing out the memory. This is possible – the datasets are are only 20-25 MB each and the predictor variable stacks are between 5 and 15 MB, depending on spatial resolution. The smallest memory configuration I used was 600MB, so perhaps it didn’t fill up with this small of datasets. I have logs for some of the lower memory instances, and it does appear that a large portion of the memory remains free. In the future, I can better monitor the percentage of memory usage and match it to the computing time.</p>
+<p>The addition of vCPU cores is similarly confounding. The boosted regression tree function I’m using in R (from the dismo package) relies on the gbm package. This package has the option to run the model cross validation on multiple CPU cores. The default to this function is to run the CV on parallel::detectCores() cores, which I know to be working, because I use this function to find the number of cores of each machine as they initialize themselves. dismo::gbm.step() calls the gbm::gbm.fit() function with n.cores set to NULL, which triggers the default behavior. Thus, I believe that the function should be completing the CV on multiple cores. While this is a relatively small portion of the total code, it should at least slightly influence the execution time. The logs I have indicate that perhaps 50% of the CPU capacity was used, so similar to memory, I think I’m just not taxing the system enough. Another note with these hardware variables is that I am running them on dedicated computers, not under normal desktop load (like you would find in the wild), so my results likely underestimate the stress put on the memory and processor. In a real-world lab, you’d likely be running many other processes, which would take away CPU and memory capacity from the SDM models.</p>
+<p>The predictive models are surprisingly good at predicting the execution time from an independent testing set. However, I think that this is due almost completely to the number of training examples predictor, which is strongly correlated with the resulting total time. Furthermore, I can come close to predicting the mean response time but the standard deviation of the errors is large, so I don’t have much confidence in either the GBM or multiple regression models as predictive tools.</p>
+<p>The within-cell variance is also concerning. Not only is it large, but it appears that it increases with execution time, indicating that it will be harder to predict longer running processes. Perhaps there is another hardware (or algorithm input) variable that I can use to reduce the within-cell variance and better capture the responses.</p>
+<p>On the positive side, I’ve fully developed a modeling workflow that works in a distributed environment on the cloud. It works as expected (I think), ties into a central database, is easy to maintain and simple to download the results set. I think this is a really excellent start, and even if I have to start over from scratch on the experimental design, this will be a good framework to re-use. I have also learned a ton about computers and the SDM model code and inner workings.</p>
+<p>Furthermore, even from the limited data, I can start to make statements about the effect of adding training examples to the models. While there is some literature about assessing the accuracy of models as a result of training examples, few experiment with finding the optimal number of training examples to maximize accuracy. I think that there is some value in being able to estimate accuracy from the number of occurrence points that you start with.</p>
+<h1 id="what-next">What Next</h1>
+<p>My task now is to determine whether to be patient and continue with the experimental protocol I have developed, or to refine the experimental design and start over. Given what I have so far, I think it is safe to say that in the best of circumstances (i.e., with no other running processes) standard boosted regression tree SDMs do not require anything more than the most simple of computers. However, that’s not that interesting of a finding, and will be difficult to write about. Also, I don’t think that this is a typical scenario, as most researchers will be using the computers for multiple foreground and background tasks during the modeling workflow (e.g., email, RStudio GUI, solitaire, etc). An interesting comparison would be to correlate the cloud results with the same experiments run on a traditional desktop.</p>
+<p>I think that the preliminary results can be used as a baseline result, showing that simple models can be run quickly and efficiently on standard desktops, but I think that it is necessary to refine the protocol and design some experiments that will really stress even the larger computer configurations. Some ideas that I think might fit the bill:</p>
+<ol style="list-style-type: decimal">
+<li><p>Use community-level models to develop responses for multiple taxa in one go,</p></li>
+<li><p>Use more predictors than just the five I am currently running. This has accuracy and overfitting implications,</p></li>
+<li><p>Test other SDM algorithms (GLM, GAM, SVM, etc). This is an easy way out, since it’s just a couple of lines of code to change, but I doubt that if GBMs don’t respond to hardware factors that other simple models with either,</p></li>
+<li><p>Re-code a GBM function that is more explicitly parallel. There is some literature on this, but it would likely make a minimal difference, and is probably beyond my ability,</p></li>
+<li><p>Expand study area from North America to the whole world. This would increase the memory needed to store and project the output,</p></li>
+<li><p>Fit the model on even more training points (say &gt;100,000)</p></li>
+</ol>
+<p>I think of all of these solutions, the best would be using community level models or more computationally intensive SDMs, perhaps with some of the others mixed in (e.g., with more training examples at a larger spatial scale).</p>
+<div id="refs" class="references">
+<div id="ref-Araujo:2005jy">
+<p>Araújo, M. B., Whittaker, R. J., Ladle, R. J., &amp; Erhard, M. (2005). Reducing uncertainty in projections of extinction risk from climate change. <em>Global Ecology and Biogeography</em>, <em>14</em>(6), 529–538.</p>
+</div>
+<div id="ref-Dawson:2016wa">
+<p>Dawson, A., Paciorek, C., McLachlan, J., Goring, S., WIlliams, J., &amp; Jackson, S. T. (2016). Quantifying pollen-vegetation relationships to reconstruct ancient forests using 19th-century forest composition and pollen data, 1–76.</p>
+</div>
+<div id="ref-Ficetola:2007bn">
+<p>Ficetola, G. F., Thuiller, W., &amp; Miaud, C. (2007). Prediction and validation of the potential global distribution of a problematic alien invasive species - the American bullfrog. <em>Diversity and Distributions</em>, <em>13</em>(4), 476–485.</p>
+</div>
+<div id="ref-Franklin:2010tn">
+<p>Franklin, J. (2010). <em>Mapping Species Distributions</em>. Spatial inference and prediction (Vol. 44). Cambridge University Press.</p>
+</div>
+<div id="ref-Guisan:2013hqa">
+<p>Guisan, A., Tingley, R., Baumgartner, J. B., Naujokaitis-Lewis, I., Sutcliffe, P. R., Tulloch, A. I. T., Regan, T. J., et al. (2013). Predicting species distributions for conservation decisions. <em>Ecology Letters</em>, <em>16</em>(12), 1424–1435.</p>
+</div>
+<div id="ref-Hassan:2011uh">
+<p>Hassan, Q. (2011). Demystifying Cloud Computing. <em>CrossTalk</em>, 16–21.</p>
+</div>
+<div id="ref-Mell:2012jj">
+<p>Mell, P. M., &amp; Grance, T. (2012). The NIST definition of cloud computing. <em>National Institude of Standards and Technology</em>, 1–7.</p>
+</div>
+<div id="ref-Mosco:2014cu">
+<p>Mosco, V. (2014). To the Cloud: Big Data in a Turbulent World. <em>Popular Communication</em>, <em>12</em>(4), 271–269.</p>
+</div>
+<div id="ref-Thuiller:2008enb">
+<p>Thuiller, W., Albert, C., Araújo, M. B., Berry, P. M., Cabeza, M., Guisan, A., Hickler, T., et al. (2008). Predicting global change impacts on plant species distributions: Future challenges. <em>Perspectives in Plant Ecology, Evolution and Systematics</em>, <em>9</em>(3-4), 137–152.</p>
+</div>
+<div id="ref-Anonymous:mc8EfgMa">
+<p>Vaquero, L. M., Rodero-Merino, L., Caceres, J., &amp; Lindner, M. (2008). A break in the clouds. <em>ACM SIGCOMM Computer Communication Review</em>, <em>39</em>(1), 50–56.</p>
+</div>
+<div id="ref-Veloz:2012jw">
+<p>Veloz, S. D., Williams, J. W., Blois, J. L., He, F., Otto-Bliesner, B., &amp; Liu, Z. (2012). No-analog climates and shifting realized niches during the late quaternary: implications for 21st-century predictions by species distribution models. <em>Global Change Biology</em>, <em>18</em>(5), 1698–1713.</p>
+</div>
+<div id="ref-Williams:2007iwa">
+<p>Williams, J. W., &amp; Jackson, S. T. (2007). Novel climates, no-analog communities, and ecological surprises. <em>Frontiers in Ecology and the Environment</em>, <em>5</em>(9), 475–482.</p>
+</div>
+<div id="ref-Yang:2011bd">
+<p>Yang, C., Goodchild, M., Huang, Q., Nebert, D., Raskin, R., Xu, Y., Bambacus, M., et al. (2011). Spatial cloud computing: how can the geospatial sciences use and help shape cloud computing? <em>International Journal of Digital Earth</em>, <em>4</em>(4), 305–329.</p>
+</div>
+</div>
+</body>
+</html>

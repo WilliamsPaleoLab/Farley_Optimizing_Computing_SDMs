@@ -6,10 +6,9 @@ library(SDMTools)
 library(parallel)
 library(randomForest)
 library(RMySQL)
-library(doMC)
 library(gbm)
 
-setwd("/home/rstudio")
+setwd("/users/scottsfarley/documents")
 
 source("thesis-scripts/R/config.R")
 
@@ -93,18 +92,16 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   if (pickMethod == 'random'){
     if (nocc < q){
       training_set <- points[sample(q, nocc), ] ## this is what we will build the model upon
-      print(nrow(training_set))
     }else{
       training_set <- points[sample(q, q*0.8), ] ## hack around for debug on small files
     }
   }else{
     training_set <- points[1:nocc, ]
-    print(nrow(training_set))
   }
   
   
   training_set <- na.omit(training_set)
-  
+  print(paste("Training set is ", nrow(training_set)))
   ####*******Train the Model ******######
   fitStart <- proc.time()
   model <- "NEW" ##overwrite
@@ -252,7 +249,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
-for (numExamples in seq(1000, 11000, by=5000)){
+for (numExamples in seq(1000, 1000, by=5000)){
   for (rep in 1:5){
     print(paste("This is repition #", rep, "with", numExamples, "examples"))
     rand <- timeSDM("Picea", ncores, -1, numExamples, 0.5, modelMethod="GBM-BRT", pickMethod='random')
@@ -265,20 +262,21 @@ for (numExamples in seq(1000, 11000, by=5000)){
                   rand[5], "," ,
                   rand[6], "," ,
                   rand[7], "," ,
-                  numTrees, ",",
-                  ncores, ",",
+                  numExamples, ",",
+                  detectCores(), ",",
                   -1, ",",
                   "'Picea',",
                   "'RANDOM', DEFAULT);"
     )
+    print(pSQL)
     sSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
                   unif[3], "," ,
                   unif[4], "," ,
                   unif[5], "," ,
                   unif[6], "," ,
                   unif[7], "," ,
-                  numTrees, ",",
-                  ncores, ",",
+                  numExamples, ",",
+                  detectCores(), ",",
                   -1, ",",
                   "'Picea',",
                   "'CONSTANT', DEFAULT);"
