@@ -246,9 +246,9 @@ drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
 treeSeq <- seq(from=1000, to=11000, by=5000)
-TexSeq <- seq(from=1000, to=11000, b =5000)
+TexSeq <- seq(from=11000, to=11000, b =5000)
 totalCores <- detectCores()
-for (ncores in 1:totalCores){
+for (ncores in 3:totalCores){
   print(paste("Cores = ", ncores))
   registerDoMC(cores = ncores)
   print(paste("Registered parallel backend with # workers = ", getDoParWorkers()))
