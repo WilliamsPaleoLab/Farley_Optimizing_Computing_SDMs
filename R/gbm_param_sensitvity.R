@@ -257,7 +257,10 @@ for (lr in lrSeq){
     for(tex in TexSeq){
       for(rep in 1:3){
         print(paste("This is replicate #", rep, "using", tex, "trainingExamples and a learning rate of",lr,"and a complexity of", tc))
-        s <- timeSDM("Picea", detectCores(), -1, tex, 0.5, modelMethod="GBM-BRT", learning.rate=lr, tree.complexity=tc)
+        
+        s <- try(
+          timeSDM("Picea", detectCores(), -1, tex, 0.5, modelMethod="GBM-BRT", learning.rate=lr, tree.complexity=tc)
+        )
         sql <- paste("INSERT INTO GBMParameterRuns VALUES (DEFAULT,",
                       detectCores(), ",",
                       -1, ",",
