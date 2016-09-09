@@ -233,9 +233,9 @@ print("Downloading stuff from google storage")
 points <- read.csv("https://storage.googleapis.com/thesis-1329/250_MB_testData.csv")
 points <- points[1:1000, ]
 print("Doing GBM")
-gbm250 <- timeSDM(250, ncore, compMem, nrow(points), modelMethod='GBM-BRT')
+gbm250 <- timeSDM(250, ncore, compMem, nrow(points), 1, modelMethod='GBM-BRT')
 print("Doing RF")
-rf250 <- timeSDM(250, ncore, compMem, nrow(points), modelMethod='PRF', rfTrees = 6000)
+rf250 <- timeSDM(250, ncore, compMem, nrow(points), 1, modelMethod='PRF', rfTrees = 6000)
 
 dbSendQuery(paste("INSERT INTO SuperBig VALUES (DEFAULT, 250, ", compMem, ",", nrow(points), gbm250[3], gbm250[4], "GBM-BRT"))
 dbSendQuery(paste("INSERT INTO SuperBig VALUES (DEFAULT, 250, ", compMem, ",", nrow(points), rf250[3], rf250[4], "PRF"))
