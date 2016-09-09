@@ -131,7 +131,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
     y <- training_set[['presence']]
     print(paste("Training set length: ", length(y)))
     treesPerCore <- round(rfTrees / ncores)
-    model <- foreach(ntree=rep(rfTrees, ncores), .combine=combine, .multicombine=TRUE,
+    model <- foreach(ntree=rep(treesPerCore, ncores), .combine=combine, .multicombine=TRUE,
                      .packages='randomForest') %do% {
                        randomForest(x, y, ntree=ntree, nodesize=15)}
   }
