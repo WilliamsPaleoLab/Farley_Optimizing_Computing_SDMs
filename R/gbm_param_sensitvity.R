@@ -249,7 +249,7 @@ drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
 tcSeq <- seq(from=1, to=5, by=1)
-lrSeq <- c(0.005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1)
+lrSeq <- c(0.01, 0.05, 0.1, 0.25, 0.5, 1)
 TexSeq <- seq(from=1000, to=11000, b = 5000)
 
 for (lr in lrSeq){
