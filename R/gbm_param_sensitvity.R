@@ -249,7 +249,7 @@ drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
 tcSeq <- seq(from=1, to=5, by=1)
-lrSeq <- c(0.005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1)
+lrSeq <- c(0.01, 0.05, 0.1, 0.25, 0.5, 1)
 TexSeq <- seq(from=1000, to=11000, b = 5000)
 
 for (lr in lrSeq){
@@ -257,7 +257,10 @@ for (lr in lrSeq){
     for(tex in TexSeq){
       for(rep in 1:3){
         print(paste("This is replicate #", rep, "using", tex, "trainingExamples and a learning rate of",lr,"and a complexity of", tc))
-        s <- timeSDM("Picea", detectCores(), -1, tex, 0.5, modelMethod="GBM-BRT", learning.rate=lr, tree.complexity=tc)
+        
+        s <- try(
+          timeSDM("Picea", detectCores(), -1, tex, 0.5, modelMethod="GBM-BRT", learning.rate=lr, tree.complexity=tc)
+        )
         sql <- paste("INSERT INTO GBMParameterRuns VALUES (DEFAULT,",
                       detectCores(), ",",
                       -1, ",",

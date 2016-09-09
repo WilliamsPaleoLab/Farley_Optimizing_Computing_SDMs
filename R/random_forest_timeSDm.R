@@ -1,4 +1,4 @@
-install.packages(c("randomForest", "doMC", "foreach", "dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth", "devtools"), repos='http://cran.mtu.edu/')
+install.packages(c("randomForest", "doMC", "foreach", "dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth"), repos='http://cran.mtu.edu/')
 library(foreach)
 library(raster)
 library(dismo)
@@ -6,12 +6,7 @@ library(SDMTools)
 library(parallel)
 library(randomForest)
 library(RMySQL)
-library(devtools)
-devtools::install_github("krlmlr/ulimit")
-library(ulimit)
 ##Set memory limit to 6GB
-## TODO: make this more programatically
-memory_limit(size = 6000)
 
 setwd("/home/rstudio")
 source("thesis-scripts/R/config.R")
@@ -126,15 +121,19 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   }else if (modelMethod == 'PRF'){#parallel random forest
     x <- as.matrix(training_set[c('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19')])
     y <- training_set[['presence']]
-    model <- foreach(ntree=rep(rfTrees, ncores), .combine=combine, .multicombine=TRUE,
+    print(paste("Training set length: ", length(y)))
+    treesPerCore <- round(rfTrees / ncores)
+    model <- foreach(ntree=rep(treesPerCore, ncores), .combine=combine, .multicombine=TRUE,
                      .packages='randomForest') %dopar% {
-                       randomForest(x, y, ntree=ntree)}
+                       randomForest(x, y, ntree=ntree, nodesize=15)}
   }else if (modelMethod == "SRF"){## sequential random forest
     x <- as.matrix(training_set[c('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19')])
     y <- training_set[['presence']]
-    model <- foreach(ntree=rep(rfTrees, ncores), .combine=combine, .multicombine=TRUE,
+    print(paste("Training set length: ", length(y)))
+    treesPerCore <- round(rfTrees / ncores)
+    model <- foreach(ntree=rep(treesPerCore, ncores), .combine=combine, .multicombine=TRUE,
                      .packages='randomForest') %do% {
-                       randomForest(x, y, ntree=ntree)}
+                       randomForest(x, y, ntree=ntree, nodesize=15)}
   }
   
   if (is.null(model)){
@@ -251,11 +250,10 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
-treeSeq <- seq(from=1000, to=6000, by=5000)
-TexSeq <- seq(from=1000, to=6000, by =5000)
+treeSeq <- seq(from=6000, to=6000, by=5000)
+TexSeq <- seq(from=6000, to=6000, by =5000)
 totalCores <- detectCores()
-for (ncores in 4:totalCores){
-  print(paste("Cores = ", ncores))
+for (ncores in 1:totalCores){
   registerDoMC(cores = ncores)
   print(paste("Registered parallel backend with # workers = ", getDoParWorkers()))
   for (numTex in TexSeq){
@@ -274,7 +272,7 @@ for (ncores in 4:totalCores){
                       p[6], "," ,
                       p[7], "," ,
                       numTrees, ",",
-                      ncores, ",",
+                      getDoParWorkers(), ",",
                       -1, ",",
                       "'Picea',",
                       "'PARALLEL', DEFAULT, ", numTex, ");"
@@ -286,15 +284,13 @@ for (ncores in 4:totalCores){
                       s[6], "," ,
                       s[7], "," ,
                       numTrees, ",",
-                      ncores, ",",
+                      getDoParWorkers(), ",",
                       -1, ",",
                       "'Picea',",
                       "'SERIAL', DEFAULT, ", numTex, ");"
         )
         dbSendQuery(con, pSQL) ## results query
         dbSendQuery(con, sSQL) ## results query
-        gc()
-        gcinfo(verbose=T)
       }
     }
   }
