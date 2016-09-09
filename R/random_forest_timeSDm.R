@@ -253,7 +253,7 @@ con <- dbConnect(drv, host=hostname, username=username, password=password, dbnam
 treeSeq <- seq(from=11000, to=11000, by=5000)
 TexSeq <- seq(from=11000, to=11000, by =5000)
 totalCores <- detectCores()
-for (ncores in 16:totalCores){
+for (ncores in 1:totalCores){
   registerDoMC(cores = ncores)
   print(paste("Registered parallel backend with # workers = ", getDoParWorkers()))
   for (numTex in TexSeq){
