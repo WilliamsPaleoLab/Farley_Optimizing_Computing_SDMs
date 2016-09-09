@@ -220,11 +220,6 @@ con <- dbConnect(drv, host=hostname, username=username, password=password, dbnam
 
 ## GBM and RF
 ##250MB
-timeSDM<-function(MB, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto',
-                  presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage', 
-                  save=FALSE, saveLocation='/home/rstudio/thesis-scripts/modelOutput', imgName="rasterOutput", rfTrees = 25000,
-                  modelMethod='GBM-BRT')
-
 args = commandArgs(trailingOnly=TRUE)  
 if (length(args) == 1){
   compMem = args[1]
