@@ -80,7 +80,7 @@ timeSDM<-function(MB, ncores, memory, nocc = nrow(points), sr, testingFrac = 0.2
   model <- "NEW" ##overwrite
   if (modelMethod == 'GBM-BRT') {
     model <- gbm.step(training_set, gbm.y="presence", gbm.x= c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19"),
-                      tree.complexity=5, learning.rate=0.001, verbose=FALSE, silent=TRUE, 
+                      tree.complexity=5, learning.rate=0.001, verbose=TRUE, silent=FALSE, 
                       max.trees=100000000000, plot.main=FALSE, plot.folds = FALSE)
   }else if (modelMethod == 'MARS'){
     x <- training_set[c('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', 'presence')]
@@ -239,10 +239,13 @@ if (length(args) == 1){
 }
 
 con <- dbConnect(dbDriver("MySQL"), host='104.154.235.236', password = 'Thesis-Scripting123!', dbname='timeSDM', username='Scripting')
-
+print("Finished setup phase of Rscript")
+print("Downloading stuff from google storage")
 points <- read.csv("https://storage.googleapis.com/thesis-1329/250_MB_testData.csv")
 points <- points[1:1000, ]
+print("Doing GBM")
 gbm250 <- timeSDM(250, ncore, compMem, nrow(points), modelMethod='GBM-BRT')
+print("Doing RF")
 rf250 <- timeSDM(250, ncore, compMem, nrow(points), modelMethod='PRF', rfTrees = 6000)
 
 dbSendQuery(paste("INSERT INTO SuperBig VALUES (DEFAULT, 250, ", compMem, ",", nrow(points), gbm250[3], gbm250[4], "GBM-BRT"))
