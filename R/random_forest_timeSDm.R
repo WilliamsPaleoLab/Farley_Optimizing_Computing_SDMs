@@ -1,4 +1,4 @@
-install.packages(c("randomForest", "doMC", "foreach", "dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth"), repos='http://cran.mtu.edu/')
+install.packages(c("randomForest", "doMC", "foreach", "dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth", "devtools"), repos='http://cran.mtu.edu/')
 library(foreach)
 library(raster)
 library(dismo)
@@ -6,6 +6,12 @@ library(SDMTools)
 library(parallel)
 library(randomForest)
 library(RMySQL)
+library(devtools)
+devtools::install_github("krlmlr/ulimit")
+library(ulimit)
+##Set memory limit to 6GB
+## TODO: make this more programatically
+memory_limit(size = 6000)
 
 setwd("/home/rstudio")
 source("thesis-scripts/R/config.R")
@@ -245,10 +251,10 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
-treeSeq <- seq(from=1000, to=11000, by=5000)
-TexSeq <- seq(from=11000, to=11000, b =5000)
+treeSeq <- seq(from=1000, to=6000, by=5000)
+TexSeq <- seq(from=1000, to=6000, by =5000)
 totalCores <- detectCores()
-for (ncores in 3:totalCores){
+for (ncores in 4:totalCores){
   print(paste("Cores = ", ncores))
   registerDoMC(cores = ncores)
   print(paste("Registered parallel backend with # workers = ", getDoParWorkers()))
@@ -287,6 +293,8 @@ for (ncores in 3:totalCores){
         )
         dbSendQuery(con, pSQL) ## results query
         dbSendQuery(con, sSQL) ## results query
+        gc()
+        gcinfo(verbose=T)
       }
     }
   }
