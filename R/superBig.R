@@ -1,4 +1,4 @@
-#install.packages(c("randomForest", "doMC", "foreach", "dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth"), repos='http://cran.mtu.edu/')
+install.packages(c("randomForest", "doMC", "foreach", "dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth", "devtools"), repos='http://cran.mtu.edu/')
 library(foreach)
 library(raster)
 library(dismo)
@@ -6,11 +6,18 @@ library(SDMTools)
 library(parallel)
 library(randomForest)
 library(RMySQL)
-library(gbm)
+library(devtools)
+devtools::install_github("krlmlr/ulimit")
+library(ulimit)
+##Set memory limit to 6GB
+## TODO: make this more programatically
+memory_limit(size = 6000)
 
-setwd("/users/scottsfarley/documents")
-
+setwd("/home/rstudio")
 source("thesis-scripts/R/config.R")
+
+library(doMC)
+
 
 predPath <- "thesis-scripts/data/predictors/standard_biovars/"
 
@@ -25,36 +32,12 @@ names(pred_025deg) <- c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19")
 names(pred_0_1deg) <- c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19")
 
 
-## load the occurrences
-## prethresholded and filtered to only include the above bioclimatic vars
-occPath <- "thesis-scripts/data/occurrences/"
-quercus_points <- read.csv(paste(occPath, "quercus_ready.csv", sep=""))
-betula_points <- read.csv(paste(occPath, "betula_ready.csv", sep=""))
-tsuga_points <- read.csv(paste(occPath, "tsuga_ready.csv", sep=""))
-picea_points <- read.csv(paste(occPath, "picea_ready.csv", sep=""))
-sequoia_points <- read.csv(paste(occPath, "sequoia_ready.csv", sep=""))
-
-timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto',
+timeSDM<-function(MB, ncores, memory, nocc = nrow(points), sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto',
                   presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage', 
                   save=FALSE, saveLocation='/home/rstudio/thesis-scripts/modelOutput', imgName="rasterOutput", rfTrees = 25000,
-                  modelMethod='GBM-BRT', pickMethod='random'){
+                  modelMethod='GBM-BRT'){
   
   startTime <- proc.time()
-  ## get the right species points
-  if (species == "Sequoia"){
-    points <- sequoia_points
-  }else if (species == 'Quercus'){
-    points <- quercus_points
-  }else if (species == "Betula"){
-    points <- betula_points
-  }else if (species == "Tsuga"){
-    points<- tsuga_points
-  }else if (species == "Picea"){
-    points<- picea_points
-  }else{
-    print("Invalid species name.")
-    return(FALSE)
-  }
   
   if (sr == 1){
     pred <- pred_1deg
@@ -88,26 +71,14 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   q_test <- testingFrac*q
   testing_set <- points[sample(q, q_test), ] ## select q_test random rows from points
   
-  ## now take a random sampling on nocc rows
-  if (pickMethod == 'random'){
-    if (nocc < q){
-      training_set <- points[sample(q, nocc), ] ## this is what we will build the model upon
-    }else{
-      training_set <- points[sample(q, q*0.8), ] ## hack around for debug on small files
-    }
-  }else{
-    training_set <- points[1:nocc, ]
-  }
-  
+  training_set <- points ## use all the points here
   
   training_set <- na.omit(training_set)
-  print(paste("Training set is ", nrow(training_set)))
-  write.csv(training_set, file=paste("Training_set_"as.numeric(Sys.time()), ".csv"))
+  
   ####*******Train the Model ******######
   fitStart <- proc.time()
   model <- "NEW" ##overwrite
   if (modelMethod == 'GBM-BRT') {
-    print("Doing GBM model.")
     model <- gbm.step(training_set, gbm.y="presence", gbm.x= c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19"),
                       tree.complexity=5, learning.rate=0.001, verbose=FALSE, silent=TRUE, 
                       max.trees=100000000000, plot.main=FALSE, plot.folds = FALSE)
@@ -126,15 +97,17 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   }else if (modelMethod == 'PRF'){#parallel random forest
     x <- as.matrix(training_set[c('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19')])
     y <- training_set[['presence']]
-    model <- foreach(ntree=rep(rfTrees, ncores), .combine=combine, .multicombine=TRUE,
+    treesPerCore <- rfTrees / ncores
+    model <- foreach(ntree=rep(treesPerCore, ncores), .combine=combine, .multicombine=TRUE,
                      .packages='randomForest') %dopar% {
-                       randomForest(x, y, ntree=ntree)}
+                       randomForest(x, y, ntree=ntree, nodesize=15)}
   }else if (modelMethod == "SRF"){## sequential random forest
     x <- as.matrix(training_set[c('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19')])
     y <- training_set[['presence']]
-    model <- foreach(ntree=rep(rfTrees, ncores), .combine=combine, .multicombine=TRUE,
+    treesPerCore <- rfTrees / ncores
+    model <- foreach(ntree=rep(treesPerCore, ncores), .combine=combine, .multicombine=TRUE,
                      .packages='randomForest') %do% {
-                       randomForest(x, y, ntree=ntree)}
+                       randomForest(x, y, ntree=ntree, nodesize=15)}
   }
   
   if (is.null(model)){
@@ -251,43 +224,44 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
-for (numExamples in seq(1000, 1000, by=5000)){
-  for (rep in 1:5){
-    print(paste("This is repition #", rep, "with", numExamples, "examples"))
-    rand <- timeSDM("Picea", ncores, -1, numExamples, 0.5, modelMethod="GBM-BRT", pickMethod='uniform')
-    print("Finished Random")
-    unif <- timeSDM("Picea", ncores, -1, numExamples, 0.5, modelMethod="GBM-BRT", pickMethod='uniform')
-    print("Finished Uniform")
-    pSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
-                  rand[3], "," ,
-                  rand[4], "," ,
-                  rand[5], "," ,
-                  rand[6], "," ,
-                  rand[7], "," ,
-                  numExamples, ",",
-                  detectCores(), ",",
-                  -1, ",",
-                  "'Picea',",
-                  "'RANDOM-TEST', DEFAULT);"
-    )
-    print(pSQL)
-    sSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
-                  unif[3], "," ,
-                  unif[4], "," ,
-                  unif[5], "," ,
-                  unif[6], "," ,
-                  unif[7], "," ,
-                  numExamples, ",",
-                  detectCores(), ",",
-                  -1, ",",
-                  "'Picea',",
-                  "'CONSTANT_TEST', DEFAULT);"
-    )
-    dbSendQuery(con, pSQL) ## results query
-    dbSendQuery(con, sSQL) ## results query
-  }
+## GBM and RF
+##250MB
+timeSDM<-function(MB, ncores, memory, nocc, sr, testingFrac = 0.2, plot_prediction=F, pollen_threshold='auto',
+                  presence_threshold='auto', presence_threshold.method='maxKappa', percentField='pollenPercentage', 
+                  save=FALSE, saveLocation='/home/rstudio/thesis-scripts/modelOutput', imgName="rasterOutput", rfTrees = 25000,
+                  modelMethod='GBM-BRT')
+
+args = commandArgs(trailingOnly=TRUE)  
+if (length(args) == 1){
+  compMem = args[1]
+}else{
+  compMem = -1
 }
 
+con <- dbConnect(dbDriver("MySQL"), host='104.154.235.236', password = 'Thesis-Scripting123!', dbname='timeSDM', username='Scripting')
 
+points <- read.csv("https://storage.googleapis.com/thesis-1329/250_MB_testData.csv")
+points <- points[1:1000, ]
+gbm250 <- timeSDM(250, ncore, compMem, nrow(points), modelMethod='GBM-BRT')
+rf250 <- timeSDM(250, ncore, compMem, nrow(points), modelMethod='PRF', rfTrees = 6000)
 
-system("shutdown")
+dbSendQuery(paste("INSERT INTO SuperBig VALUES (DEFAULT, 250, ", compMem, ",", nrow(points), gbm250[3], gbm250[4], "GBM-BRT"))
+dbSendQuery(paste("INSERT INTO SuperBig VALUES (DEFAULT, 250, ", compMem, ",", nrow(points), rf250[3], rf250[4], "PRF"))
+# 
+# points <- read.csv("https://storage.googleapis.com/thesis-1329/500_MB_testData.csv")
+# gbm500 <- timeSDM(500, ncore, compMem, nrow(points), modelMethod='GBM-BRT')
+# rf500 <- timeSDM(500, ncore, compMem, nrow(points), modelMethod='PRF', rfTrees = 6000)
+# dbSendQuery(paste("INSERT INTO SuperBig VALUES (DEFAULT, 500, ", compMem, ",", nrow(points), gbm500[3], gbm500[4], "GBM-BRT"))
+# dbSendQuery(paste("INSERT INTO SuperBig VALUES (DEFAULT, 500, ", compMem, ",", nrow(points), rf500[3], rf500[4], "PRF"))
+# 
+# points <- read.csv("https://storage.googleapis.com/thesis-1329/1_GB_testData.csv")
+# gbm1000 <- timeSDM(1000, ncore, compMem, nrow(points), modelMethod='GBM-BRT')
+# rf1000 <- timeSDM(1000, ncore, compMem, nrow(points), modelMethod='PRF', rfTrees = 6000)
+# dbSendQuery(paste("INSERT INTO SuperBig VALUES (DEFAULT, 1000, ", compMem, ",", nrow(points), gbm1000[3], gbm1000[4], "GBM-BRT"))
+# dbSendQuery(paste("INSERT INTO SuperBig VALUES (DEFAULT, 1000, ", compMem, ",", nrow(points), rf1000[3], rf1000[4], "PRF"))
+# 
+# points <- rbind(points, points)
+# gbm2000 <- timeSDM(2000, ncore, compMem, nrow(points), modelMethod='GBM-BRT')
+# rf2000 <- timeSDM(2000, ncore, compMem, nrow(points), modelMethod='PRF', rfTrees = 6000)
+# dbSendQuery(paste("INSERT INTO SuperBig VALUES (DEFAULT, 2000, ", compMem, ",", nrow(points), gbm2000[3], gbm2000[4], "GBM-BRT"))
+# dbSendQuery(paste("INSERT INTO SuperBig VALUES (DEFAULT, 2000, ", compMem, ",", nrow(points), rf2000[3], rf2000[4], "PRF"))
