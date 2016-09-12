@@ -250,8 +250,8 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
-treeSeq <- seq(from=6000, to=6000, by=5000)
-TexSeq <- seq(from=6000, to=6000, by =5000)
+treeSeq <- seq(from=1000, to=11000, by=5000)
+TexSeq <- seq(from=1000, to=11000, by =5000)
 totalCores <- detectCores()
 for (ncores in 1:totalCores){
   registerDoMC(cores = ncores)
@@ -259,7 +259,7 @@ for (ncores in 1:totalCores){
   for (numTex in TexSeq){
     for (numTrees in treeSeq){
       print(paste("Loping with numTrees = ", numTrees))
-      for (rep in 1:5){
+      for (rep in 1:3){
         print(paste("This rep is #", rep, "for cores=", ncores, "and numTrees=",numTrees, "and training examples=", numTex))
         p <- timeSDM("Picea", ncores, -1, numTex, 0.5, rfTrees = numTrees, modelMethod="PRF")
         print("Parallel finished")
