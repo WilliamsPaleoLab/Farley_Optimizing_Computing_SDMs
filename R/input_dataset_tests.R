@@ -102,7 +102,7 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
   
   training_set <- na.omit(training_set)
   print(paste("Training set is ", nrow(training_set)))
-  write.csv(training_set, file=paste("Training_set_"as.numeric(Sys.time()), ".csv"))
+  write.csv(training_set, file=paste("Training_set_", as.numeric(Sys.time()), ".csv"))
   ####*******Train the Model ******######
   fitStart <- proc.time()
   model <- "NEW" ##overwrite
@@ -251,43 +251,41 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
-for (numExamples in seq(1000, 1000, by=5000)){
-  for (rep in 1:5){
-    print(paste("This is repition #", rep, "with", numExamples, "examples"))
-    rand <- timeSDM("Picea", ncores, -1, numExamples, 0.5, modelMethod="GBM-BRT", pickMethod='uniform')
-    print("Finished Random")
-    unif <- timeSDM("Picea", ncores, -1, numExamples, 0.5, modelMethod="GBM-BRT", pickMethod='uniform')
-    print("Finished Uniform")
-    pSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
-                  rand[3], "," ,
-                  rand[4], "," ,
-                  rand[5], "," ,
-                  rand[6], "," ,
-                  rand[7], "," ,
-                  numExamples, ",",
-                  detectCores(), ",",
-                  -1, ",",
-                  "'Picea',",
-                  "'RANDOM-TEST', DEFAULT);"
-    )
-    print(pSQL)
-    sSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
-                  unif[3], "," ,
-                  unif[4], "," ,
-                  unif[5], "," ,
-                  unif[6], "," ,
-                  unif[7], "," ,
-                  numExamples, ",",
-                  detectCores(), ",",
-                  -1, ",",
-                  "'Picea',",
-                  "'CONSTANT_TEST', DEFAULT);"
-    )
-    dbSendQuery(con, pSQL) ## results query
-    dbSendQuery(con, sSQL) ## results query
-  }
+
+numExamples <- 6000
+for (rep in 1:5){
+  print(paste("This is repition #", rep, "with", numExamples, "examples"))
+  rand <- timeSDM("Picea", detectCores(), -1, numExamples, 0.5, modelMethod="GBM-BRT", pickMethod='random')
+  print("Finished Random")
+  unif <- timeSDM("Picea", detectCores(), -1, numExamples, 0.5, modelMethod="GBM-BRT", pickMethod='random')
+  print("Finished Uniform")
+  pSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
+                rand[3], "," ,
+                rand[4], "," ,
+                rand[5], "," ,
+                rand[6], "," ,
+                rand[7], "," ,
+                numExamples, ",",
+                detectCores(), ",",
+                -1, ",",
+                "'Picea',",
+                "'RANDOM-TEST', DEFAULT);"
+  )
+  print(pSQL)
+  sSQL <- paste("INSERT INTO InputDatasetTests VALUES (DEFAULT,",
+                unif[3], "," ,
+                unif[4], "," ,
+                unif[5], "," ,
+                unif[6], "," ,
+                unif[7], "," ,
+                numExamples, ",",
+                detectCores(), ",",
+                -1, ",",
+                "'Picea',",
+                "'CONSTANT_TEST', DEFAULT);"
+  )
+  dbSendQuery(con, pSQL) ## results query
+  dbSendQuery(con, sSQL) ## results query
 }
-
-
 
 system("shutdown")

@@ -1,7 +1,9 @@
+library(gbm)
+library(plyr)
 con <- dbConnect(dbDriver("MySQL"), host='104.154.235.236', password = 'Thesis-Scripting123!', dbname='timeSDM', username='Scripting')
 ## get results from database
 r <- dbGetQuery(con, "Select * From Experiments Inner Join Results on Results.experimentID = Experiments.experimentID
-                  WHERE experimentStatus = 'DONE' AND cores < 8 AND model = 'GBM-BRT';")
+                  WHERE experimentStatus = 'DONE' AND cores < 8 AND model = 'GBM-BRT' OR model='MARS' OR model='GAM';")
 ## separate models
 r.brt <- r[which(r$model == 'GBM-BRT'), ]
 r.gam <- r[which(r$model == 'GAM'), ]
