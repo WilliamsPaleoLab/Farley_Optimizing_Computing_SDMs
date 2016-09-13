@@ -87,7 +87,8 @@ sd(r.gam.lm.delta)
 sd(r.mars.lm.delta)
 
 
-plot(r.brt.lm.predict ~ log(r.brt.testing$totalTime), main='Performance Model (Linear Model)', xlab='Observed Execution Time [Seconds]', ylab='Predicted Execution Time [Seconds]', xlim=c(-10, 175), ylim=c(-10, 175), pch=3, col='darkgreen')
+plot(r.brt.lm.predict ~ log(r.brt.testing$totalTime), main='Performance Model (Linear Model)', xlab='Observed Execution Time [log(Seconds)]', 
+     ylab='Predicted Execution Time [log(Seconds)]', pch=3, col='darkgreen', xlim=c(0, 7), ylim=c(0, 7))
 points(r.gam.lm.predict ~ log(r.gam.testing$totalTime), pch=3, col='darkred')
 points(r.mars.lm.predict ~ log(r.mars.testing$totalTime), pch=3, col='dodgerblue')
 legend('bottomright', c('GBM-BRT', 'GAM', 'MARS'), col=c('darkgreen', 'darkred', 'dodgerblue'), pch=3)
@@ -105,9 +106,66 @@ a.gbm.predict <- predict(a.gbm, a.testing, n.trees = a.gbm.bestIter)
 cor(a.gbm.predict, a.testing$testingAUC)
 a.gbm.delta <- a.gbm.predict - a.testing$testingAUC
 mean(a.gbm.delta)
+sd(a.gbm.delta)
+sum((a.gbm.predict - a.testing$testingAUC)^2)
 a.s <- ddply(a, .(cores, GBMemory, trainingExamples, taxon, cellID, spatialResolution),summarise, var = var(testingAUC), sd=sd(testingAUC), mean=mean(testingAUC), median=median(testingAUC))
 
 plot(a.gbm, n.trees=a.gbm.bestIter, main='AUC Accuracy of GBM-BRT SDM', xlim=c(0, 10000))
 points(a.training$testingAUC ~ a.training$trainingExamples, col=rgb(0.5, 0.5, 0, 0.5))
 #points(a.s$median ~ a.s$trainingExamples, col=rgb(0.5, 0.5, 0, 1))
-legend('bottomright', c('Observed Values', 'Predictive Model'), col=c(rgb(0.5, 0.5, 0), 'black'), lty=c(NA, 1), pch=c(1, NA))
+legend('bottomright', c('Observed Values', 'Predictive Model'), col=c(rgb(0.5, 0.5, 0), 'black'), 
+       lty=c(NA, 1), pch=c(1, NA))
+
+
+
+
+
+par(mfrow=c(1, 3), oma=c(0, 0, 3, 0))
+plot(r.brt.lm.predict ~ log(r.brt.testing$totalTime), main='GBM-BRT', 
+     xlab='Observed Execution Time [log(Seconds)]', 
+     ylab='Predicted Execution Time [log(Seconds)]', pch=3, col='darkgreen', xlim=c(0, 7), ylim=c(0, 7))
+abline(0, 1)
+plot(r.gam.lm.predict ~ log(r.gam.testing$totalTime), main='GAM', 
+     xlab='Observed Execution Time [log(Seconds)]', 
+     ylab='Predicted Execution Time [log(Seconds)]', pch=3, col='darkred', xlim=c(0, 7), ylim=c(0, 7))
+abline(0, 1)
+plot(r.mars.lm.predict  ~ log(r.mars.testing$totalTime), main='MARS', 
+     xlab='Observed Execution Time [log(Seconds)]', 
+     ylab='Predicted Execution Time [log(Seconds)]', pch=3, col='blue', xlim=c(0, 7), ylim=c(0, 7))
+abline(0, 1)
+title("Linear Performance Model", outer=T, cex=2)
+
+
+
+par(mfrow=c(1, 3), oma=c(0, 0, 3, 0))
+plot(r.brt.brt.predict ~ log(r.brt.testing$totalTime), main='GBM-BRT', 
+     xlab='Observed Execution Time [log(Seconds)]', 
+     ylab='Predicted Execution Time [log(Seconds)]', pch=3, col='darkgreen', xlim=c(0, 7), ylim=c(0, 7))
+abline(0, 1)
+plot(r.gam.brt.predict ~ log(r.gam.testing$totalTime), main='GAM', 
+     xlab='Observed Execution Time [log(Seconds)]', 
+     ylab='Predicted Execution Time [log(Seconds)]', pch=3, col='darkred', xlim=c(0, 7), ylim=c(0, 7))
+abline(0, 1)
+plot(r.mars.brt.predict  ~ log(r.mars.testing$totalTime), main='MARS', 
+     xlab='Observed Execution Time [log(Seconds)]', 
+     ylab='Predicted Execution Time [log(Seconds)]', pch=3, col='blue', xlim=c(0, 7), ylim=c(0, 7))
+abline(0, 1)
+title("Boosted Regression Tree Model", outer=T, cex=2)
+
+
+par(mfrow=c(1, 3), oma=c(0, 0, 3, 0))
+summary(r.brt.brt, main="GBM-BRT")
+summary(r.gam.brt, main="GBM-BRT")
+summary(r.mars.brt, main="GBM-BRT")
+title("Relative Influence of Predictors", outer=T, cex=2)
+
+
+
+RSS.brt.brt <- sum((r.brt.brt.predict - log(r.brt.testing$totalTime))^2)
+RSS.gam.brt <- sum((r.gam.brt.predict - log(r.gam.testing$totalTime))^2)
+RSS.mars.brt <- sum((r.mars.brt.predict - log(r.mars.testing$totalTime))^2)
+
+RSS.brt.lm <- sum((r.brt.lm.predict - log(r.brt.testing$totalTime))^2)
+RSS.gam.lm <- sum((r.gam.lm.predict - log(r.gam.testing$totalTime))^2)
+RSS.mars.lm <- sum((r.mars.lm.predict - log(r.mars.testing$totalTime))^2)
+

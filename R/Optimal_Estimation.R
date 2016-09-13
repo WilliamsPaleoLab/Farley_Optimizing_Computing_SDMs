@@ -260,7 +260,7 @@ estimateOptimal <- function(trainingExamples, spatialResolution,
   for (i in 1:nrow(prices)){
     thisComp <- prices[i,]
     thisComp.cores <- thisComp$CPUs
-    thisComp.memory <- thisComp$GBsMem
+    thisComp.memory <- 1
     scenario <- c(cores = thisComp.cores, GBMemory = thisComp.memory, 
                   trainingExamples=trainingExamples, 
                   spatialResolution=spatialResolution, numTrees = rfTrees)
@@ -270,7 +270,7 @@ estimateOptimal <- function(trainingExamples, spatialResolution,
     thisComp.pricePerSecond <- thisComp.price / 3600 ## this is rate per second
     thisComp.Conf <- thisComp$ConfigurationNumber
     if (method == 'GBM-BRT'){
-      timeModel <- r.brt.brt
+      timeModel <- r.brt.lm
       timePred <- predict(timeModel, scenario, n.trees = r.brt.brt.bestIter)
       accModel <- a.gbm
       accPred <- predict(accModel, scenario, n.trees = a.gbm.bestIter)
@@ -283,7 +283,7 @@ estimateOptimal <- function(trainingExamples, spatialResolution,
       timePred <- predict(timeModel, scenario, n.trees = r.mars.brt.bestIter)
       accPred <- 0
     }else if(method == 'PRF'){
-      timeModel <- rf.gbm
+      timeModel <- rf.lm
       timePred <- predict(timeModel, scenario, n.trees = rf.gbm.bestIter)
       accModel <- acc.gbm
       accPred <- predict(accModel, scenario, n.tree = acc.gbm.bestIter)
@@ -299,26 +299,14 @@ estimateOptimal <- function(trainingExamples, spatialResolution,
     v <- c(thisComp.cores, thisComp.memory, exp(timePred), scenarioCost, accPred, thisComp.Conf, scenario$trainingExamples, scenario$spatialResolution)
     timeAndCost[i, ] <- v
   }
+  euc.dist <- function(x1, x2) sqrt(sum((x1 - x2) ^ 2))
+  
+  
   return(timeAndCost)
 }
 
-o <- estimateOptimal(10, 1, 'PRF', prices=prices)
+o <- estimateOptimal(10000, 1, 'GBM-BRT', prices=prices)
 
+x <- o[c("cost", "seconds")]
 
-
-
-x <- list()
-for (i in 1:nrow(prices)){
-  thisComp <- prices[i, ]
-  cores <- thisComp$CPUs
-  GBMem <- thisComp$GBsMem
-  thisVector <- as.data.frame(t(c( numTrees = 110000, cores = cores, GBMemory = GBMem, 
-                  trainingExamples = 110000)))
-  prediction <- predict(rf.gbm, thisVector, n.tree = rf.gbm.bestIter)
-  prediction <- exp(prediction)
-  thisOutput <- c(cores, GBMem, prediction)
-  x[[i]] <- thisOutput
-}
-
-
-
+dists <- as.matrix(dist(x, method = "maximum"))[1,]

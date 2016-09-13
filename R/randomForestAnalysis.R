@@ -155,14 +155,13 @@ for (i in 1:length(resSplit)){
 ggplot(parResults, aes(x = cores, y=speedup, 
                        group=interaction(trainingExamples, numTrees),
                        col = interaction(trainingExamples, numTrees))) + 
-  geom_line()
+  geom_line() + ggtitle("Parallel Speedup of Random Forests")
 
 ## and efficiency
 ggplot(parResults, aes(x = cores, y=efficiency, 
                        group=interaction(trainingExamples, numTrees),
                        col = interaction(trainingExamples, numTrees))) + 
-  geom_line() + scale_color_brewer(palette = 10)
-
+  geom_line() + ggtitle("Parallel Efficiency of Random Forests")
 
 
 
