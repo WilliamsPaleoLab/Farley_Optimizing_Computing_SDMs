@@ -248,8 +248,8 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
 drv <- dbDriver("MySQL")
 con <- dbConnect(drv, host=hostname, username=username, password=password, dbname=dbname)
 
-tcSeq <- seq(from=1, to=5, by=1)
-lrSeq <- c(0.01, 0.05, 0.1, 0.25, 0.5, 1)
+tcSeq <- seq(from=5, to=10, by=1)
+lrSeq <- c(0.01, 0.1, 0.25, 1)
 TexSeq <- seq(from=1000, to=11000, b = 5000)
 
 for (lr in lrSeq){
@@ -261,7 +261,7 @@ for (lr in lrSeq){
         s <- try(
           timeSDM("Picea", detectCores(), -1, tex, 0.5, modelMethod="GBM-BRT", learning.rate=lr, tree.complexity=tc)
         )
-        sql <- paste("INSERT INTO GBMParameterRuns VALUES (DEFAULT,",
+        sql <- try(paste("INSERT INTO GBMParameterRuns VALUES (DEFAULT,",
                       detectCores(), ",",
                       -1, ",",
                       "'Picea'", ",",
@@ -274,8 +274,8 @@ for (lr in lrSeq){
                       s[6], "," , ## acc time
                       s[5], "," , #predictTime
                       s[7], "," ,"DEFAULT);" ##AUC
-        )
-        dbSendQuery(con, sql) ## results query
+        ))
+        try(dbSendQuery(con, sql)) ## results query
       }
     }
   }
