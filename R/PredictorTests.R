@@ -1,4 +1,4 @@
-#install.packages(c("randomForest", "doMC", "foreach", "dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth"), repos='http://cran.mtu.edu/')
+install.packages(c("randomForest", "doMC", "foreach", "dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth"), repos='http://cran.mtu.edu/')
 library(foreach)
 library(raster)
 library(dismo)
@@ -8,7 +8,7 @@ library(randomForest)
 library(RMySQL)
 library(gbm)
 
-setwd("/users/scottsfarley/documents")
+setwd("/home/rstudio")
 
 source("thesis-scripts/R/config.R")
 
