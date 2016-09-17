@@ -173,13 +173,13 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
     test_preds <- predict.gbm(model, testing_set, n.trees=model$gbm.call$best.trees, type='response') ## these are the predicted values from the gbm at the points held out as testing set
   }else if (modelMethod == 'MARS'){
     prediction <- predict(pred, model, type='response')
-    test_preds <- predict(model, testingSet, type='response')
+    test_preds <- predict(model, testing_set, type='response')
   }else if (modelMethod == 'SVM'){
     prediction <- predict(pred, model, type='response')
-    test_preds <- predict(model, testingSet, type='response')
+    test_preds <- predict(model, testing_set, type='response')
   }else if (modelMethod == 'GAM'){
     prediction <- predict(pred, model, type='response')
-    test_preds <- predict(model, testingSet, type='response')
+    test_preds <- predict(model, testing_set, type='response')
   }else if (modelMethod == 'PRF'){
     prediction <- predict(pred, model, type='response')
     test_preds <- predict(model, testing_set, type='response')
