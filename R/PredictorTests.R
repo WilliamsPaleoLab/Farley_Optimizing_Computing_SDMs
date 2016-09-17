@@ -108,19 +108,39 @@ timeSDM<-function(species, ncores, memory, nocc, sr, testingFrac = 0.2, plot_pre
                       tree.complexity=5, learning.rate=0.001, verbose=FALSE, silent=TRUE, 
                       max.trees=100000000000, plot.main=FALSE, plot.folds = FALSE)
   }else if (modelMethod == 'MARS'){
-    # predictors <- c("bio2", "bio7", "bio8", "bio15", "bio18", "bio19")[1:numPredictors]
-    # print(predictors)
-    # x <- training_set[c(predictors 'presence')]
-    # f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', sep=' + ')))
-    # model <- earth(f, data=x)
+    x <- training_set[c('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', 'presence')]
+    if (numPredictors == 1){
+      f = as.formula(paste('presence ~ ', paste('bio2', sep=' + ')))
+    }else if (numPredictors == 2){
+      f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', sep=' + ')))
+    }else if (numPredictors == 3){
+      f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', 'bio8',  sep=' + ')))
+    }else if (numPredictors == 4){
+      f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', 'bio8', 'bio15', 'bio18', sep=' + ')))
+    }else{
+      f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', sep=' + ')))
+    }
+    model <- earth(f, data=x)
+    print(summary(model))
   }else if (modelMethod == 'SVM'){
     # x <- training_set[c('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', 'presence')]
     # f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', sep=' + ')))
     # model <- svm(f, data=x)
   }else if (modelMethod == 'GAM'){
-    # x <- training_set[c('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', 'presence')]
-    # f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', sep=' + ')))
-    # model <- gam(f, data=x)
+    x <- training_set[c('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', 'presence')]
+    if (numPredictors == 1){
+      f = as.formula(paste('presence ~ ', paste('bio2', sep=' + ')))
+    }else if (numPredictors == 2){
+      f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', sep=' + ')))
+    }else if (numPredictors == 3){
+      f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', 'bio8',  sep=' + ')))
+    }else if (numPredictors == 4){
+      f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', 'bio8', 'bio15', 'bio18', sep=' + ')))
+    }else{
+      f = as.formula(paste('presence ~ ', paste('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19', sep=' + ')))
+    }
+    model <- gam(f, data=x)
+    print(summary(model))
   }else if (modelMethod == 'PRF'){#parallel random forest
     x <- as.matrix(training_set[c('bio2', 'bio7', 'bio8', 'bio15', 'bio18', 'bio19')])
     y <- training_set[['presence']]
@@ -256,30 +276,30 @@ numExamples <- 6000
 for (rep in 1:5){
   for (p in 1:5){
     for (n in seq(1000, 11000, by=1000)){
-      gbmRes <- timeSDM("Picea", detectCores(), -1, n, 0.5, modelMethod="GBM-BRT", numPredictors = p)
-      rfRes <- timeSDM("Picea", detectCores(), -1, n, 0.5, modelMethod="SRF", numPredictors = p, rfTrees = 1000)
-      gbmSQL <- paste("INSERT INTO PredictorRuns VALUES (DEFAULT, 'GBM-BRT',",
-                      gbmRes[3], "," ,
-                      gbmRes[4], "," ,
-                      gbmRes[5], "," ,
-                      gbmRes[6], "," ,
-                    gbmRes[7], "," ,
+      gamRes <- timeSDM("Picea", detectCores(), -1, n, 0.5, modelMethod="GAM", numPredictors = p)
+      marsRes <- timeSDM("Picea", detectCores(), -1, n, 0.5, modelMethod="MARS", numPredictors = p)
+      gamSQL <- paste("INSERT INTO PredictorRuns VALUES (DEFAULT, 'GAM',",
+                      gamRes[3], "," ,
+                      gamRes[4], "," ,
+                      gamRes[5], "," ,
+                      gamRes[6], "," ,
+                      gamRes[7], "," ,
                     n, ",",
                     0.5, ",",
                     p, ",DEFAULT);"
       )
-      rfSQL <- paste("INSERT INTO PredictorRuns VALUES (DEFAULT, 'SRF',",
-                     rfRes[3], "," ,
-                     rfRes[4], "," ,
-                     rfRes[5], "," ,
-                     rfRes[6], "," ,
-                     rfRes[7], "," ,
+      marsSQL <- paste("INSERT INTO PredictorRuns VALUES (DEFAULT, 'MARS',",
+                     marsRes[3], "," ,
+                     marsRes[4], "," ,
+                     marsRes[5], "," ,
+                     marsRes[6], "," ,
+                     marsRes[7], "," ,
                       n, ",",
                       0.5, ",",
                       p, ",DEFAULT);"
       )
-      dbSendQuery(con, gbmSQL) ## results query
-      dbSendQuery(con, rfSQL) ## results query
+      dbSendQuery(con, gamSQL) ## results query
+      dbSendQuery(con, marsSQL) ## results query
     }
   }
 }

@@ -133,13 +133,13 @@ Here I present a theoretical framework for linking the goals of a model user to 
 $$H(t) = H_static + H_dynamic + \zeta$$
 in which $H(t)$ is the effective processing power, $H_satic$ represents the static, hardware capabilities of the machine that do not change with time and $H_dynamic$ represent the portions of the system that do vary with time. Execution times can vary non-deterministically with hardware due to stochastic changes in system state, so $\zeta$ represents process uncertainty and unexplained variance.
 
-2. [THIS IS COST]. Can't deal with this right now.
+2. Consumers of computing services are part of a market driven by supply and demand, and face a costs set by computing providers dictated by the effective computing power provided. Figure [X] demonstrates an instance of a Google's cost surface as a function of memory and CPUs.
 
 3.  Now, formalize the goals of the model user. Every user of an application has a particular set of goals for using it in the first place [@Norman:1984fg].  Scenario-based interface design informs our development of a finite set of use cases for a given application that fall within the bounds of existing or expected use [@Carroll:1999hh; @Rosson:2002vj].  For example, consider a hypothetical scenario that could apply to a typical species distribution model user (adapted from [@Smith:2013cs]):
 
 *Jessica Smith is a land manager at Yellowstone National Park, interested in understanding how Mountain Pine Beetle infestations may change under different anthropogenic climate change scenarios.  Dr. Smith primarily wishes to characterize how the beetle range might change under the three different IPCC emissions pathways [@Moss:2010en], rather than differences between algorithms or characterization of modeling uncertainty.*
 
-From this brief scenario, we formalize Dr. Smith's goals with the SDM applications.  She wishes to model one species (Dendroctonus ponderosae), in a single area of known size (Yellowstone National Park, ~3,500 mi^2), under three climate scenarios.  She requires only a single modeling algorithm.
+From this brief scenario, we formalize Dr. Smith's goals with the SDM applications.  She wishes to model one species (*Dendroctonus ponderosae*), in a single area of known size (Yellowstone National Park, ~3,500 mi^2), under three climate scenarios.  She requires only a single modeling algorithm.
 
 Using brief user-based scenarios like this, we formalize the user, $U$ as a vector of characteristics that fully characterize the user's goals in the scenario. The components of $U$ include a number of experiments to complex, as well as user traits such as experience with the model and familiarity with the interface employed, motivation, skill, and accuracy required. Associated with each user is a list of experiments to be completed that specify the number and character of modeling runs the users wants to do. Each element of the experiments list is a vector of model characteristics that contain enough information to specify the runtime behavior of a single model run, including modeling algorithm, spatial resolution, training examples, number of input predictor/covariate layers, and number of future time periods to project onto.
 
@@ -191,6 +191,8 @@ The occurrence-climate datasets were then filtered to include on the six least c
 
 Future climate layers for AD2100 were obtained from the CMIP project, HadCM3 climate model.  These layers model expected climate variables under the UN IPCC RCP 8.5, a scenario that assumes high population, moderate economic growth, and a sustained dependence on fossil fuels [@Riahi:2011dk]. These layers were converted to bioclimatic variables and resampled to various resolutions for their use as output layers in different experiments.
 
+With the trend of ecological Big Data, it is foreseeable that future datasets may exceed any currently available.  To assess the affect of very large input datasets (n > 1e7), I created a four simulated datasets of given sizes: 250MB, 500MB, 1000MB, 2000MB.  These datasets were created using a python script that randomly generated a latitude, longitude, age, abundance, and bioclimatic variable assemblage.  Each row was 327 bytes of information.  Rows were randomly simulated until a given file size had been reached.
+
 #### Computing Infrastructure
 I used the Google Cloud Compute Enginge (GCE) to complete all of my experiments. A popular Infrastructure-as-a-service (IaaS) provider [@Hassan:2011uh], the platform rents out a wide array of virtual server instances, from the most basic (1 CPU, 0.6 GB RAM) to exceptionally powerful (32 CPU, 208 GB RAM).  The platform also provides a set of application programming interfaces (API) to allow workflow automation on the virtual computing instances, as well as a graphical user interface (GUI) for interactive resource provisioning.  
 
@@ -207,136 +209,37 @@ An outline of the system is described below and are illustrated in Figure [X].
 3.  Because Google charges by the minute for the use of their virtual machines, instances must be torn down as soon as possible. While the computing nodes execute the experiments, the Master Node repeatedly polls the central database to determine the current position within the experiment table, attempting to determine the percentage completion of the current group of experiments.  If the group is complete, Master Node will use the gcloud tools to deleted the individual instances, the instance pool, and the template that was used to create each instance.  After this, the Master Node is the only instance that remains online. At this point, Master Node returns to Step 1 to build a new pool of instances for the new memory/cores combination.
 
 #### SDM Model Protocol
-The experimental parameters are communicated to the worker node by the central database.  The computing node parses the database's response and starts a new experiment session.  First, the set of occurrences corresponding with the species to be modeled is loaded from the disk. It is then randomly partitioned two nonoverlapping subsets, a training set of $N$ occurrences, and a testing set of 20% of the total number (*Picea* = 9935, *Quercus* = 8953, *Betula* = 10226, *Tsuga* = 7140). All examples were converted to binary presence-absence values using the Nieto-Lugilde [@NietoLugilde:2015bza] method for determining local presence from fossil pollen records.  The training set is then sent to the specified learning function where an SDM model is fit using $P$ predictors. The model use then used to predict that taxon's range in 2100 AD under the RCP 8.5 scenario. The holdout testing set is used to evaluate the model's ability to discriminate presence-absence from the predictors. During the execution separate times are recorded for model fitting, prediction onto the gridded surface, and accuracy calculation, as well as the total time.  Furthermore, several measures of accuracy, including the Area Under the Receiver Operator Curve (AUC), a popular method of evaluating logistic output (but see [@Lobo:2008du]).  There is no database I/O inside of the timing script, so results should not be slow-biased by network connection or context switching. Learning parameters (learning rate, number of trees, tree complexity, etc) are held constant for all runs except a small subset which were designed specifically to determine sensitivity to these parameters.  
+The experimental parameters are communicated to the worker node by the central database.  The computing node parses the database's response and starts a new experiment session.  First, the set of occurrences corresponding with the species to be modeled is loaded from the disk. It is then randomly partitioned two nonoverlapping subsets, a training set of $N$ occurrences, and a testing set of 20% of the total number (*Picea* = 9935, *Quercus* = 8953, *Betula* = 10226, *Tsuga* = 7140). All examples were converted to binary presence-absence values using the Nieto-Lugilde [@NietoLugilde:2015bza] method for determining local presence from fossil pollen records.  The training set is then sent to the specified learning function where an SDM model is fit using $P$ predictors. The model use then used to predict that taxon's range in 2100 AD under the RCP 8.5 scenario. The holdout testing set is used to evaluate the model's ability to discriminate presence-absence from the predictors. During the execution separate times are recorded for model fitting, prediction onto the gridded surface, and accuracy calculation, as well as the total time.  Furthermore, several measures of accuracy, including the Area Under the Receiver Operator Curve (AUC), a popular method of evaluating logistic output (but see [@Lobo:2008du]).  There is no database I/O inside of the timing script, so results should not be slow-biased by network connection or context switching. Learning parameters (learning rate, number of trees, tree complexity, etc) are held constant for all runs except a small subset which were designed specifically to determine sensitivity to these parameters.
+
+Due to limited time and budget constraints, and thus inability to cover all possible parameterizations, experiments were divided into several categories in which different variables were systematically altered to determine sensitivity. This compromise aims to capture as much within-parameter variance as possible while simultaneously capturing the influence of interactions between variables.  One basic series of experiments was run for all SDMs using a small subset of algorithm inputs (training examples and memory) on a wide variety of VM types (core/memory combinations). Five additional, separate analyses were completed to determine the sensitivity to specific parameterizations.
+
+The largest number of SDM experiments was done on a small combination of training examples and spatial resolutions but over a large number of computing instances, and were used to assess the performance of serial SDM algorithms under default conditions. Attempts were made to capture interactions between variables and to capture the contribution of algorithms on increasingly more power machine types.  Because execution time can vary non-linearly when the hardware parameters are changed, I tested as many combinations of memory and CPUs as possible.  On each computer, a standard set of 160 experiments were run for each sequential SDM (MARS, GBM-BRT, GAM), including four spatial resolutions, four training example sets, and 10 replicates of each cell. All experiments were done on the *Picea* pooled niche data set. 20,225 experiments were completed for this category. Settings for each algorithm are included in Table [X].  
+
+[XXXXXXXXXX TABLE X XXXXXXXXXX]
+DO TABLE STUFF
+[XXXXXXXXXX TABLE X XXXXXXXXXX]
+
+Individual, target experiment sets were done to assess the contribution of individual or sets of parameterizations.  While no theoretical difference would suggest that execution times should vary between different taxa, a set of 191 model runs were done to evaluate whether differences exist in practice. The model uses aspatial input sets, which suggests that geographic range, abundance, or taxon-specific patterns should not bias the results of the experiments.  Using all four taxa on six different VM instance types, inter-taxonomic sensitivity was recorded.  The number of training examples and spatial resolutions was held constant for these runs.
+
+Empirical Performance Models suggest that specific algorithm parameterizations will take longer to execute than others [@Cannon:2007ge]. SDM have a large number of potential parameters with which to alter, though many ecologists use the defaults, or packages that make it difficult to change the default parameter values (e.g., dismo [@Hijmans:2012ej]). To assess the magnitude of changes in execution time due to different parameterizations, the GBM-BRT was tested on a set of 180 [CITE THIS NUMBER WHEN DONE WITH EXPERIMENTS] different parameterizations.  During these experiments, the learning rate, tree complexity, and number of training examples were systematically altered.  The learning rate parameter of the GBM-BRT model is a shrinkage parameter that reduces the impact of each additional fitted tree, driven by the boosting paradigm of fitting a model with many small models rather than fewer large trees. If one of the greedy iterations does not improve model fit, the contribution of that iteration can be easily reversed in the subsequent iterations [@Natekin:2013ji]. The tree complexity parameter controls whether interactions between predictors are fitted.  If tree complexity is 1, the tree will be an additive model with no interactions.  A tree complexity of $N$ will produce a model with $N$-way interactions between variables[@Elith:2008el]. These two variables together control the total number of trees needed to fit the model [@Elith:2008el].  All of these experiments (N=?????) were run on a single instance type of 1 CPU and 3.75 GB RAM. All experiments used the *Picea* niche set. Refer to Table [X] fora parameterization details.
+
+To assess the relative performance of parallel methods over sequential models, random forest SDMs were fit both sequentially and in parallel on instances up to 24 CPU cores. Spatial resolution, memory, and taxon were held constant while number of ensemble members and number of training examples were systematically altered for each core. In total, 3300 random forests were fit using randomForest with the foreach package providing parallelization support.  Sequential runs were fit using the same function but with number of cores set to only 1. Three parameters of training examples and three of number of ensemble members were altered as well. Table [X] shows the parameterizations used in this series.
+
+In addition to performance gains made by increasing the number of CPU cores and leveraging parallel methods, increasing instance memory should improve performance for very large datasets.  Using the simulated datasets, I attempted to assess the performance of the model when faced with more than 1 million input examples.  R has little support for high memory tasks, and these tests routinely crashed the computer when trying to fit the SDM due to inability to allocate memory space.
+
+Finally, I evaluated the effect of varying the number of predictors on the execution time of the algorithm. The literature on theoretical complexity of algorithms (e.g., [@Hastie:2009up]) often characterize the complexity of machine learning algorithms in terms of both number of training examples and number of features in each example. I systematically modified the number of training examples between 1000 and 11000 and the number of predictors on GBM-BRT and sequential random forests.  Because both of these algorithms run serially, they can safely be run on a single processor without the need for estimating the effects of additional cores.  [ADD MORE DETAILS ABOUT THIS HERE].
+
+[Add summary statistics about the modeling process here.  In total there were x configurations, blah blah blah] Need to wait on this.
 
 
+#### Modeling Execution Time and Accuracy
 
+To model algorithm execution time, I created a separate model for each SDM type.  Gradient Boosted Regression trees, implemented in R though the 'gbm' package [@gbm], because tree based models have been previously shown to be highly effective in empirical performance models [@Hutter:2014cia].  For each model, a holdout set of 100 observations was randomly selected for evaluation purposes. Each model was developed to predict the log-transform total time of execution, which is the sum of the SDM fitting time, prediction time, and time to calculate accuracy statistics. Log transforms are used because they do not allow negative predictions, which are possible under non-transformed inputs and have been shown to be more accurate when observed responses span large ranges [@Hutter:2014cia].  The GBM models were fit using the R package defaults of a tree complexity of 1 (no interaction) and a learning rate of 0.01, with a bag fraction of 0.75.  15000 trees were calculated initially, and the best subset of those were used by calculating 'gbm.perf' for each model.  
 
+SDM accuracy was modeled in the same way as execution time.  A separate accuracy model was built for each SDM type.  Separate models were calculated rather than using the model algorithm as a categorical variable because of the different assumptions and parameters that go into each algorithm. Accuracy was not log transformed before modeling.
 
+#### Resource Utilization
+To develop a more thorough understanding of the way in which hardware variables contribute to SDM execution speed, I monitored the runtime environment and record CPU and memory utilization as the models were being executed.  Using a python script and the 'psutil' (https://github.com/giampaolo/psutil) module, I recorded the relative utilization of each individual CPU core, total CPU utilization, and memory utilization.  These measurements were recorded in the central database and later linked to individual SDM runs by using measurement timestamps. Resource utilization was also recorded by the Google infrastructure itself and displayed in real time as the models run.  These data were downloaded as JSON and interpreted in conjunction with the python monitoring.
 
-4.  Selected literature review
-* This will need some serious revision from last spring
-* Focus more on the ecological dimensions of why this is important
-* Then connect to computing, machine learning, etc
-* Finally, review algorithms and optimization techniques
-1. Species distribution models
-  1. What are they? (brief)
-  2. Ecological foundations, niches, use of paleodata to improve accuracy
-    * Data availability
-  3. Machine learning and species distribution models
-    * Models used to be simple (boxcar models)
-    * Now they're very complex
-    * High variance, low bias
-    * Low variance, high bias
-    * Look at cited AUC/accuracy metrics
-    * No clear winner for all tasks
-    * All methods are still widely used
-    * Maxent and its popularity
-    * Ensemble and parallel methods and their application/accuracy
-  4. Prediction and hindcasting using models as a key way to understand the past and future
-    * Cite land manager uses here (this is more than just hypotheses for ecological testing)
-    * These are real issues that need support (invasive species)
-  5.  Meta-analysis/results of targeted reading
-    * Other papers commenting on the growth of the field
-    * This will flow nicely from the review of what people actually use these models for
-2.  Cloud computing as a technology to support researchers
-  1.  Support for machine learning
-  2.  Designed for big data and distributed processing
-    * We've already clarified that ecological data is Big Data, so this will be easy to reinforce here
-  3.  The cloud as a research tool, rather than a market device
-    * Not too much on this, but note the economic underpinnings of the computing as a service
-    * Cite NSF/NASA/others that require cloud computing for research
-3.  Benchmarking, timing, and why it matters
-  1. Systems evaluation and benchmarking
-    * Overview of types of benchmarks
-    * Application level benchmarks are the best
-    * Need for repeated measurements
-    * Point of section: stochastic variance in benchmarks
-      * Non-linear, complex, hard to model
-      * But it's okay
-    * Potentially, consequences of using virtual instances --> few, using monitor scripts
-  2.  Algorithms Optimization
-    1.  What affect's an empirical/theoretical runtime?
-      * Introduce my experimental variables
-      * Need to read more on the theoretical underpinnings of memory/paging/CPU/etc
-      * Briefly touch on theoretical runtime complexity
-    2. Other attempts at empirical runtime modeling
-      * Need to read more on this
-      * We extend this away from just algorithm inputs to hardware inputs too.
-    3. Sensitivity analysis vs. optimization analysis
-      * Maybe we need to change some terminology here,
-      * I think with the alg. opt. literature I can still call it optimization and prediction.
-5.  Problem Formulation
-  * Do I need to update this? Probably more or less close to being done
-6.  Specific components of the framework to address in the thesis
-  * The framework introduces six components involved in the optimization
-  * I just look at one of the central components (time to compute, and address the others tangentially)
-  * Demonstrate the proof of concept of the framework, leave the other components to other researchers
-7. Methods
-  1.  Data collection
-    1. Species distribution modeling inputs
-      * GBIF and Neotoma
-      * Climate model output
-      * Data preparation and cleaning
-    2. Simulated data for large memory experiments
-      * Do I need to do this? Maybe GBIF would let me do a real species.
-      * Simulated data would make more sense from a computing standpoint
-      * Real data would make more sense from a user/thesis standpoint
-    3. Cost model data
-      * Does this go in data? probably
-  2.  Computing experiments
-    1.  Computing set up
-      * Flowchart framework
-      * Google cloud description
-    2. Serial SDM experiments
-      1. Inter-model differences
-      2. Taxonomic differences
-      3. Parameter sensitivity
-      4. Training example sensitivity
-      5. Serial SDMs with large memory requirements
-      * I think this will be a nice flow of experiment descriptions
-    3.  Parallel SDM experiments
-      * Need to specifically introduce that these need to be considered separately in my framework, because they respond to differences in cores
-      * Might have less accuracy or cost more than methods above,
-      * Might have more accuracy than methods above, and can be executed on a single core
-      * Just random forests
-        * Parallel machine learning methods are a topic of active CS research,
-          * This probably needs to go into literature review, or could go into discussion/conclussion
-  3. Predictive Modeling Building
-    1.  Runtime prediction
-      1. Linear model
-        * Do I even need to show results of LM?
-        * Ref: comments from CI
-      2.  GBM
-        * Able to capture non-linearities
-    2.  Accuracy prediction
-      * Build one accuracy model for each SDM class
-      * Can we test this from the literature too?
-    4. Cost optimization model building
-8. Discussion and Results
-  1. Computational runtime prediction accuracy assessment
-      * Should formalize this
-        * Least squares?
-  2.  Accuracy prediction assessment
-    * Parallel methods and their accuracy
-  3. Cost optimization assessment
-    * This will be tricky to assess quantitatively
-    * Need to think about this more
-    * Qualitatively, we can do this fairly easily
-  4. Case study
-      * Need to find a good case study
-    * Illustrate model results and utility
-    * Discuss limitations and uncertainties
-    * Discuss confidence in results
-  5.  Limitations of current approach
-    * How much will the additional components of the framework influence the results?
-    * Modeling expertise can do more than predictive modeling
-    * Stress uncertainties and lack of predictive skill
-    * Scientific realities over modeled optima
-      * we should try to find some literature about compromising workflows to meet computational demands.
-9. Conclusion
-  1. Reiterate and answer research questions
-  2. Next steps to reduce uncertainty remaining in the model
-  3. Areas where additional research is needed
-    * Parallel machine learning methods
-10. Bibliography
+#### Model Evaluation
+Contributions to each predictive model were evaluated using partial dependency plots and variable influence, the non-linear analog to ANOVA testing to a linear model. Performance and accuracy models were built using a holdout testing set of 100 randomly selected observations, and evaluated using the difference between observed and predicted values.  The residual sum of square and mean prediction error are reported for all models. The best model is selected as the model with the lowest residual sum of squares.
