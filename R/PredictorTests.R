@@ -7,6 +7,8 @@ library(parallel)
 library(randomForest)
 library(RMySQL)
 library(gbm)
+library(gam)
+library(earth)
 
 setwd("/home/rstudio")
 
