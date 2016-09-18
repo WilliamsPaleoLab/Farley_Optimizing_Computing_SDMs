@@ -325,3 +325,7 @@ slope.loess <-function(X, data){
   res
 }
 
+
+
+
+

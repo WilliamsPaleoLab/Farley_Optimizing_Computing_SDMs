@@ -5,6 +5,7 @@ prices <- prices[-which(prices$TotalRate > 10),]
 
 ## Computing Costs
 ## interp to linear grid
+par(mar=mar.default)
 i <- interp(prices$CPUs,prices$GBsMem,prices$TotalRate, xo=c(1:22), yo=c(1:22))
 filled.contour(i, xlab='CPU', ylab='Memory (GB)', main="Computing Hourly Rate", 
                col=rev(heat.colors(n=30, alpha=0.7)))
@@ -103,6 +104,51 @@ ggplot(gbif_all, aes(x=year, y=cumsum)) +
   xlab("Year") +
   ylab("Number of Occurrences") +
   ggtitle("GBIF Occurrences")
+
+
+## plot the nuber of articles per year
+articles <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/SDM_Trends.csv")
+names(articles) <- c("Year", "Articles", "Pct", "Growth")
+articles <- articles[-1,] ## rm header
+articles$Year <- as.numeric(as.character(articles$Year))
+articles$Articles <- as.numeric(as.character(articles$Articles))
+articles$Pct <- as.numeric(as.character(articles$Pct))
+articles$Growth <- as.numeric(as.character(articles$Growth))
+nsf_totalRate <- 2.8
+a <- articles[which(articles$Year > 1995),]
+a <- a[which(a$Year < 2015),]
+
+z <- vector('numeric', length=18)
+z[1] <- 752
+for (y in 2:19){
+  z[y] <- z[y-1] * 1.028
+}
+
+a$NSF <- rev(z)
+
+ggplot(a) + 
+  geom_line(aes(x=Year, y=Articles, col='SDM Citation Growth')) + 
+  geom_point(aes(x=Year, y=Articles)) +
+  geom_line(aes(x=Year, y=NSF, col='Average Citation Growth')) +
+  ylab("Number of SDM Citations") +
+  ggtitle("Web of Science Citations") +
+  theme(legend.position="right", legend.title=element_blank()) +
+  scale_colour_manual(values=c("SDM Citation Growth" = 'blue', "Average Citation Growth" = 'black'))
+
+### Meta Analysis
+meta <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/meta_analysis.csv")
+mar.default <- c(5,3,3,2) + 0.1
+par(oma=c(0,0,2,0))
+par(mfrow=c(1, 2), mar = mar.default + c(0, 7, 0, 0))
+plot(as.factor(meta$NameFixed),las=2, horiz=T, xlab="Instances", cex.lab=1, 
+     cex.names=0.67)
+par(mar=mar.default)
+l <- c("NA", "Model-Driven", "Data-Driven", "Bayesian")
+f <- factor(as.character(meta$Tier), labels=l)
+plot(f, horiz=T, xlab="Instances")
+title("Algorithms Used in SDM Literature", outer=T)
+
+
 
 
 

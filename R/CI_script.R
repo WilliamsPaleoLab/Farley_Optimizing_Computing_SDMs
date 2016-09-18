@@ -45,13 +45,13 @@ r.brt.brt.delta <- r.brt.brt.predict - log(r.brt.testing$totalTime)
 r.gam.brt.delta <- r.gam.brt.predict - log(r.gam.testing$totalTime)
 r.mars.brt.delta <- r.mars.brt.predict - log(r.mars.testing$totalTime)
 
-mean(r.brt.brt.delta)
-mean(r.gam.brt.delta)
-mean(r.mars.brt.delta)
+exp(mean(r.brt.brt.delta))
+exp(mean(r.gam.brt.delta))
+exp(mean(r.mars.brt.delta))
 
-sd(r.brt.brt.delta)
-sd(r.gam.brt.delta)
-sd(r.mars.brt.delta)
+exp(sd(r.brt.brt.delta))
+exp(sd(r.gam.brt.delta))
+exp(sd(r.mars.brt.delta))
 
 plot(r.brt.brt.predict ~ log(r.brt.testing$totalTime), main='Performance Model (GBM)', xlab='Observed Execution Time [Seconds]', ylab='Predicted Execution Time [Seconds]', xlim=c(-10, 175), ylim=c(-10, 175), pch=3, col='darkgreen')
 points(r.gam.brt.predict ~ log(r.gam.testing$totalTime), pch=3, col='darkred')
@@ -76,15 +76,15 @@ cor(r.mars.lm.predict, r.mars.testing$totalTime)
 
 r.brt.lm.delta <- r.brt.lm.predict - log(r.brt.testing$totalTime)
 r.gam.lm.delta <- r.gam.lm.predict - log(r.gam.testing$totalTime)
-r.mars.lm.delta <- r.mars.brt.predict - log(r.mars.testing$totalTime)
+r.mars.lm.delta <- r.mars.lm.predict - log(r.mars.testing$totalTime)
 
-mean(r.brt.lm.delta)
-mean(r.gam.lm.delta)
-mean(r.mars.lm.delta)
+exp(mean(r.brt.lm.delta))
+exp(mean(r.gam.lm.delta))
+exp(mean(r.mars.lm.delta))
 
-sd(r.brt.lm.delta)
-sd(r.gam.lm.delta)
-sd(r.mars.lm.delta)
+exp(sd(r.brt.lm.delta))
+exp(sd(r.gam.lm.delta))
+exp(sd(r.mars.lm.delta))
 
 
 plot(r.brt.lm.predict ~ log(r.brt.testing$totalTime), main='Performance Model (Linear Model)', xlab='Observed Execution Time [log(Seconds)]', 

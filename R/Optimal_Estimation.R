@@ -300,7 +300,7 @@ estimateOptimal <- function(trainingExamples, spatialResolution,
     timeAndCost[i, ] <- v
   }
   euc.dist <- function(x1, x2) sqrt(sum((x1 - x2) ^ 2))
-  
+  # 
   
   return(timeAndCost)
 }
