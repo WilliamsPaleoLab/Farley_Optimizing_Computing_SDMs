@@ -123,7 +123,7 @@ gbif_all$cumsum <- cumsum(gbif_all$value)
 gbif_all$year <- as.numeric(as.character(gbif_all$year))
 
 ggplot(gbif_all, aes(x=year, y=cumsum)) + 
-  geom_line() + geom_rug(aes(x=NULL)) +
+  geom_line() 
   xlab("Year") +
   ylab("Number of Occurrences") +
   ggtitle("GBIF Occurrences")

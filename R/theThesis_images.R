@@ -121,10 +121,12 @@ a <- a[which(a$Year < 2015),]
 z <- vector('numeric', length=18)
 z[1] <- 752
 for (y in 2:19){
-  z[y] <- z[y-1] * 1.028
+  z[y] <- z[y-1] * 1.07
 }
 
 a$NSF <- rev(z)
+
+
 
 ggplot(a) + 
   geom_line(aes(x=Year, y=Articles, col='SDM Citation Growth')) + 

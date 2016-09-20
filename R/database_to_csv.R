@@ -53,6 +53,18 @@ mars <- mars[c("totalTime", "fittingTime","predictionTime", "accTime", "testingA
 names(mars) <- c("totalTime", "fittingTime", "predictionTime", "accuracyTime", "testingAUC", "cores", "GBMemory",
                  "trainingExamples", "spatialResolution", "taxon")
 
+mars$numPredictors <-5
+sql <- "SELECT * FROM PredictorRuns where modelMethod = 'MARS';"
+marsPred <- dbGetQuery(con, sql)
+mars.pred <- marsPred[c("totalTime", "fittingTime", "predictionTime", "accuracyTime", "testingAUC", "trainingExamples",
+                       "spatialResolution", "numPredictors")]
+mars.pred$cores <- 1
+mars.pred$GBMemory <- 3.75
+mars.pred$taxon <- "Picea"
+mars.pred$cells <- NA
+
+mars <- rbind(mars, mars.pred)
+
 mars$cells <- NA
 mars$cells[mars$spatialResolution == 0.1] = deg0.1Cells
 mars$cells[mars$spatialResolution == 0.25] = deg0.25Cells
@@ -72,6 +84,18 @@ gam <- gam[c("totalTime", "fittingTime","predictionTime", "accTime", "testingAUC
 
 names(gam) <- c("totalTime", "fittingTime", "predictionTime", "accuracyTime", "testingAUC", "cores", "GBMemory",
                  "trainingExamples", "spatialResolution", "taxon")
+
+gam$numPredictors <-5
+sql <- "SELECT * FROM PredictorRuns where modelMethod = 'GAM';"
+gamPred <- dbGetQuery(con, sql)
+gam.pred <- gamPred[c("totalTime", "fittingTime", "predictionTime", "accuracyTime", "testingAUC", "trainingExamples",
+                        "spatialResolution", "numPredictors")]
+gam.pred$cores <- 1
+gam.pred$GBMemory <- 3.75
+gam.pred$taxon <- "Picea"
+gam.pred$cells <- NA
+
+gam <- rbind(gam, gam.pred)
 
 gam$cells <- NA
 gam$cells[gam$spatialResolution == 0.1] = deg0.1Cells
