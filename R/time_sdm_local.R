@@ -3,10 +3,13 @@ source("/home/rstudio/thesis-scripts/R/time_sdm_generic.R")
 library(earth)
 library(gam)
 
+ncores = detectCores()
+nodename <- Sys.info()['nodename']
+nodeSplit <- strsplit(nodename, "-")
+globals.totalMemory = systemInfo[['totalMem']]
+experimentMemory = nodeSplit[['nodename']][3]
 
 taxon <- "Picea"
-ncores <- 8
-memory <- 16
 modelopts <- c("MARS", "GAM")
 sr = c(0.1, 0.25, 0.5, 1)
 reps = 5
@@ -27,7 +30,7 @@ for (opt in modelopts){
   for (sr in srOpts){
     for (n in noccOpts){
       for (rep in 1:reps){
-        r <- timeSDM(taxon, ncores, memory, n, sr, modelMethod=opt)
+        r <- timeSDM(taxon, ncores, experimentMemory, n, sr, modelMethod=opt)
         print(r)
         if (stdout){
           print(paste("Running: ", opt, n, "#", rep))
