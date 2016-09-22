@@ -22,6 +22,7 @@ noccOpts <- c(10000,20000, 30000, 40000, 50000)
 taxonOpts <- c("Picea", "Betula", "Quercus", "Tsuga")
 db=TRUE
 stdout=TRUE
+compID <- Sys.info()['nodename']
 
 if(db){
   source("thesis-scripts/R/config.R")
