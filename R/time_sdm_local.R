@@ -16,7 +16,7 @@ experimentMemory = nodeSplit[['nodename']][3]
 
 taxon <- "Picea"
 modelopts <- c("MARS", "GAM")
-sr = c(0.1, 0.25, 0.5, 1)
+srOpts = c(0.1, 0.25, 0.5, 1)
 reps = 5
 noccOpts <- c(10000,20000, 30000, 40000, 50000)
 taxonOpts <- c("Picea", "Betula", "Quercus", "Tsuga")
