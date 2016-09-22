@@ -9,7 +9,7 @@ library(RMySQL)
 library(gbm)
 library(gam)
 library(earth)
-
+srOpts <- c(0.1, 0.25, 0.5, 1)
 setwd("/home/rstudio")
 
 source("thesis-scripts/R/config.R")
@@ -276,10 +276,11 @@ con <- dbConnect(drv, host=hostname, username=username, password=password, dbnam
 
 numExamples <- 6000
 for (rep in 1:5){
+  for (sr in srOpts){
   for (p in 1:5){
     for (n in seq(1000, 11000, by=1000)){
-      gamRes <- timeSDM("Picea", detectCores(), -1, n, 0.5, modelMethod="GAM", numPredictors = p)
-      marsRes <- timeSDM("Picea", detectCores(), -1, n, 0.5, modelMethod="MARS", numPredictors = p)
+      gamRes <- timeSDM("Picea", detectCores(), -1, n, sr, modelMethod="GAM", numPredictors = p)
+      marsRes <- timeSDM("Picea", detectCores(), -1, n, sr, modelMethod="MARS", numPredictors = p)
       gamSQL <- paste("INSERT INTO PredictorRuns VALUES (DEFAULT, 'GAM',",
                       gamRes[3], "," ,
                       gamRes[4], "," ,
@@ -303,6 +304,7 @@ for (rep in 1:5){
       dbSendQuery(con, gamSQL) ## results query
       dbSendQuery(con, marsSQL) ## results query
     }
+  }
   }
 }
 
