@@ -3,6 +3,11 @@ source("/home/rstudio/thesis-scripts/R/time_sdm_generic.R")
 library(earth)
 library(gam)
 
+
+## get system details
+source("thesis-scripts/R/linux_getVars.R")
+systemInfo <- getSystemVars()
+RInfo <- getRVars()
 ncores = detectCores()
 nodename <- Sys.info()['nodename']
 nodeSplit <- strsplit(nodename, "-")
