@@ -1,18 +1,28 @@
+install.packages(c("randomForest", "doMC", "foreach", "dismo", "raster", "gbm", "SDMTools", "RMySQL", "rgdal", "gam", "earth"), repos='http://cran.mtu.edu/')
 source("/home/rstudio/thesis-scripts/R/time_sdm_generic.R")
 library(earth)
 library(gam)
 
 
+## get system details
+source("thesis-scripts/R/linux_getVars.R")
+systemInfo <- getSystemVars()
+RInfo <- getRVars()
+ncores = detectCores()
+nodename <- Sys.info()['nodename']
+nodeSplit <- strsplit(nodename, "-")
+globals.totalMemory = systemInfo[['totalMem']]
+experimentMemory = nodeSplit[['nodename']][3]
+
 taxon <- "Picea"
-ncores <- 8
-memory <- 16
-modelopts <- c("MARS", "GAM", 'GBM-BRT')
-sr = 0.5
-reps = 10
+modelopts <- c("MARS", "GAM")
+srOpts = c(0.1, 0.25, 0.5, 1)
+reps = 5
 noccOpts <- c(10000,20000, 30000, 40000, 50000)
+taxonOpts <- c("Picea", "Betula", "Quercus", "Tsuga")
 db=TRUE
 stdout=TRUE
-compID = "Instance-8-16"
+compID <- Sys.info()['nodename']
 
 if(db){
   source("thesis-scripts/R/config.R")
@@ -21,20 +31,25 @@ if(db){
 }
 
 for (opt in modelopts){
-  for (n in noccOpts){
-    for (rep in 1:reps){
-      r <- timeSDM(taxon, ncores, memory, n, sr, modelMethod=opt)
-      print(r)
-      if (stdout){
-        print(paste("Running: ", opt, n, "#", rep))
-      }
-      if (db){
-        sql = paste("INSERT INTO OtherResults2 VALUES(default, '", r['Species'], "','", r['ModelMethod'], "','NorthAmerica',", r['trainingexamples'], ",", r['spatialResolution'], ",", r['cores'] , ",", r['memory'], ",", r['totalTime'], ",", r['fitTime'], ",", r['predTime'], ",", r['accTime'], ",", r['AUC'] ,  ",'", r['startTime'], "','", compID, "',default);", sep="")
-        dbSendQuery(con, sql)
-      }
-      if(stdout){
+  for (t in taxonOpts){
+  
+  for (sr in srOpts){
+    for (n in noccOpts){
+      for (rep in 1:reps){
+        r <- timeSDM(taxon, ncores, experimentMemory, n, sr, modelMethod=opt)
         print(r)
+        if (stdout){
+          print(paste("Running: ", opt, n, "#", rep))
+        }
+        if (db){
+          sql = paste("INSERT INTO OtherResults2 VALUES(default, '", r['Species'], "','", r['ModelMethod'], "','NorthAmerica',", r['trainingexamples'], ",", r['spatialResolution'], ",", r['cores'] , ",", r['memory'], ",", r['totalTime'], ",", r['fitTime'], ",", r['predTime'], ",", r['accTime'], ",", r['AUC'] ,  ",'", r['startTime'], "','", compID, "',default);", sep="")
+          dbSendQuery(con, sql)
+        }
+        if(stdout){
+          print(r)
+        }
       }
     }
-  }
+    }
+    }
 }
