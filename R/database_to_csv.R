@@ -1,5 +1,7 @@
 con <- dbConnect(dbDriver("MySQL"), host='104.154.235.236', password = 'Thesis-Scripting123!', dbname='timeSDM', username='Scripting')
 
+setwd("/Users/scottsfarley/documents")
+
 deg1Cells <- 8750
 deg0.5Cells <- 35000
 deg0.25Cells <- 140000
@@ -7,9 +9,10 @@ deg0.1Cells <- 875000
 
 
 ## Get all GBM Records from the Datbase
-sql <- "select * from Results INNER JOIN Experiments on Experiments.experimentID = Results.experimentID where model='GBM-BRT';"
+sql <- "select * from Results INNER JOIN Experiments on Experiments.experimentID = Results.experimentID where model='GBM-BRT' AND experimentStatus = 'DONE';"
 gbmRes <- dbGetQuery(con, sql)
-g.main <- gbmRes[c('totalTime', 'fittingTime', "predictionTime", 'accuracyTime', 'testingAUC', 'nTrees', 'cores', 'GBMemory', 'taxon', 'trainingExamples', 'spatialResolution')]
+g.main <- gbmRes[c('totalTime', 'fittingTime', "predictionTime", 'accuracyTime', 'testingAUC', 'nTrees', 'cores', 'GBMemory', 
+                   'taxon', 'trainingExamples', 'spatialResolution')]
 g.main$learningRate <- 0.001
 g.main$treeComplexity <- 5
 g.main$numPredictors <- 5
@@ -44,6 +47,15 @@ write.csv(gbm.full, "thesis-scripts/data/GBM_ALL.csv")
 
 
 ## Get all MARS Data
+sql <- "select * from Results INNER JOIN Experiments on Experiments.experimentID = Results.experimentID where model='MARS' AND experimentStatus = 'DONE';"
+mars.orig <- dbGetQuery(con, sql)
+
+mars.orig <- mars.orig[c('totalTime', 'fittingTime', "predictionTime", 'accuracyTime', 'testingAUC', 'cores', 'GBMemory', 
+                   'taxon', 'trainingExamples', 'spatialResolution')]
+mars.orig$numPredictors <- 5
+
+
+
 sql <- "SELECT * FROM OtherResults2 WHERE method = 'MARS';"
 mars <- dbGetQuery(con, sql)
 
@@ -61,9 +73,8 @@ mars.pred <- marsPred[c("totalTime", "fittingTime", "predictionTime", "accuracyT
 mars.pred$cores <- 1
 mars.pred$GBMemory <- 3.75
 mars.pred$taxon <- "Picea"
-mars.pred$cells <- NA
 
-mars <- rbind(mars, mars.pred)
+mars <- rbind(mars, mars.pred, mars.orig)
 
 mars$cells <- NA
 mars$cells[mars$spatialResolution == 0.1] = deg0.1Cells
@@ -75,6 +86,13 @@ write.csv(mars, "thesis-scripts/data/mars_full.csv")
 
 
 ### Get all GAM Data 
+
+sql <- "select * from Results INNER JOIN Experiments on Experiments.experimentID = Results.experimentID where model='GAM' AND experimentStatus = 'DONE';"
+gam.orig <- dbGetQuery(con, sql)
+
+gam.orig <- gam.orig[c('totalTime', 'fittingTime', "predictionTime", 'accuracyTime', 'testingAUC', 'cores', 'GBMemory', 
+                         'taxon', 'trainingExamples', 'spatialResolution')]
+gam.orig$numPredictors <- 5
 
 sql <- "SELECT * FROM OtherResults2 WHERE method = 'GAM';"
 gam <- dbGetQuery(con, sql)
@@ -93,7 +111,6 @@ gam.pred <- gamPred[c("totalTime", "fittingTime", "predictionTime", "accuracyTim
 gam.pred$cores <- 1
 gam.pred$GBMemory <- 3.75
 gam.pred$taxon <- "Picea"
-gam.pred$cells <- NA
 
 gam <- rbind(gam, gam.pred)
 
@@ -109,7 +126,9 @@ write.csv(gam, "thesis-scripts/data/gam_full.csv")
 sql <- "SELECT * FROM RandomForestRuns WHERE trainingExamples IS NOT NULL;"
 rf <- dbGetQuery(con, sql)
 rf <- rf[c("totalTime", "fitTime", "predTime", "accuracyTime", "AUC", "numTrees", "cores", "GBMemory", "taxon", "method", "trainingExamples")]
-names(rf) <- c("totalTime", "fittingTime", "predictionTime", "accuracyTime", "testingAUC", "numTrees", "cores", "GBMemory", "taxon", "method", "trainingExamples")
+names(rf) <- c("totalTime", "fittingTime", "predictionTime", "accuracyTime", 
+               "testingAUC", "numTrees", "cores", "GBMemory", 
+               "taxon", "method", "trainingExamples")
 rf$spatialResolution <- 0.5
 rf$GBMemory[rf$cores > 16] <- 30
 rf$GBMemory[rf$cores <= 16] <- 16
@@ -118,7 +137,8 @@ rf$numPredictors <- 5
 sql <-"SELECT * FROM PredictorRuns WHERE modelMethod = 'SRF';"
 rf.pred <- dbGetQuery(con, sql)
 
-rf.pred <- rf.pred[c("totalTime", "fittingTime", "predictionTime", "accuracyTime", "testingAUC", "trainingExamples",
+rf.pred <- rf.pred[c("totalTime", "fittingTime", "predictionTime", 
+                     "accuracyTime", "testingAUC", "trainingExamples",
                      "spatialResolution", "numPredictors")]
 rf.pred$cores <- 1
 rf.pred$GBMemory <- 3.75

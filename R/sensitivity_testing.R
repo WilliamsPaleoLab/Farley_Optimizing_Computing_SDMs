@@ -3,6 +3,7 @@ library(reshape2)
 library(gam)
 library(sensitivity)
 library(ggplot2)
+library(gbm)
 setwd("/users/scottsfarley/documents")
 
 
@@ -10,7 +11,7 @@ setwd("/users/scottsfarley/documents")
 ## RANDOM FORESTS
 res <- read.csv("thesis-scripts/data/rf_full.csv")
 res$cores[res$method == "SERIAL"] = 1
-res <- res[c("totalTime", "cores", "GBMemory", "trainingExamples", "numPredictors")]
+res <- res[c("totalTime", 'fittingTime', 'predictionTime', "cores", "GBMemory", "trainingExamples", "numPredictors")]
 res$cores <- as.numeric(res$cores)
 res$totalTime <- as.numeric(res$totalTime)
 res$GBMemory <- as.numeric(res$GBMemory)
@@ -22,7 +23,7 @@ rf.rf.sensModel <- randomForest(predictors, response, ntree=2500, mtry=4)
 toTest <- predictors
 samp1 <- toTest[sample(nrow(toTest), 10000, replace=T),]
 samp2 <- toTest[sample(nrow(toTest), 10000, replace=T),]
-sens <- sobol(rf.rf.sensModel, samp1, samp2, order=2, nboot=1000)
+sens <- sobol(rf.rf.sensModel, samp1, samp2, order=1, nboot=1000)
 rf.sobol <- data.frame(sens$S)
 rf.sobol$names <- rownames(rf.sobol)
 ggplot(rf.sobol, aes(x = names)) + geom_point(aes(y=original)) +
@@ -38,7 +39,7 @@ rf.testing <- res[rf.testingInd,]
 rf.training <- res[-rf.testingInd,]
 rf.training.predictors <- rf.training[c( "numPredictors", "cores", "GBMemory", "trainingExamples")]
 rf.training.predictors <- data.frame(scale(rf.training.predictors))
-rf.training.response <- log(rf.training[[c("totalTime")]])
+rf.training.response <- log(rf.training[[c("fittingTime")]])
 rf.rf <- randomForest(rf.training.predictors, rf.training.response, ntree = 15000, mtry=4)
 
 ## do prediction
@@ -48,17 +49,50 @@ rf.prediction <- predict(rf.rf, rf.testing.predictors)
 rf.prediction <- exp(rf.prediction)
 
 ## get statistics
-rf.mdCor <- cor(rf.prediction, rf.testing[['totalTime']])
+rf.mdCor <- cor(rf.prediction, rf.testing[['fittingTime']])
 rf.mdDelta <- rf.prediction - rf.testing$totalTime
 rf.mdDelta.mean <- mean(rf.mdDelta)
 rf.mdDelta.sd <- sd(rf.mdDelta)
 rf.mdDelta.RSS <- sum((rf.prediction - rf.testing$totalTime)^2)
 
 ## Plot
-plot(rf.prediction, rf.testing[['totalTime']])
+plot(rf.prediction, rf.testing[['fittingTime']])
 abline(0, 1)
-plot(log(rf.prediction), log(rf.testing[['totalTime']]))
+plot(log(rf.prediction), log(rf.testing[['fittingTime']]))
 abline(0, 1)
+
+
+#### PredictionTimeModel
+gams <- read.csv("thesis-scripts/data/gam_full.csv")
+mars <- read.csv("thesis-scripts/data/mars_full.csv")
+rfs <- read.csv("thesis-scripts/data/rf_full.csv")
+gbms <- read.csv("thesis-scripts/data/gbm_all.csv")
+spatRes <- rbind(gams[c("predictionTime", "numPredictors", "cells", "trainingExamples","cores", "GBMemory", "fittingTime")], 
+      mars[c("predictionTime", "numPredictors", "cells", "trainingExamples","cores", "GBMemory","fittingTime")],
+      rfs[c("predictionTime", "numPredictors", "cells", "trainingExamples","cores", "GBMemory","fittingTime")],
+      gbms[c("predictionTime", "numPredictors", "cells", "trainingExamples","cores", "GBMemory","fittingTime")])
+
+spatRes.testingInd <- sample(nrow(spatRes), 2500)
+spatRes.testing <- spatRes[spatRes.testingInd,]
+spatRes.training <- spatRes[-spatRes.testingInd,]
+
+fTime <- log(as.numeric(spatRes.training[['fittingTime']]))
+sTime <- log(spatRes.training[['predictionTime']])
+fX <- spatRes.training[c("numPredictors", "cores", "trainingExamples", "GBMemory")]
+fX$numPredictors <- as.numeric(fX$numPredictors)
+fX$cores <- as.numeric(fX$cores)
+fX$trainingExamples <- as.numeric(fX$trainingExamples)
+fX$GBMemory <- as.numeric(fX$GBMemory)
+sX <- spatRes.training[c("cells", "numPredictors", "trainingExamples")]
+spatRes.rf <- randomForest(x, y, ntree=1000, mtry=3)
+
+# spatRes.prediction <- predict(spatRes.rf, spatRes.testing)
+# cor(log(spatRes.testing$predictionTime), spatRes.prediction)
+# 
+
+
+totalPrediction = predict(rf.rf, rf.testing) + predict(spatRes.rf, rf.testing)
+plot(log(rf.testing$fittingTime + rf.testing$predictionTime))
 
 
 
@@ -67,27 +101,27 @@ abline(0, 1)
 # ## GAMS
 res <- read.csv("thesis-scripts/data/gam_full.csv")
 res <- res[c("totalTime", "cores", "GBMemory", "trainingExamples", "numPredictors", "cells")]
-# res$cores <- as.numeric(res$cores)
-# res$totalTime <- as.numeric(res$totalTime)
-# res$GBMemory <- as.numeric(res$GBMemory)
-# res$trainingExamples <- as.numeric(res$trainingExamples)
-# res$numPredictors <- as.numeric(res$numPredictors)
-# res$cells <- as.numeric(res$cells)
-# predictors <- data.frame(scale(res[c("cores", "GBMemory", "trainingExamples", "numPredictors")]))
-# response <- log(res$totalTime)
-# gam.rf.sensModel <- randomForest(predictors, response, ntree=2500, mtry=4)
-# toTest <- predictors
-# samp1 <- toTest[sample(nrow(toTest), 400, replace=F),]
-# samp2 <- toTest[sample(nrow(toTest), 400, replace=F),]
-# sens <- sobol(gam.rf.sensModel, samp1, samp2, order=2, nboot=1000)
-# gam.sobol <- data.frame(sens$S)
-# gam.sobol$names <- rownames(rf.sobol)
-# ggplot(gam.sobol, aes(x = names)) + geom_point(aes(y=original)) +
-#   geom_errorbar(aes(ymax=max..c.i., ymin=min..c.i.)) +
-#   ylab("First Order Sobol' Index") +
-#   xlab("") +
-#   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-#   ggtitle("GAM Sensitivity Analysis")
+res$cores <- as.numeric(res$cores)
+res$totalTime <- as.numeric(res$totalTime)
+res$GBMemory <- as.numeric(res$GBMemory)
+res$trainingExamples <- as.numeric(res$trainingExamples)
+res$numPredictors <- as.numeric(res$numPredictors)
+res$cells <- as.numeric(res$cells)
+predictors <- data.frame(scale(res[c("cores", "GBMemory", "trainingExamples", "numPredictors")]))
+response <- log(res$totalTime)
+gam.rf.sensModel <- randomForest(predictors, response, ntree=2500, mtry=4)
+toTest <- predictors
+samp1 <- toTest[sample(nrow(toTest), 400, replace=F),]
+samp2 <- toTest[sample(nrow(toTest), 400, replace=F),]
+sens <- sobol(gam.rf.sensModel, samp1, samp2, order=2, nboot=1000)
+gam.sobol <- data.frame(sens$S)
+gam.sobol$names <- rownames(gam.sobol)
+ggplot(gam.sobol, aes(x = names)) + geom_point(aes(y=original)) +
+  geom_errorbar(aes(ymax=max..c.i., ymin=min..c.i.)) +
+  ylab("First Order Sobol' Index") +
+  xlab("") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("GAM Sensitivity Analysis")
 
 gam.testingInd <- sample(nrow(res), nrow(res) * 0.2)
 gam.testing <- res[gam.testingInd,]
@@ -209,13 +243,13 @@ ggplot(rf.sobol, aes(x = names)) + geom_point(aes(y=original)) +
 gbm.testingInd <- sample(nrow(res), nrow(res) * 0.2)
 gbm.testing <- res[gbm.testingInd,]
 gbm.training <- res[-gbm.testingInd,]
-gbm.training.predictors <- gbm.training[c( "numPredictors", "cores", "GBMemory", "trainingExamples")]
+gbm.training.predictors <- gbm.training[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells')]
 gbm.training.predictors <- data.frame(gbm.training.predictors)
 gbm.training.response <- log(gbm.training[[c("totalTime")]])
-gbm.rf <- randomForest(gbm.training.predictors, gbm.training.response, ntree = 15000, mtry=4)
+gbm.rf <- randomForest(gbm.training.predictors, gbm.training.response, ntree = 1000, mtry=4)
 
 ## do prediction
-gbm.testing.predictors <- gbm.testing[c( "numPredictors", "cores", "GBMemory", "trainingExamples")]
+gbm.testing.predictors <- gbm.testing[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells')]
 gbm.testing.predictors <- data.frame(scale(gbm.testing.predictors))
 gbm.prediction <- predict(gbm.rf, gbm.testing.predictors)
 gbm.prediction <- exp(gbm.prediction)
@@ -228,9 +262,9 @@ gbm.mdDelta.sd <- sd(gbm.mdDelta)
 gbm.mdDelta.RSS <- sum((gbm.prediction - gbm.testing$totalTime)^2)
 
 ## Plot
-plot(gbm.prediction, gbm.testing[['totalTime']])
+plot(gbm.prediction, log(gbm.testing[['totalTime']]))
 abline(0, 1)
-plot(log(gbm.prediction), log(gbm.testing[['totalTime']]))
+plot(log(gbm.prediction), gbm.testing[['totalTime']])
 abline(0, 1)
 
 
