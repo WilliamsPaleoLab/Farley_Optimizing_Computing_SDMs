@@ -1,0 +1,402 @@
+---
+title: "bayesian_comp_model"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+library(R2jags)
+library(ggplot2)
+```
+
+## R Markdown
+
+
+Load the data.
+```{r}
+res <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/gbm_all.csv")
+res$logTime <- log(res$totalTime)
+res$grp <- as.numeric(interaction(res$cores, res$GBMemory, res$trainingExamples, res$cells, res$numPredictors))
+```
+
+
+Fit a linear regression so we know how well we might expect to do
+```{r}
+basicModel <- lm(logTime ~  trainingExamples + numPredictors + cores + GBMemory + cells + learningRate + treeComplexity, data = res)
+summary(basicModel)
+anova(basicModel)
+```
+
+
+Specify the Bayesian Model
+```{r}
+bayesModel <- function(){
+  beta0 ~ dnorm(0.001, 0.01) ## intercept prior
+  tau ~ dgamma (0.001, 0.001)      ## model error prior
+  beta1 ~ dnorm (0.001, 0.001) # prior for nT
+  beta2 ~ dnorm (0.001, 0.001) # prior for nP
+  beta3 ~ dnorm (0.001, 0.001) # prior for cores
+  beta4 ~ dnorm (0.001, 0.001) # prior for memory
+  beta5 ~ dnorm (0.001, 0.001) # prior for cells
+  
+  for (i in 1:N){
+    totalTime[i] ~ dnorm(mu[i], tau) # model error
+    mu[i] <- beta0 + beta1*nT[i] + beta2*nP[i] + beta3*cores[i] + beta4*mem[i] + beta5 * cells[i]
+  }
+  
+}
+
+out <- jags(data = list(totalTime = res$logTime,
+                        nP = res$numPredictors,
+                        nT = res$trainingExamples,
+                        cells = res$cells,
+                        cores = res$cores,
+                        mem = res$GBMemory,
+                        N = nrow(res)),
+  parameters.to.save = c('beta0', 'beta1', 'beta2', 'beta3', 'beta4', 'beta5', 'tau'), 
+  n.chains = 1,
+  n.iter = 10000, 
+  n.burnin = 1000, 
+  n.thin = 10,
+  model.file = bayesModel, 
+  DIC = FALSE)
+out.mcmc <- as.mcmc(out)[[1]]
+
+```
+Compare bayesian and ML estimates
+
+```{r}
+beta0.mean <- mean(out.mcmc[, 1]) ## intercept
+beta1.mean <- mean(out.mcmc[, 2]) ## nT
+beta2.mean <- mean(out.mcmc[, 3]) ## nP
+beta3.mean <- mean(out.mcmc[, 4]) ## cores 
+beta4.mean <- mean(out.mcmc[, 5]) ## memory
+beta5.mean <- mean(out.mcmc[, 6]) ## cells
+tau.mean <- mean(out.mcmc[, 7])
+
+beta0.sd <- sd(out.mcmc[, 1])
+beta1.sd <- sd(out.mcmc[, 2])
+beta2.sd <- sd(out.mcmc[, 3])
+beta3.sd <- sd(out.mcmc[, 4])
+beta4.sd <- sd(out.mcmc[, 5])
+beta5.sd <- sd(out.mcmc[, 6])
+tau.sd <- sd(out.mcmc[, 7])
+
+
+beta0.lm <- basicModel$coefficients['(Intercept)']
+beta1.lm <- basicModel$coefficients['trainingExamples']
+beta2.lm <- basicModel$coefficients['numPredictors']
+beta3.lm <- basicModel$coefficients['cores']
+beta4.lm <- basicModel$coefficients['GBMemory']
+beta5.lm <- basicModel$coefficients['cells']
+
+lmCoeffs <- c(beta0.lm, beta1.lm, beta2.lm, beta3.lm, beta4.lm, beta5.lm, NA)
+bayesCoeffs <- c(beta0.mean, beta1.mean, beta2.mean, beta3.mean, beta4.mean, beta5.mean, tau.mean)
+bayesMin <- c(beta0.mean - beta0.sd, beta1.mean - beta1.sd, 
+              beta2.mean - beta2.sd, beta3.mean - beta3.sd, 
+              beta4.mean - beta4.sd, beta5.mean - beta5.sd, 
+              tau.mean - tau.sd)
+
+bayesMax <- c(beta0.mean + beta0.sd, beta1.mean + beta1.sd, 
+              beta2.mean + beta2.sd, beta3.mean + beta3.sd, 
+              beta4.mean + beta4.sd, beta5.mean + beta5.sd, 
+              tau.mean + tau.sd)
+
+coeffName <- c("beta0", "beta1", "beta2", "beta3", "beta4", "beta5", "tau")
+
+basicMat <- data.frame(lmCoeffs, bayesCoeffs, bayesMax, bayesMin, coeffName)
+
+##plot the coefficients
+ggplot(basicMat, aes(x = coeffName)) + geom_point(aes(y = bayesCoeffs, col='Bayes')) + 
+  geom_errorbar(aes(ymin = bayesMin, ymax = bayesMax, col='Bayes')) + 
+  geom_point(aes(y = lmCoeffs, col='LM'))
+  
+```
+
+Do simple prediction
+```{r}
+test <- res[sample(nrow(res), 50, replace=F),]
+
+simplePrediction <- function(){
+  beta0 ~ dnorm(beta0.mean, 1/(beta0.sd)^2) ## intercept prior
+  tau ~ dnorm (tau.mean, 1/(tau.sd)^2)      ## model error prior
+  beta1 ~ dnorm(beta1.mean, 1/(beta1.sd)^2) # prior for nT
+  beta2 ~ dnorm(beta2.mean, 1/(beta2.sd)^2) # prior for nP
+  beta3 ~ dnorm(beta3.mean, 1/(beta3.sd)^2) # prior for cores
+  beta4 ~ dnorm(beta4.mean, 1/(beta4.sd)^2) # prior for memory
+  beta5 ~ dnorm(beta5.mean, 1/(beta5.sd)^2) # prior for cells
+  
+  for (i in 1:N){
+    totalTime[i] ~ dnorm(mu[i], tau) # model error
+    mu[i] <- beta0 + beta1*nT[i] + beta2*nP[i] + beta3*cores[i] + beta4*mem[i] + beta5 * cells[i]
+  }
+}
+
+simplePredictionMCMC <- jags(data = list(
+                        nP = test$numPredictors,
+                        nT = test$trainingExamples,
+                        cells =test$cells,
+                        cores = test$cores,
+                        mem = test$GBMemory,
+                        N = nrow(test),
+                        beta0.mean = beta0.mean, beta0.sd = beta0.sd,
+                        beta1.mean = beta1.mean, beta1.sd = beta1.sd,
+                        beta2.mean = beta2.mean, beta2.sd= beta2.sd,
+                        beta3.mean = beta3.mean, beta3.sd = beta3.sd,
+                        beta4.mean = beta4.mean, beta4.sd = beta4.sd,
+                        beta5.mean = beta5.mean, beta5.sd = beta5.sd,
+                        tau.mean = tau.mean, tau.sd = tau.sd),
+  parameters.to.save = c('totalTime'), 
+  n.chains = 3,
+  n.iter = 10000, 
+  model.file = simplePrediction, 
+  DIC = FALSE)
+preds <- data.frame(simplePredictionMCMC$BUGSoutput$summary)
+plot(preds$mean, totalTime.test)
+abline(0, 1)
+
+
+lmPred <- predict(basicModel, test)
+
+predMat <- data.frame(obs = test$logTime, bayesPred = preds$mean, 
+                      bayesMin = preds$X2.5., bayesMax = preds$X97.5.)
+
+ggplot(predMat, aes(x = obs)) +
+  ggtitle("Multiple Regression") + 
+  xlab("Observed") +
+  ylab("Predicted") +
+  geom_errorbar(aes(ymax = bayesMax, ymin = bayesMin, col='bayes')) + 
+  geom_point(aes(y = lmPred, col='LM'))  +
+  geom_abline(slope=1, intercept=0, col='black')   +
+  geom_point(aes(y = bayesPred, x=obs), col='red')
+
+
+ggplot(predMat, aes(x = lmPred, y = bayesPred)) + 
+  geom_errorbar(aes(ymin = bayesMin, ymax = bayesMax))+
+  geom_point(col='red') + 
+  geom_abline(slope=1,intercept=0)
+
+r <- cor(predMat$obs, predMat$bayesPred)
+r2 <- r*r
+
+```
+
+
+
+
+
+```{r}
+  bayesModel.complex <- function(){
+  beta0Fit ~ dnorm(0.001, 0.001) ## intercept prior for fitting
+  beta0Pred ~ dnorm(0.001, 0.001) ## intercept prior for prediction
+  beta0Acc ~ dnorm(0.001, 0.001) ## incercept prior for accuracy
+  
+  
+  tau ~ dgamma (0.001, 0.001)      ## model error prior
+  beta1 ~ dnorm(0, 0.01) # prior for nT --> fitting
+  beta2 ~ dnorm(0, 0.01) # prior for nP --> fitting
+  beta3 ~ dnorm(0, 0.01) # prior for cores --> fitting
+  beta4 ~ dnorm(0, 0.01) # prior for memory --> fitting
+  beta5 ~ dnorm(0, 0.01) # prior for cells --> fitting
+  
+  beta6 ~ dnorm(0, 0.01) # prior for nT --> accuracy
+  beta7 ~ dnorm(0, 0.01) # prior for nP --> accuracy
+  beta8 ~ dnorm(0, 0.01) # prior for cores --> accuracy
+  beta9 ~ dnorm(0, 0.01) # prior for memory --> accuracy
+  beta10~ dnorm(0, 0.01) # prior for cells --> accuracy
+  
+  beta11 ~ dnorm(0, 0.01) # prior for nT --> accuracy
+  beta12 ~ dnorm(0, 0.01) # prior for nP --> accuracy
+  beta13 ~ dnorm(0, 0.01) # prior for cores --> accuracy
+  beta14 ~ dnorm(0, 0.01) # prior for memory --> accuracy
+  beta15~ dnorm(0, 0.01) # prior for cells --> accuracy
+  
+  errorFit ~ dgamma(0.001, 0.001) ## measurement error for fitting
+  errorPred ~ dgamma(0.001, 0.001) ## measurement error for prediction
+  errorAcc ~ dgamma(0.001, 0.001) ## measurement error for accuracy
+  
+  for (i in 1:N){
+    fitTime[i] ~ dnorm(fitMu[i], errorFit) ## fitting time distribution
+    predTime[i] ~ dnorm(predMu[i], errorPred) ## prediction time distribution
+    accTime[i] ~ dnorm(accMu[i], errorAcc) ##accuracy time distribution
+    
+    fitMu[i] <- beta0Fit + beta1*nT[i] + beta2*nP[i] + beta3*cores[i] + beta4*mem[i] + beta5 * cells[i]
+    predMu[i] <- beta0Pred + beta6*nT[i] + beta7*nP[i] + beta8*cores[i] + beta9*mem[i] + beta10 * cells[i]
+    accMu[i] <- beta0Acc + beta11*nT[i] + beta12*nP[i] + beta13*cores[i] + beta14*mem[i] + beta15 * cells[i]
+      
+    totalTime[i] ~ dnorm(totalMu[i], tau) # model error
+    totalMu[i] <- fitMu[i] + predMu[i] + accMu[i]
+  }
+}
+```
+
+```{r}
+out <- jags(data = list(totalTime = totalTime,
+                        nP = nP,
+                        nT = nT,
+                        cells =cells,
+                        cores = cores,
+                        mem = mem,
+                        accTime = accTime,
+                        fitTime = fitTime,
+                        predTime = predTime,
+                        N = length(totalTime)),
+  parameters.to.save = c('beta1', 'beta2', 'beta3', 'beta4', 'beta5',
+                         'beta6', 'beta7', 'beta8', 'beta9', 'beta10',
+                         'beta11', 'beta12', 'beta13', 'beta14', 'beta15',
+                         'tau', 'beta0Fit', 'beta0Pred', 'beta0Acc', 'errorFit', 'errorPred', 'errorAcc'), 
+  n.chains = 2,
+  n.iter = 5000, 
+  n.burnin = 1000, 
+  model.file = bayesModel.complex, 
+  DIC = FALSE)
+out.mcmc <- as.mcmc(out)
+```
+
+
+
+Use the posteriors to develop our model 
+```{r}
+beta0Fit.mean <- mean(out.mcmc[[1]][, 2])
+beta0Pred.mean <-  mean(out.mcmc[[1]][, 3])
+beta0Acc.mean <- mean(out.mcmc[[1]][, 1])
+
+
+tau.mean <- mean (out.mcmc[[1]][, 22])      ## model error prior
+beta1.mean <- mean(out.mcmc[[1]][, 4])
+beta2.mean  <- mean(out.mcmc[[1]][, 11])
+beta3.mean <- mean(out.mcmc[[1]][, 12])
+beta4.mean <- mean(out.mcmc[[1]][, 13])
+beta5.mean <- mean(out.mcmc[[1]][, 14])
+
+beta6.mean <- mean(out.mcmc[[1]][, 15])
+beta7.mean <- mean(out.mcmc[[1]][, 16])
+beta8.mean <- mean(out.mcmc[[1]][, 17])
+beta9.mean <- mean(out.mcmc[[1]][, 18])
+beta10.mean <- mean(out.mcmc[[1]][, 5])
+
+beta11.mean <- mean(out.mcmc[[1]][, 6])
+beta12.mean <- mean(out.mcmc[[1]][, 7])
+beta13.mean <- mean(out.mcmc[[1]][, 8])
+beta14.mean <- mean(out.mcmc[[1]][, 9])
+beta15.mean <- mean(out.mcmc[[1]][, 10])
+
+errorFit.mean <- mean(out.mcmc[[1]][, 20])
+errorPred.mean <- mean(out.mcmc[[1]][, 21])
+errorAcc.mean <- mean(out.mcmc[[1]][, 19])
+
+
+beta0Fit.sd <- 1/sd(out.mcmc[[1]][, 2])
+beta0Pred.sd <- 1/sd(out.mcmc[[1]][, 3])
+beta0Acc.sd <- 1/sd(out.mcmc[[1]][, 1])
+
+
+tau.sd <- 1/ sd(out.mcmc[[1]][, 22])      ## model error prior
+beta1.sd <- 1/ sd(out.mcmc[[1]][, 4])
+beta2.sd <- 1/ sd(out.mcmc[[1]][, 11])
+beta3.sd <- 1/ sd(out.mcmc[[1]][, 12])
+beta4.sd <- 1/ sd(out.mcmc[[1]][, 13])
+beta5.sd <- 1/ sd(out.mcmc[[1]][, 14])
+
+beta6.sd <- 1/ sd(out.mcmc[[1]][, 15])
+beta7.sd <- 1/ sd(out.mcmc[[1]][, 16])
+beta8.sd <- 1/ sd(out.mcmc[[1]][, 17])
+beta9.sd <- 1/ sd(out.mcmc[[1]][, 18])
+beta10.sd <- 1/ sd(out.mcmc[[1]][, 5])
+
+beta11.sd <- 1/ sd(out.mcmc[[1]][, 6])
+beta12.sd <- 1/ sd(out.mcmc[[1]][, 7])
+beta13.sd <- 1/ sd(out.mcmc[[1]][, 8])
+beta14.sd <- 1/ sd(out.mcmc[[1]][, 9])
+beta15.sd <- 1/ sd(out.mcmc[[1]][, 10])
+
+errorFit.sd <- 1/ sd(out.mcmc[[1]][, 20])
+errorPred.sd <- 1/ sd(out.mcmc[[1]][, 21])
+errorAcc.sd <- 1/ sd(out.mcmc[[1]][, 19])
+```
+
+```{r}
+predictionModel <- function(){
+  beta0Fit ~ dnorm(-370.9475, 0.05809798) ## intercept prior for fitting
+  beta0Pred ~ dnorm(-19.03331, 0.4555797) ## intercept prior for prediction
+  beta0Acc ~ dnorm(-0.7103752, 5.769167) ## incercept prior for accuracy
+  
+  
+  tau ~ dgamma (2.113639e-05, 2006932)      ## model error prior
+  beta1 ~ dnorm(0.1411697, 1101.748) # prior for nT --> fitting
+  beta2 ~ dnorm(68.98417, 0.2941426) # prior for nP --> fitting
+  beta3 ~ dnorm(-1.339924, 2.073026) # prior for cores --> fitting
+  beta4 ~ dnorm(0.1158699, 9.902154) # prior for memory --> fitting
+  beta5 ~ dnorm(-1.30869e-06, 236623.7) # prior for cells --> fitting
+  
+  beta6 ~ dnorm(0.003320241, 10061.88) # prior for nT --> accuracy
+  beta7 ~ dnorm(4.429729, 2.285258) # prior for nP --> accuracy
+  beta8 ~ dnorm(-0.2491819, 19.42564) # prior for cores --> accuracy
+  beta9 ~ dnorm(0.03586165, 93.53924) # prior for memory --> accuracy
+  beta10~ dnorm(6.268412e-05, 2256735) # prior for cells --> accuracy
+  
+  beta11 ~ dnorm(0.0001568141, 130215.6) # prior for nT --> accuracy
+  beta12 ~ dnorm(0.8398568, 244.8469) # prior for nP --> accuracy
+  beta13 ~ dnorm(-0.03036635, 244.8469) # prior for cores --> accuracy
+  beta14 ~ dnorm(0.009153187, 1160.372) # prior for memory --> accuracy
+  beta15~ dnorm(2.2684e-07, 29460486) # prior for cells --> accuracy
+  
+  errorFit ~ dgamma(0.001, 0.001) ## measurement error for fitting
+  errorPred ~ dgamma(0.001, 0.001) ## measurement error for prediction
+  errorAcc ~ dgamma(0.001, 0.001) ## measurement error for accuracy
+  
+  errorFitPrec <- 1/(errorFit * errorFit)
+  errorPredPrec <- 1/(errorPred * errorPred)
+  errorAccPrec <- 1 /(errorAcc * errorAcc)
+
+  for (i in 1:N){
+    fitTime[i] ~ dnorm(fitMu[i],  errorFit) ## fitting time distribution
+    predTime[i] ~ dnorm(predMu[i],  errorPred) ## prediction time distribution
+    accTime[i] ~ dnorm(accMu[i], errorAcc) ##accuracy time distribution
+    totalTime[i] ~ dnorm(totalMu[i], tau) # model error
+    
+    fitMu[i] <- beta0Fit + beta1*nT[i] + beta2*nP[i] + beta3*cores[i] + beta4*mem[i] + beta5 * cells[i]
+    predMu[i] <- beta0Pred + beta6*nT[i] + beta7*nP[i] + beta8*cores[i] + beta9*mem[i] + beta10 * cells[i]
+    accMu[i] <- beta0Acc + beta11*nT[i] + beta12*nP[i] + beta13*cores[i] + beta14*mem[i] + beta15 * cells[i]
+    totalMu[i] <- fitMu[i] + predMu[i] + accMu[i]
+  }
+}
+```
+
+Run the prediction model
+```{r}
+
+#res <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/gbm_full.csv")
+test <- res[sample(nrow(res), 1000),]
+totalTime.test <- test$totalTime
+fitTime.test <- test$fittingTime
+accTime.test <- test$accuracyTime
+predTime.test <- test$predictionTime
+
+cells.test <- test$cells
+nP.test <- test$numPredictors
+nT.test <- test$trainingExamples
+cores.test <- test$cores
+mem.test <- test$GBMemory
+
+
+Predictions <- jags(data = list(
+                        nP = nP.test,
+                        nT = nT.test,
+                        cells = cells.test,
+                        cores = cores.test,
+                        mem = mem.test,
+                        N = length(nP.test)),
+  parameters.to.save = c('fitTime', 'predTime', 'totalTime'), 
+  n.chains = 2,
+  n.iter = 5000, 
+  n.burnin = 1000, 
+  model.file = predictionModel, 
+  DIC = FALSE)
+out.mcmc <- as.mcmc(out)
+
+
+
+ggplot(predMat, aes(y = obs)) + geom_errorbar(aes(x = mean, ymax = X97.5., ymin = X2.5.)) + geom_point(aes(x = mean))
+```
+

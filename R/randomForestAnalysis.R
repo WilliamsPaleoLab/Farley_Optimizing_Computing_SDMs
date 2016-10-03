@@ -64,7 +64,7 @@ importance(rf.rf)
 
 rf.rf.pred = predict(rf.rf, testingSet)
 
-plot(rf.rf.pred ~ log(testingSet$totalTime), xlab="Observed Time",ylab="Modeled Time", main="Linear Execution Time Model")
+plot(rf.rf.pred ~ log(testingSet$totalTime), xlab="Observed Time",ylab="Modeled Time", main="Random Forest Execution Time Model")
 abline(0, 1, col='red')
 
 RSS.rf <- sum((rf.rf.pred - log(testingSet$totalTime))^2)
