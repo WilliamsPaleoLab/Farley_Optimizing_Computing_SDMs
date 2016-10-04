@@ -256,7 +256,7 @@ out.mcmc <- as.mcmc(out)
 
 
 Use the posteriors to develop our model 
-```{r}
+```{r, echo=F}
 beta0Fit.mean <- mean(out.mcmc[[1]][, 2])
 beta0Pred.mean <-  mean(out.mcmc[[1]][, 3])
 beta0Acc.mean <- mean(out.mcmc[[1]][, 1])
@@ -398,5 +398,214 @@ out.mcmc <- as.mcmc(out)
 
 
 ggplot(predMat, aes(y = obs)) + geom_errorbar(aes(x = mean, ymax = X97.5., ymin = X2.5.)) + geom_point(aes(x = mean))
+```
+
+```{r }
+library(R2jags)
+library(bartMachine)
+res <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/gbm_all.csv")
+
+res <- res[c("totalTime", "cores", "GBMemory", "trainingExamples", "numPredictors", "cells", "treeComplexity", "learningRate")]
+
+gbm.testingInd <- sample(nrow(res), 1)
+gbm.testing <- res[gbm.testingInd,]
+gbm.training <- res[-gbm.testingInd,]
+gbm.training.predictors <- gbm.training[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells', "treeComplexity", "learningRate")]
+gbm.training.predictors <- data.frame(gbm.training.predictors)
+gbm.training.response <- log(gbm.training[[c("totalTime")]]) ## take the log for prediction
+
+
+gbm.testing.predictors <- gbm.testing[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells', 
+                                         "treeComplexity", "learningRate")]
+gbm.testing.predictors <- data.frame(gbm.testing.predictors)
+
+gbm.model <- bartMachine(X = gbm.training.predictors, y = gbm.training.response, serialize = T)
+
+
+model <- function(){
+  time ~ dnorm(mu, 1/(sigma)^2)
+  cost <- price * time
+}
+
+p <- bartMachine::bart_machine_get_posterior(gbm.model, gbm.testing.predictors)
+p <- data.frame(p$y_hat_posterior_samples)
+p <- t(p)
+p <- data.frame(p)
+mu <- mean(p$p)
+sigma <- sd(p$p)
+rates <- prices$TotalRate
+
+for (i in 1:length(prices)){
+  price = prices$TotalRate[[i]]
+}
+out <- jags(data = list(mu=mu, sigma=sigma, price = prices$TotalRate[[1]]),
+  parameters.to.save = c("time", "cost"), 
+  n.chains = 3,
+  n.iter = 100000, 
+  n.burnin = 1000, 
+  n.thin = 10,
+  model.file = model, 
+  DIC = FALSE)
+
+
+timeCost <- data.frame(out$BUGSoutput$summary)
+timeCost <- data.frame(t(timeCost))
+o <- data.frame(out$BUGSoutput$sims.matrix)
+ggplot(o) + geom_density(aes(time, col='time'))
+ggplot(o) + geom_density(aes(cost, col='cost'))
+ggplot(o) + geom_point(aes(x = cost, y=time))
+
+
+
+# 
+# 
+# 
+# 
+# library(reshape2)
+# prices <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/costs.csv")
+# calcTimeCostIndex <- function(trainingExamples, cells, numPredictors,
+#                             model, prices, rfTrees = 100, 
+#                             gbm.learningRate=0.01, 
+#                             gbm.treeComplexity=5,
+#                             rf.method = "PARALLEL"){
+#   
+#   timeAndCost <- data.frame(
+#     cores = vector('numeric', length=nrow(prices)),
+#     GBMemory = vector('numeric', length=nrow(prices)),
+#     seconds = vector('numeric', length=nrow(prices)),
+#     cost = vector('numeric', length=nrow(prices)),
+#     accuracy = vector('numeric', length = nrow(prices)))
+#   
+#   for (i in 1:nrow(prices)){
+#     thisComp <- prices[i,]
+#     thisComp.cores <- thisComp$CPUs
+#     thisComp.memory <- thisComp$GBsMem
+#     scenario <- c(cores = thisComp.cores, GBMemory = thisComp.memory, 
+#                   trainingExamples=trainingExamples, 
+#                   numPredictors = numPredictors,
+#                   cells=cells,
+#                   method = rf.method
+#                   )
+#     scenario <- t(melt(scenario, data.frame))
+#     scenario <- as.data.frame(scenario)
+#     thisComp.price <- thisComp$TotalRate## this is rate per hour
+#     thisComp.pricePerSecond <- thisComp.price / 3600 ## this is rate per second
+#     thisComp.Conf <- thisComp$ConfigurationNumber
+#     if (model == 'GBM-BRT'){
+#       scenario$learningRate <- gbm.learningRate
+#       scenario$treeComplexity <- gbm.treeComplexity
+#       logTime <- predict(gbm.rf, scenario)
+#       acc <- predict(gbm.acc.rf, scenario)
+#       inverseAcc <- 1 - acc
+#     }
+#     if (model == 'RF'){
+#       ## dummy vars for categorical method
+#       if (scenario$method == "PARALLEL"){
+#         scenario$par <- 1
+#         scenario$seq <- 0
+#       }else{
+#         scenario$seq <- 1
+#         scenario$par <- 0
+#       }
+#       logTime <- predict(rf.rf, scenario)
+#       acc <- predict(rf.acc.rf, scenario)
+#       inverseAcc <- 1 - acc
+#     }
+#     if (model == 'GAM'){
+#       logTime <- predict(gam.rf, scenario)
+#       acc <- predict(gam.acc.rf, scenario)
+#       inverseAcc <- 1 - acc
+#     }
+#     if(model == 'MARS'){
+#       logTime <- predict(mars.rf, scenario)
+#       acc <- predict(mars.acc.rf, scenario)
+#       inverseAcc <- 1 - acc
+#     }
+#     timePred <- exp(logTime)
+#     scenarioCost <- timePred * thisComp.pricePerSecond
+#     v <- c(thisComp.cores, thisComp.memory, timePred, scenarioCost, inverseAcc)
+#     timeAndCost[i, ] <- v
+#   }
+#   return(timeAndCost)
+# }
+# 
+# estimateOptimal <- function(timeCostMatrix, plot.scene = T){
+#   r <- timeCostMatrix[c("cost", "seconds", "accuracy")]
+#   origin <- c(0, 0, 0)
+#   r <- rbind(r, origin)
+#   d <- as.matrix(dist(r, "manhattan"))
+#   fromOrigin <- d[,nrow(r)]
+#   fromOrigin <- fromOrigin[fromOrigin > 0]
+#   fromOrigin <- as.numeric(fromOrigin)
+#   minDistIdx <- which.min(fromOrigin)
+#   optimal <- timeCostMatrix[minDistIdx, ]
+#   if (plot.scene){
+#     xend = optimal$seconds
+#     yend = optimal$cost
+#     print(ggplot(timeCostMatrix) +
+#     geom_segment(aes(x=0, y=0, xend=seconds, yend=cost, alpha=0.1)) +
+#     geom_point(aes(x = seconds, y=cost, col=cores, size=GBMemory)) +
+#     xlab("Time Cost [seconds]") +
+#     ylab("Money Cost [$]") +
+#     ggtitle(paste("Estimated Costs for Experiment")) + 
+#     geom_segment(aes(x = 0, y=0, yend=yend, xend=xend), col='red'))
+#   }
+#   return(optimal)
+# }
+# 
+# res.gbm <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/gbm_all.csv")
+# res.rf <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/rf_full.csv")
+# res.gam <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/gam_full.csv")
+# res.mars <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/mars_full.csv")
+# 
+# nTest <- 1
+# 
+# test.gbm <- res.gbm[sample(nrow(res.gbm), nTest),]
+# test.gbm$method <- NA
+# test.rf <- res.rf[sample(nrow(res.rf), nTest),]
+# test.gam <- res.gam[sample(nrow(res.gam), nTest),]
+# test.gam$method <- NA
+# test.mars <- res.mars[sample(nrow(res.mars), nTest),]
+# test.mars$method <- NA
+# 
+# predictors.gbm <- test.gbm[c("trainingExamples", "cells", "numPredictors", "treeComplexity", "learningRate", "X")]
+# predictors.gbm$model <- "GBM-BRT"
+# predictors.gam <- test.gam[c("trainingExamples", "cells", "numPredictors", "X")]
+# predictors.gam$model <- "GAM"
+# predictors.rf <- test.rf[c("trainingExamples", "cells", "numPredictors", "method", "X")]
+# predictors.rf$model <- "RF"
+# predictors.mars <- test.mars[c("trainingExamples", "cells", "numPredictors", "X")]
+# predictors.mars$model <- "MARS"
+# 
+# toPredict <- list(predictors.gbm, predictors.gam, predictors.mars, predictors.rf)
+# 
+# timeCosts <- list()
+# optima <- list()
+# idx <- 1
+# for (m in 1:length(toPredict)){
+#   methodPredictors <- toPredict[[m]]
+#   for (i in 1:nTest){
+#     testCase <- methodPredictors[i,]
+#     print(paste("Model: ", testCase$model, 
+#                 " using n=", trainingExamples=testCase$trainingExamples, 
+#                 "and p =", testCase$numPredictors))
+#     timeCost <- calcTimeCostIndex(trainingExamples=testCase$trainingExamples, 
+#                     cells=testCase$cells, 
+#                     numPredictors = testCase$numPredictors,
+#                     model = testCase$model, prices=prices, 
+#                     gbm.learningRate = testCase$learningRate, 
+#                     gbm.treeComplexity = testCase$treeComplexity,
+#                     rf.method = testCase$method)
+#     timeCosts[[idx]] <- timeCost
+#     optimal <- estimateOptimal(timeCost, plot.scene=T)
+#     print(paste("Estimated Cost ($): ", optimal$cost))
+#     print(paste("Estimated Cost (seconds): ", optimal$seconds))
+#     print(paste("Optimal # Cores: ", optimal$cores))
+#     print(paste("Optimal RAM: ", optimal$GBMemory))
+#     optima[[idx]] <- optimal 
+#     idx = idx + 1
+#   }
+# }
+
 ```
 

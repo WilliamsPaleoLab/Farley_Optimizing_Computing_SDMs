@@ -103,6 +103,7 @@ neotomaplot <- ggplot(totalCum, aes(x = date, y = value, group = type)) +
   ggtitle("Neotoma Dataset Submissions") + theme(legend.position="none")
 neotomaplot
 ```
+
 *Figure 2A* shows the steady increase in datasets in the Neotoma Paleoecological Database. 
 
 #### B.
@@ -129,6 +130,7 @@ ggplot(gbif_all, aes(x=year, y=cumsum)) +
   ylab("Number of Occurrences") +
   ggtitle("GBIF Occurrences")
 ```
+
 *Figure 2A* shows the massive influx of occurrence records in the Global Biodiversity Information Facility. Note that digitization of existing records allows GBIF's holdings to preceed it's organization in 2001.  
 
 ### Figure 3
@@ -140,6 +142,7 @@ ggplot(df, aes(df$type)) + geom_bar() +
   ggtitle("Dataset Types in Neotoma") +
   xlab("") + ylab("Count")
 ```
+
 *Figure 3A* shows the relative proportion of each of the 23 dataset types in the Neotoma Paleoecological Database.
 
 
@@ -154,6 +157,7 @@ ggplot(gbif_occ_types, aes(x=Type, y=numOfType)) +
   ggtitle("GBIF Record Types") +
   xlab("") + ylab("Number of Records")
 ```
+
 *Figure 3B* shows the relative proportion of each of the eight record types in the GBIF dataset.
 
 
@@ -191,6 +195,7 @@ ggplot(a) +
   theme(legend.position="right", legend.title=element_blank()) +
   scale_colour_manual(values=c("SDM Citation Growth" = 'blue', "Average Citation Growth" = 'black'))
 ```
+
 *Figure 4* shows that the recent growth in citations for ecological forecasting models far outpaces the average citation growth in all of STEM fields. SDM citation growth was established from a Web of Science query for ("Ecolgical Niche Model" OR "Species Distribution Model" OR "Habitat Suitability Model") and average citation growth was derived from the National Science Board report on Science and Engineering indicators (2014).
 
 
@@ -208,17 +213,20 @@ plot(f, horiz=T, xlab="Instances")
 title("Algorithms Used in SDM Literature", outer=T)
 
 ```
+
 *Figure 5* reports the relative proportions of algorithms used in 100 randomly sampled modeling studies.  Instances were classified according to their classification in the data-driven/model-drive/Bayesian framework. In total, 203 model instances were reviewed in 100 papers. 42 unique algorithms were employed.
 
 #### Figure 6
 ```{r computingCost, echo=F, message=F, warning=F, error=F}
-## interp to linear grid
+prices <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/costs.csv")
+prices <- na.omit(prices)
 par(mar=c(4, 4, 3, 3))
 i <- interp(prices$CPUs,prices$GBsMem,prices$TotalRate, xo=c(1:22), yo=c(1:22))
 filled.contour(i, xlab='CPU', ylab='Memory (GB)', main="Computing Hourly Rate",
                col=rev(heat.colors(n=30, alpha=0.7)))
 
 ```
+
 *Figure 6* demonstrates the cost surface faced by consumers of Google's Cloud Computing Engine. Rates are in $/hr. Note the tradeoff in relative increases in one of the computing components for the same total rate.
 
 
@@ -252,13 +260,14 @@ gbm.mdDelta.sd <- sd(gbm.mdDelta)
 gbm.mdDelta.RSS <- sum((gbm.prediction - gbm.testing$totalTime)^2)
 
 ## Plot
-plot(gbm.prediction ~ log(gbm.testing[['totalTime']]), xlab="Observed", ylab="Predicted", main="Observed-Predicted Execution Time")
+plot(gbm.prediction ~ log(gbm.testing[['totalTime']]), xlab="Observed", ylab="Predicted", main="Observed-Predicted Execution Time (GBM-BRT)")
 abline(0, 1)
 
 print(paste("Runtime Model Mean Squared Error: ", gbm.rf$mse[length(gbm.rf$mse)]))
 print(paste("Runtime Model Percent Variance Explained: ", gbm.rf$rsq[length(gbm.rf$rsq)], "%"))
 
 ```
+
 *Figure 7* shows the model-data comparison for the GBM-BRT model running time as predicted by a random forest ensemble of 100 trees. 
 
 
@@ -289,13 +298,15 @@ gbm.mdDelta.sd.acc <- sd(gbm.mdDelta.acc)
 gbm.mdDelta.RSS.acc <- sum((gbm.prediction.acc - gbm.testing.acc$testingAUC)^2)
 
 ## Plot
-plot(gbm.prediction.acc ~ gbm.testing.acc[['testingAUC']], xlab="Observed AUC", ylab="Predicted AUC", main="Observed-Predicted AUC")
+plot(gbm.prediction.acc ~ gbm.testing.acc[['testingAUC']], xlab="Observed AUC", 
+     ylab="Predicted AUC", main="Observed-Predicted AUC (GBM-BRT)")
 abline(0, 1)
 
 print(paste("Accuracy Model Mean Squared Error: ", gbm.acc.rf$mse[length(gbm.acc.rf$mse)]))
 print(paste("Accuracy Model Percent Variance Explained: ", gbm.acc.rf$rsq[length(gbm.acc.rf$rsq)], "%"))
       
 ```
+
 *Figure 8* shows the model-data comparison for the GBM-BRT accuracy as predicted by a random forest ensemble of 100 trees. 
 
 
@@ -312,6 +323,7 @@ ggplot(accImp) + geom_bar(aes(y = IncNodePurity, x=predictor), stat="identity") 
   ggtitle("Variable Importance in GBM Accuracy Model")
 
 ```
+
 *Figure 9A* shows the relative importance of variables in the model of runtime for the GBM-BRT. *Figure 9B* shows the relative importance of variables in the model of accuracy for the GBM-BRT.
 
 #### Figure 10
@@ -341,13 +353,15 @@ gam.mdDelta.sd <- sd(gam.mdDelta)
 gam.mdDelta.RSS <- sum((gam.prediction - gam.testing$totalTime)^2)
 
 ## Plot
-plot(gam.prediction ~ log(gam.testing[['totalTime']]), xlab="Observed", ylab="Predicted", main="Observed-Predicted Execution Time")
+plot(gam.prediction ~ log(gam.testing[['totalTime']]), xlab="Observed", 
+     ylab="Predicted", main="Observed-Predicted Execution Time (GAM)")
 abline(0, 1)
 
 print(paste("Runtime Model Mean Squared Error: ", gam.rf$mse[length(gam.rf$mse)]))
 print(paste("Runtime Model Percent Variance Explained: ", gam.rf$rsq[length(gam.rf$rsq)], "%"))
 
 ```
+
 *Figure 10* shows the model-data comparison for the runtime of the generalized additive model (GAM) SDM. 
 
 
@@ -378,13 +392,15 @@ gbm.mdDelta.sd.acc <- sd(gam.mdDelta.acc)
 gbm.mdDelta.RSS.acc <- sum((gam.prediction.acc - gam.testing.acc$testingAUC)^2)
 
 ## Plot
-plot(gam.prediction.acc ~ gam.testing.acc[['testingAUC']], xlab="Observed AUC", ylab="Predicted AUC", main="Observed-Predicted AUC")
+plot(gam.prediction.acc ~ gam.testing.acc[['testingAUC']], 
+     xlab="Observed AUC", ylab="Predicted AUC", main="Observed-Predicted AUC (GAM)")
 abline(0, 1)
 
 print(paste("Accuracy Model Mean Squared Error: ", gam.acc.rf$mse[length(gam.acc.rf$mse)]))
 print(paste("Accuracy Model Percent Variance Explained: ", gam.acc.rf$rsq[length(gam.acc.rf$rsq)], "%"))
       
 ```
+
 *Figure 11* shows the model-data comaprison for the model of GAM accuracy.
 
 #### Figure 12
@@ -400,6 +416,7 @@ ggplot(accImp.gam) + geom_bar(aes(y = IncNodePurity, x=predictor), stat="identit
   ggtitle("Variable Importance in GAM Accuracy Model")
 
 ```
+
 *Figure 12A* shows the relative importance of each variable in the GAM runtime model. *Figure 12B* shows the relative importance of each variable in the GAM accuracy model.
 
 
@@ -430,13 +447,15 @@ mars.mdDelta.sd <- sd(mars.mdDelta)
 mars.mdDelta.RSS <- sum((mars.prediction - mars.testing$totalTime)^2)
 
 ## Plot
-plot(mars.prediction ~ log(mars.testing[['totalTime']]), xlab="Observed", ylab="Predicted", main="Observed-Predicted Execution Time")
+plot(mars.prediction ~ log(mars.testing[['totalTime']]), 
+     xlab="Observed", ylab="Predicted", main="Observed-Predicted Execution Time (MARS)")
 abline(0, 1)
 
 print(paste("Runtime Model Mean Squared Error: ", mars.rf$mse[length(mars.rf$mse)]))
 print(paste("Runtime Model Percent Variance Explained: ", mars.rf$rsq[length(mars.rf$rsq)], "%"))
 
 ```
+
 *Figure 13* shows the model-data comparison of the runtime model for the multivariate adaptive regression splines (MARS) SDM. 
 
 
@@ -467,13 +486,15 @@ mars.mdDelta.sd.acc <- sd(mars.mdDelta.acc)
 mars.mdDelta.RSS.acc <- sum((mars.prediction.acc - mars.testing.acc$testingAUC)^2)
 
 ## Plot
-plot(mars.prediction.acc ~ mars.testing.acc[['testingAUC']], xlab="Observed AUC", ylab="Predicted AUC", main="Observed-Predicted AUC")
+plot(mars.prediction.acc ~ mars.testing.acc[['testingAUC']], 
+     xlab="Observed AUC", ylab="Predicted AUC", main="Observed-Predicted AUC (MARS)")
 abline(0, 1)
 
 print(paste("Accuracy Model Mean Squared Error: ", mars.acc.rf$mse[length(mars.acc.rf$mse)]))
 print(paste("Accuracy Model Percent Variance Explained: ", mars.acc.rf$rsq[length(mars.acc.rf$rsq)], "%"))
       
 ```
+
 *Figure 14* shows the model-data comparison for the model of MARS accuracy.
 
 #### Figure 15
@@ -489,6 +510,7 @@ ggplot(accImp.mars) + geom_bar(aes(y = IncNodePurity, x=predictor), stat="identi
   ggtitle("Variable Importance in MARS Accuracy Model")
 
 ```
+
 *Figure 15A* shows the relative importance of variables in the MARS runtime model.
 *Figure 15B* shows the relative importance of variables in the MARS accuracy model.
 
@@ -523,13 +545,15 @@ rf.mdDelta.sd <- sd(rf.mdDelta)
 rf.mdDelta.RSS <- sum((rf.prediction - rf.testing$totalTime)^2)
 
 ## Plot
-plot(rf.prediction ~ log(rf.testing[['totalTime']]), xlab="Observed", ylab="Predicted", main="Observed-Predicted Execution Time")
+plot(rf.prediction ~ log(rf.testing[['totalTime']]), 
+     xlab="Observed", ylab="Predicted", main="Observed-Predicted Execution Time (RF)")
 abline(0, 1)
 
 print(paste("Runtime Model Mean Squared Error: ", rf.rf$mse[length(rf.rf$mse)]))
 print(paste("Runtime Model Percent Variance Explained: ", rf.rf$rsq[length(rf.rf$rsq)], "%"))
 
 ```
+
 *Figure 16* shows the model-data comparison for the random forest (RF) model of runtime.
 
 #### Figure 17
@@ -559,13 +583,15 @@ rf.mdDelta.sd.acc <- sd(rf.mdDelta.acc)
 rf.mdDelta.RSS.acc <- sum((rf.prediction.acc - rf.testing.acc$testingAUC)^2)
 
 ## Plot
-plot(rf.prediction.acc ~ rf.testing.acc[['testingAUC']], xlab="Observed AUC", ylab="Predicted AUC", main="Observed-Predicted AUC")
+plot(rf.prediction.acc ~ rf.testing.acc[['testingAUC']], 
+     xlab="Observed AUC", ylab="Predicted AUC", main="Observed-Predicted AUC (RF)")
 abline(0, 1)
 
 print(paste("Accuracy Model Mean Squared Error: ", rf.acc.rf$mse[length(rf.acc.rf$mse)]))
 print(paste("Accuracy Model Percent Variance Explained: ", rf.acc.rf$rsq[length(rf.acc.rf$rsq)], "%"))
       
 ```
+
 *Figure 17* shows the model-data comparison for the RF model of accruacy.
 
 #### Figure 18
@@ -581,11 +607,12 @@ ggplot(accImp.rf) + geom_bar(aes(y = IncNodePurity, x=predictor), stat="identity
   ggtitle("Variable Importance in Random Forest Accuracy Model")
 
 ```
+
 *Figure 18A* shows the relative importance of each of the variables used in the RF runtime model. *Figure 18B* shows the relative importance of each of the variables used in the RF accuracy model.
 
 
 #### Figure 19
-```{r}
+```{r, echo=F}
 res <- read.csv("thesis-scripts/data/rf_full.csv")
 library(plyr)
 res$grp <- interaction(res$method, res$cores, res$trainingExamples, res$numTrees)
@@ -620,31 +647,218 @@ ggplot(parResults, aes(x = cores, y=speedup,
                        col = interaction(trainingExamples, numTrees))) + 
   geom_line() + ggtitle("Parallel Speedup of Random Forests")
 ```
+
 *Figure 19* shows that more expensive workloads benefit more from additional cores than simple modeling routines.
 
 #### Figure 20
-```{r}
+```{r, echo=F}
 ## and efficiency
 ggplot(parResults, aes(x = cores, y=efficiency, 
                        group=interaction(trainingExamples, numTrees),
                        col = interaction(trainingExamples, numTrees))) + 
   geom_line() + ggtitle("Parallel Efficiency of Random Forests")
 ```
+
 *Figure 20* shows the diminishing marginal returns of using additional cores. Note that simple workflows, though benefiting from additional cores, drop off steeply, while complex workloads decline nearly linearly. 
 
+#### Figure 22
+```{r multiplotfunction, echo=F}
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
+```{r, echo=F}
+library(reshape2)
+prices <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/costs.csv")
+calcTimeCostIndex <- function(trainingExamples, cells, numPredictors,
+                            model, prices, rfTrees = 100, 
+                            gbm.learningRate=0.01, 
+                            gbm.treeComplexity=5,
+                            rf.method = "PARALLEL"){
+  
+  timeAndCost <- data.frame(
+    cores = vector('numeric', length=nrow(prices)),
+    GBMemory = vector('numeric', length=nrow(prices)),
+    seconds = vector('numeric', length=nrow(prices)),
+    cost = vector('numeric', length=nrow(prices)),
+    accuracy = vector('numeric', length = nrow(prices)))
+  
+  for (i in 1:nrow(prices)){
+    thisComp <- prices[i,]
+    thisComp.cores <- thisComp$CPUs
+    thisComp.memory <- thisComp$GBsMem
+    scenario <- c(cores = thisComp.cores, GBMemory = thisComp.memory, 
+                  trainingExamples=trainingExamples, 
+                  numPredictors = numPredictors,
+                  cells=cells,
+                  method = rf.method
+                  )
+    scenario <- t(melt(scenario, data.frame))
+    scenario <- as.data.frame(scenario)
+    thisComp.price <- thisComp$TotalRate## this is rate per hour
+    thisComp.pricePerSecond <- thisComp.price / 3600 ## this is rate per second
+    thisComp.Conf <- thisComp$ConfigurationNumber
+    if (model == 'GBM-BRT'){
+      scenario$learningRate <- gbm.learningRate
+      scenario$treeComplexity <- gbm.treeComplexity
+      logTime <- predict(gbm.rf, scenario)
+      acc <- predict(gbm.acc.rf, scenario)
+      inverseAcc <- 1 - acc
+    }
+    if (model == 'RF'){
+      ## dummy vars for categorical method
+      if (scenario$method == "PARALLEL"){
+        scenario$par <- 1
+        scenario$seq <- 0
+      }else{
+        scenario$seq <- 1
+        scenario$par <- 0
+      }
+      logTime <- predict(rf.rf, scenario)
+      acc <- predict(rf.acc.rf, scenario)
+      inverseAcc <- 1 - acc
+    }
+    if (model == 'GAM'){
+      logTime <- predict(gam.rf, scenario)
+      acc <- predict(gam.acc.rf, scenario)
+      inverseAcc <- 1 - acc
+    }
+    if(model == 'MARS'){
+      logTime <- predict(mars.rf, scenario)
+      acc <- predict(mars.acc.rf, scenario)
+      inverseAcc <- 1 - acc
+    }
+    timePred <- exp(logTime)
+    scenarioCost <- timePred * thisComp.pricePerSecond
+    v <- c(thisComp.cores, thisComp.memory, timePred, scenarioCost, inverseAcc)
+    timeAndCost[i, ] <- v
+  }
+  return(timeAndCost)
+}
+
+estimateOptimal <- function(timeCostMatrix, plot.scene = T){
+  r <- timeCostMatrix[c("cost", "seconds", "accuracy")]
+  origin <- c(0, 0, 0)
+  r <- rbind(r, origin)
+  d <- as.matrix(dist(r, "manhattan"))
+  fromOrigin <- d[,nrow(r)]
+  fromOrigin <- fromOrigin[fromOrigin > 0]
+  fromOrigin <- as.numeric(fromOrigin)
+  minDistIdx <- which.min(fromOrigin)
+  optimal <- timeCostMatrix[minDistIdx, ]
+  if (plot.scene){
+    xend = optimal$seconds
+    yend = optimal$cost
+    print(ggplot(timeCostMatrix) +
+    geom_segment(aes(x=0, y=0, xend=seconds, yend=cost, alpha=0.1)) +
+    geom_point(aes(x = seconds, y=cost, col=cores, size=GBMemory)) +
+    xlab("Time Cost [seconds]") +
+    ylab("Money Cost [$]") +
+    ggtitle(paste("Estimated Costs for Experiment")) + 
+    geom_segment(aes(x = 0, y=0, yend=yend, xend=xend), col='red'))
+  }
+  return(optimal)
+}
+
+res.gbm <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/gbm_all.csv")
+res.rf <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/rf_full.csv")
+res.gam <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/gam_full.csv")
+res.mars <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/mars_full.csv")
+
+nTest <- 1
+
+test.gbm <- res.gbm[sample(nrow(res.gbm), nTest),]
+test.gbm$method <- NA
+test.rf <- res.rf[sample(nrow(res.rf), nTest),]
+test.gam <- res.gam[sample(nrow(res.gam), nTest),]
+test.gam$method <- NA
+test.mars <- res.mars[sample(nrow(res.mars), nTest),]
+test.mars$method <- NA
+
+predictors.gbm <- test.gbm[c("trainingExamples", "cells", "numPredictors", "treeComplexity", "learningRate", "X")]
+predictors.gbm$model <- "GBM-BRT"
+predictors.gam <- test.gam[c("trainingExamples", "cells", "numPredictors", "X")]
+predictors.gam$model <- "GAM"
+predictors.rf <- test.rf[c("trainingExamples", "cells", "numPredictors", "method", "X")]
+predictors.rf$model <- "RF"
+predictors.mars <- test.mars[c("trainingExamples", "cells", "numPredictors", "X")]
+predictors.mars$model <- "MARS"
+
+toPredict <- list(predictors.gbm, predictors.gam, predictors.mars, predictors.rf)
+
+timeCosts <- list()
+optima <- list()
+idx <- 1
+for (m in 1:length(toPredict)){
+  methodPredictors <- toPredict[[m]]
+  for (i in 1:nTest){
+    testCase <- methodPredictors[i,]
+    print(paste("Model: ", testCase$model, 
+                " using n=", trainingExamples=testCase$trainingExamples, 
+                "and p =", testCase$numPredictors))
+    timeCost <- calcTimeCostIndex(trainingExamples=testCase$trainingExamples, 
+                    cells=testCase$cells, 
+                    numPredictors = testCase$numPredictors,
+                    model = testCase$model, prices=prices, 
+                    gbm.learningRate = testCase$learningRate, 
+                    gbm.treeComplexity = testCase$treeComplexity,
+                    rf.method = testCase$method)
+    timeCosts[[idx]] <- timeCost
+    optimal <- estimateOptimal(timeCost, plot.scene=T)
+    print(paste("Estimated Cost ($): ", optimal$cost))
+    print(paste("Estimated Cost (seconds): ", optimal$seconds))
+    print(paste("Optimal # Cores: ", optimal$cores))
+    print(paste("Optimal RAM: ", optimal$GBMemory))
+    optima[[idx]] <- optimal 
+    idx = idx + 1
+  }
+}
+```
+
+*Figure 22* demonstrates calculating the optimal computing configuration for five randomly drawn experiments.  I first calculate the predicted execution time and cost under 200+ configuration types, using the Google Cloud Engine cost curves. Then, I plot them in cartesian space, with time cost and dollar cost on orthogonal axes. Then, I find the euclidean distance between each point and the origin (0,0).  Finally, I find the minimum distance between the origin and a point, and call that point the optimal.
 
 #### Figure 21
 Move from a machine-learning to a Bayesian approach.  Run a simple linear model, estimating coefficients with MCMC simulations, then predict the execution time for a testing set of n=50.
 
-```{r}
+```{r, echo=F}
 library(R2jags)
 library(ggplot2)
 res <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/gbm_all.csv")
 res$logTime <- log(res$totalTime)
 res$grp <- as.numeric(interaction(res$cores, res$GBMemory, res$trainingExamples, res$cells, res$numPredictors))
 basicModel <- lm(logTime ~  trainingExamples + numPredictors + cores + GBMemory + cells, data = res)
-summary(basicModel)
-anova(basicModel)
 
 bayesModel <- function(){
   beta0 ~ dnorm(0.001, 0.01) ## intercept prior
@@ -770,14 +984,13 @@ predMat <- data.frame(obs = test$logTime, bayesPred = preds$mean,
                       bayesMin = preds$X2.5., bayesMax = preds$X97.5.)
 
 ggplot(predMat, aes(x = obs)) +
-  ggtitle("Multiple Regression") + 
   xlab("Observed [log-seconds]") +
   ylab("Predicted [log-seconds]") +
   geom_errorbar(aes(ymax = bayesMax, ymin = bayesMin, col='bayes')) + 
   geom_point(aes(y = lmPred, col='LM'))  +
   geom_abline(slope=1, intercept=0, col='black')   +
   geom_point(aes(y = bayesPred, x=obs), col='red') + 
-  ggtitle("GBM-BRT Model-Data Comparison")
+  ggtitle("Bayesian Fitting GBM-BRT Model-Data Comparison")
 
 
 ggplot(predMat, aes(x = lmPred, y = bayesPred)) + 
@@ -795,162 +1008,134 @@ print(paste("Model Explains ", r2, "% of data variance."))
 
 ```
 
+*Figure 21* shows the results of fitting a model using draws from an MCMC instead of OLS.  Notice the close agreement between OLS and posterior means.  Also, we now have uncertainty estimates on all of our results.
 
-#### Figure 21
-```{r multiplotfunction}
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  library(grid)
 
-  # Make a list from the ... arguments and plotlist
-  plots <- c(list(...), plotlist)
-
-  numPlots = length(plots)
-
-  # If layout is NULL, then use 'cols' to determine layout
-  if (is.null(layout)) {
-    # Make the panel
-    # ncol: Number of columns of plots
-    # nrow: Number of rows needed, calculated from # of cols
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                    ncol = cols, nrow = ceiling(numPlots/cols))
-  }
-
- if (numPlots==1) {
-    print(plots[[1]])
-
-  } else {
-    # Set up the page
-    grid.newpage()
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-
-    # Make each plot, in the correct location
-    for (i in 1:numPlots) {
-      # Get the i,j matrix positions of the regions that contain this subplot
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
-                                      layout.pos.col = matchidx$col))
-    }
-  }
-}
-```
+### Figure 23
 ```{r}
-library(reshape2)
-prices <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/costs.csv")
-calcTimeCostIndex <- function(trainingExamples, cells, numPredictors,
-                            model, prices, rfTrees = 100, gbm.learningRate=0.01, gbm.treeComplexity=5){
-  
-  timeAndCost <- data.frame(
-    cores = vector('numeric', length=nrow(prices)),
-    GBMemory = vector('numeric', length=nrow(prices)),
-    seconds = vector('numeric', length=nrow(prices)),
-    cost = vector('numeric', length=nrow(prices)),
-    accuracy = vector('numeric', length = nrow(prices)))
-  
-  for (i in 1:nrow(prices)){
+library(R2jags)
+library(bartMachine)
+res <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/gbm_all.csv")
+
+res <- res[c("totalTime", "cores", "GBMemory", "trainingExamples", "numPredictors", "cells", "treeComplexity", "learningRate")]
+
+gbm.testingInd <- sample(nrow(res), 100)
+gbm.testing <- res[gbm.testingInd,]
+gbm.training <- res[-gbm.testingInd,]
+gbm.training.predictors <- gbm.training[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells', "treeComplexity", "learningRate")]
+gbm.training.predictors <- data.frame(gbm.training.predictors)
+gbm.training.response <- log(gbm.training[[c("totalTime")]]) ## take the log for prediction
+
+
+gbm.testing.predictors <- gbm.testing[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells', 
+                                         "treeComplexity", "learningRate")]
+gbm.testing.predictors <- data.frame(gbm.testing.predictors)
+
+gbm.model <- bartMachine(X = gbm.training.predictors, y = gbm.training.response, serialize = T)
+
+```
+
+
+```{r}
+
+
+
+costs.mean <- vector()
+times.mean <- vector()
+CPUS <- vector()
+Mem <- vector()
+
+cost.dist <- list()
+time.dist <- list()
+
+long <- res[res$trainingExamples > 1000,]
+testCase <- long[sample(nrow(long), 1),]
+
+for (i in 1:nrow(prices)){
     thisComp <- prices[i,]
     thisComp.cores <- thisComp$CPUs
     thisComp.memory <- thisComp$GBsMem
-    scenario <- c(cores = thisComp.cores, GBMemory = thisComp.memory, 
-                  trainingExamples=trainingExamples, 
-                  numPredictors = numPredictors,
-                  cells=cells)
-    
+    scenario <- c(trainingExamples=testCase$trainingExamples,
+                  numPredictors = testCase$numPredictors,
+                  cells=testCase$cells,
+                  learningRate = testCase$learningRate,
+                  treeComplexity = testCase$treeComplexity,
+                  cores = thisComp.cores, 
+                  GBMemory = thisComp.memory)
     scenario <- t(melt(scenario, data.frame))
     scenario <- as.data.frame(scenario)
+    p <- predict(gbm.model,  scenario)
+    time <- exp(p)
+    times.mean[[i]] <- time
     thisComp.price <- thisComp$TotalRate## this is rate per hour
     thisComp.pricePerSecond <- thisComp.price / 3600 ## this is rate per second
-    thisComp.Conf <- thisComp$ConfigurationNumber
-    if (model == 'GBM-BRT'){
-      scenario$learningRate <- gbm.learningRate
-      scenario$treeComplexity <- gbm.treeComplexity
-      logTime <- predict(gbm.rf, scenario)
-      acc <- predict(gbm.acc.rf, scenario)
-      inverseAcc <- 1 - acc
-    }
-    if (model == 'RF'){
-      logTime <- predict(rf.rf, scenario)
-    }
-    if (model == 'GAM'){
-      logTime <- predict(gam.rf, scenario)
-    }
-    if(model == 'MARS'){
-      logTime <- predict(mars.rf, scenario)
-    }
-    timePred <- exp(logTime)
-    scenarioCost <- timePred * thisComp.pricePerSecond
-    v <- c(thisComp.cores, thisComp.memory, timePred, scenarioCost, inverseAcc)
-    timeAndCost[i, ] <- v
-  }
-  return(timeAndCost)
+    cost <- time*thisComp.pricePerSecond
+    costs.mean[[i]] <- cost
+    timeDist <- data.frame(t(bart_machine_get_posterior(gbm.model, scenario)$y_hat_posterior_samples))
+    names(timeDist) <- c("value")
+    timeDist$value <- exp(timeDist$value)
+    timeMean <- mean(timeDist$value)
+    timeSD <- sd(timeDist$value)
+    costDist <- timeDist$value * thisComp.pricePerSecond
+    costMean <- mean(costDist)
+    costSD <- sd(costDist)
+    time.dist[[i]] <- timeDist$value
+    cost.dist[[i]] <- costDist
 }
-
-estimateOptimal <- function(timeCostMatrix, plot.scene = T){
-  r <- timeCostMatrix[c("cost", "seconds", "accuracy")]
-  origin <- c(0, 0, 0)
-  r <- rbind(r, origin)
-  d <- as.matrix(dist(r, "manhattan"))
-  fromOrigin <- d[,nrow(r)]
-  fromOrigin <- fromOrigin[fromOrigin > 0]
-  fromOrigin <- as.numeric(fromOrigin)
-  minDistIdx <- which.min(fromOrigin)
-  optimal <- timeCostMatrix[minDistIdx, ]
-  if (plot.scene){
-    xend = optimal$seconds
-    yend = optimal$cost
-    print(ggplot(timeCostMatrix) +
-    geom_segment(aes(x=0, y=0, xend=seconds, yend=cost, alpha=0.1)) +
-    geom_point(aes(x = seconds, y=cost, col=cores, size=GBMemory)) +
-    xlab("Time Cost [seconds]") +
-    ylab("Money Cost [$]") +
-    ggtitle(paste("Estimated Costs for Experiment")) + 
-    geom_segment(aes(x = 0, y=0, yend=yend, xend=xend), col='red'))
-  }
-  return(optimal)
-}
-
-res <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/gbm_all.csv")
-nTest <- 50
-test <- res[sample(nrow(res), nTest),]
-
-predictors <- test[c("trainingExamples", "cells", "numPredictors", "treeComplexity", "learningRate", "X")]
-predictors$model <- "GBM-BRT"
-
-timeCosts <- list()
-optima <- list()
-for (i in 1:nTest){
-  print(paste("Experiment Summary: ID#", i))
-  testCase <- predictors[i,]
-  timeCost <- calcTimeCostIndex(trainingExamples=testCase$trainingExamples, 
-                  cells=testCase$cells, 
-                  numPredictors = testCase$numPredictors,
-                  model = testCase$model, prices=prices, 
-                  gbm.learningRate = testCase$learningRate, 
-                  gbm.treeComplexity = testCase$treeComplexity)
-  timeCosts[[i]] <- timeCost
-  optimal <- estimateOptimal(timeCost, plot.scene=F)
-  print(paste("Estimated Cost ($): ", optimal$cost))
-  print(paste("Estimated Cost (seconds): ", optimal$seconds))
-  print(paste("Optimal # Cores: ", optimal$cores))
-  print(paste("Optimal RAM: ", optimal$GBMemory))
-  optima[[i]] <- optimal
-}
-
-optimaDF <- data.frame(matrix(unlist(optima), ncol=5, byrow=T))
-names(optimaDF) <- c("Cores", "Memory", "Seconds", "Cost", "InverseAcc")
-
-summary(optimaDF)
-
-ggplot(optimaDF) + 
-  geom_histogram(aes(x = Cores, col='Cores', alpha=0.25)) + 
-  geom_histogram(aes(x = Memory, col='Memory', alpha=0.25))
-
-
-ggplot(optimaDF) + 
-  geom_density(aes(x = Cost, col='Cores', alpha=0.25))
 
 ```
 
+```{r}
+p <- melt(time.dist)
 
-    
+p.test <- p
+p.test$L1 <- as.factor(p.test$L1)
+ggplot(p.test) + 
+  geom_density(aes(x=value, group=L1, col=L1), alpha=0.2) +
+  scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
+  ggtitle(paste("Posterior Density of Execution Time of GBM-BRT SDM #", 1)) +
+  xlab("Log Seconds") +
+  ylab("Posterior Density")
+  
+```
+
+```{r}
+p <- melt(cost.dist)
+p <- na.omit(p)
+p.test <- p
+p.test$L1 <- as.factor(p.test$L1)
+ggplot(p.test) + 
+  geom_density(aes(x=value, group=L1, col=L1), alpha=0.2) +
+  scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
+  ggtitle(paste("Posterior Density of Cost of GBM-BRT SDM #", 1)) +
+  xlab("Dollars ($)") +
+  ylab("Posterior Density") + xlim(0, 0.2)
+
+```
+
+```{r}
+cost.sd <- sapply(cost.dist, function(x){
+  return(sd(x))
+})
+time.sd <- sapply(cost.dist, function(x){
+  return(sd(x))
+})
+cost.mean <- sapply(cost.dist, function(x){
+  return(mean(x))
+})
+time.mean <- sapply(cost.dist, function(x){
+  return(mean(x))
+})
+
+
+timeCostMatrix = data.frame(time = time.mean, cost =cost.mean,
+                            timeSD = time.sd, cost = cost.sd)
+
+ggplot(timeCostMatrix) + 
+  # geom_point(aes(x = time, y = cost)) + 
+  geom_errorbar(aes(x = time, ymin = time - timeSD, ymax = time+timeSD)) + 
+  geom_errorbarh(aes(x = time, y=cost, xmin = cost - costSD, xmax = cost+costSD)) 
+```
+
+*Figure 23* is something I'm still in the middle of working through, where I use a bayesian framework to fit the execution time model, then propagate the uncertainty through the optimal prediction process. First, I fit an additive tree model (a la GBM), but using the Bayesian framework, with priors. I used the ```bartMachine``` package in R to do this.  I computed a 1000 iteration MCMC, where each iteration was a full tree model.  Then using the posterior draws, I calculated the uncertainty on the execution time prediction.  Then, for each time, I calculated the corresponding dollar cost.  Then, I calculate the euclidean distance between all posterior draws of execution time/dollar cost and the origin for all possible computing configurations.  As before, I then take the minimum euclidean distance, but this time, with a range of possible solutions.
 
