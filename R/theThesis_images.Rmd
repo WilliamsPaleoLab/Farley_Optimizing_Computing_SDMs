@@ -1,10 +1,12 @@
 ---
 title: "Scott's Thesis Images"
-output: 
+output:
   html_document:
-    toc: true
-    theme: spacelab
     highlight: tango
+    theme: spacelab
+    toc: no
+  pdf_document:
+    toc: yes
 ---
 
 ```{r, setup, echo=FALSE, warning=FALSE, error=FALSE, message=FALSE}
@@ -21,7 +23,6 @@ library(gbm)
 library(randomForest)
 library(knitr)
 prices <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/costs.csv")
-prices <- prices[-which(prices$TotalRate > 10),]
 meta <- read.csv("/Users/scottsfarley/documents/thesis-scripts/data/meta_analysis.csv")
 opts_knit$set(root.dir = '/users/scottsfarley/documents')
 ```
@@ -1012,7 +1013,7 @@ print(paste("Model Explains ", r2, "% of data variance."))
 
 
 ### Figure 23
-```{r}
+```{r, echo=F, message=F}
 library(R2jags)
 library(bartMachine)
 res <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/gbm_all.csv")
@@ -1036,7 +1037,7 @@ gbm.model <- bartMachine(X = gbm.training.predictors, y = gbm.training.response,
 ```
 
 
-```{r}
+```{r, echo=F, message=F}
 
 
 
@@ -1051,7 +1052,7 @@ time.dist <- list()
 long <- res[res$trainingExamples > 1000,]
 testCase <- long[sample(nrow(long), 1),]
 
-for (i in 1:nrow(prices)){
+for (i in 1:50){
     thisComp <- prices[i,]
     thisComp.cores <- thisComp$CPUs
     thisComp.memory <- thisComp$GBsMem
@@ -1085,7 +1086,7 @@ for (i in 1:nrow(prices)){
 
 ```
 
-```{r}
+```{r, echo=F}
 p <- melt(time.dist)
 
 p.test <- p
@@ -1099,7 +1100,7 @@ ggplot(p.test) +
   
 ```
 
-```{r}
+```{r, echo=F}
 p <- melt(cost.dist)
 p <- na.omit(p)
 p.test <- p
@@ -1114,6 +1115,41 @@ ggplot(p.test) +
 ```
 
 ```{r}
+c.d <- melt(cost.dist)
+c.d <- na.omit(c.d)
+c.d$L1 <- as.factor(c.d$L1)
+t.d <- melt(time.dist)
+t.d <- na.omit(t.d)
+t.d$L1 <- as.factor(t.d$L1)
+pots <- data.frame(time = t.d, cost = c.d)
+ggplot(pots) + 
+  # geom_point(aes(x = cost.value, y = time.value, group=cost.L1, col=cost.L1), alpha=0.25) +
+  scale_fill_gradient() +
+  guides(col=F, group=F) +
+  stat_density2d(aes(y = time.value, x = cost.value, group=cost.L1, col=cost.L1, fill=cost.L1), 
+                 geom="polygon", bins=5) +
+  xlab("Dollar Cost ($)") + 
+  ylab("Time Cost (seconds)") +
+  scale_fill_discrete() +
+  ggtitle("Posterior Distributions of Time-Cost")
+```
+
+```{r}
+# c.d <- melt(cost.dist)
+# c.d <- na.omit(c.d)
+# c.d$L1 <- as.factor(c.d$L1)
+# t.d <- melt(time.dist)
+# t.d <- na.omit(t.d)
+# t.d$L1 <- as.factor(t.d$L1)
+# pots <- data.frame(time = t.d, cost = c.d)
+# ggplot(pots) + 
+#   # geom_point(aes(x = cost.value, y = time.value, group=cost.L1, col=cost.L1), alpha=0.25) +
+#   geom_density(aes(y = time.value, group=cost.L1, col=cost.L1)) +
+#   geom_density(aes(x = cost.value, group=cost.L1, col-cost.L1)) + 
+#   scale_x_continuous()
+```
+
+```{r, echo=F}
 cost.sd <- sapply(cost.dist, function(x){
   return(sd(x))
 })
@@ -1131,11 +1167,91 @@ time.mean <- sapply(cost.dist, function(x){
 timeCostMatrix = data.frame(time = time.mean, cost =cost.mean,
                             timeSD = time.sd, cost = cost.sd)
 
-ggplot(timeCostMatrix) + 
-  # geom_point(aes(x = time, y = cost)) + 
-  geom_errorbar(aes(x = time, ymin = time - timeSD, ymax = time+timeSD)) + 
-  geom_errorbarh(aes(x = time, y=cost, xmin = cost - costSD, xmax = cost+costSD)) 
+compDists <- list()
+for (i in 1:length(time.dist)){
+  compDist <- vector()
+  for (j in 1:1000){
+    t.i <- time.dist[[i]][[j]]
+    c.i <- cost.dist[[i]][[j]]
+    pt <- c(t.i, c.i)
+    orig <- c(0, 0)
+    m <- rbind(pt, orig)
+    d <- dist(m)
+    compDist[j] <- d[[1]]
+  }
+  compDists[[i]] <- compDist
+}
+allDistances <- melt(compDists)
+
+p <- na.omit(allDistances)
+p$value <- as.numeric(p$value)
+p$L1 <- as.factor(p$L1)
+ggplot(p) + 
+  geom_density(aes(x=value, group=L1, col=L1), alpha=0.2) +
+  scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
+  xlab("Euclidiean Distance From Origin") +
+  ggtitle("Density of Euclidean Distance From Origin") +
+  geom_rug(aes(x =value , group=L1, col=L1))
 ```
 
 *Figure 23* is something I'm still in the middle of working through, where I use a bayesian framework to fit the execution time model, then propagate the uncertainty through the optimal prediction process. First, I fit an additive tree model (a la GBM), but using the Bayesian framework, with priors. I used the ```bartMachine``` package in R to do this.  I computed a 1000 iteration MCMC, where each iteration was a full tree model.  Then using the posterior draws, I calculated the uncertainty on the execution time prediction.  Then, for each time, I calculated the corresponding dollar cost.  Then, I calculate the euclidean distance between all posterior draws of execution time/dollar cost and the origin for all possible computing configurations.  As before, I then take the minimum euclidean distance, but this time, with a range of possible solutions.
 
+
+```{r}
+learningRateOpts <- seq(0.001, 0.1, by=0.1)
+treeComplexityOpts <- seq(1, 5)
+nTexOpts <- seq(10, 25000, by=50)
+cellOpts <- seq(10000, 1000000, by=100000)
+nPOpts <- seq(1, 5)
+prices <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/costs.csv")
+
+n = length(learningRateOpts) * 
+  length(treeComplexityOpts) *
+  length(nTexOpts) *
+  length(cellOpts) *
+  length(nPOpts) *
+  nrow(prices)
+
+timeAndCost <- data.frame(
+  cores = vector('numeric', length=n),
+  GBMemory = vector('numeric', length=n),
+  seconds = vector('numeric', length=n),
+  cost = vector('numeric', length=n),
+  accuracy = vector('numeric', length = n))
+
+print(paste("N is ", n))
+
+for (lr in learningRateOpts){
+  for (tc in treeComplexityOpts){
+    for(ntex in nTexOpts){
+      for (cell in cellOpts){
+        for(np in nPOpts){
+          for (cID in 1:nrow(prices)){
+            thisComp <- prices[cID,]
+            thisComp.cores <- thisComp$CPUs
+            thisComp.memory <- thisComp$GBsMem
+            scenario <- c(cores = thisComp.cores, 
+                          GBMemory = thisComp.memory, 
+                          trainingExamples=ntex, 
+                          numPredictors = np,
+                          cells=cell,
+                          learningRate = lr,
+                          treeComplexity = tc
+                        )
+            scenario <- t(melt(scenario, data.frame))
+            scenario <- as.data.frame(scenario)
+            p <- predict(gbm.model,  scenario)
+            time <- exp(p)
+            acc <- predict(gbm.acc.rf, scenario)
+            timePred <- exp(logTime)
+            scenarioCost <- timePred * thisComp.pricePerSecond
+            v <- c(thisComp.cores, thisComp.memory, timePred, scenarioCost, acc)
+            timeAndCost[i, ] <- v
+          }
+        }
+      }
+    }
+  }
+}
+
+```
