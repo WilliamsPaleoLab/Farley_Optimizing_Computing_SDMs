@@ -238,153 +238,40 @@ Under the first optimization, the hypercube is searched to find the combination 
 
 Under the second optimization, the user is constrained in the amount of time or money able to be expended on SDM experiments.  First, the hypercube is searched for experiments that fall within the budgetary constraints.  The subset of the original hypercube is then searched for the combination of algorithm inputs that maximize accuracy.  The optimal solution is given as the configuration that maximizes the accuracy of the experiment while still falling within the constraints set by the user.
 
+| Orthogonal Axis    | Minimum Value     | Maximum Value     | Step Size     | Number of Steps     |
+| :------------- | :------------- | :------------- | :------------- |:------------- |
+| Training Examples      | 0       | 500000      | 10000      | 51      |
+| Cells      | 10000      | 1000000       | 100000       | 10       |
+| Number of Covariates      | 1       | 5       | 1      | 5      |
+| CPU Cores     | 1      | 24       | 1     | 24      |
+| Memory (GB)     | 2      | 22      | 2       | 12     |
+| Learning Rate *(GBM-BRT Only)*     | 0.001       | 0.11  |  0.005 | 22      |
+| Tree Complexity *(GBM-BRT Only)*     | 1       | 5       | 1      | 5      |
 
-### Results and Discussion
+
+### Results
 #### Model Performance
-The model results varied by SDM class, though overall showed considerable skill in predicting both time and accuracy.  Both the MARS and GBM-BRT models showed clear ability to accurately predict the runtimes in the holdout testing set.  The GBM-BRT model had an MSE of 0.076 ln(seconds)^2 and an $r^2$ value of 0.954.  The MARS model slightly exceeded this, with an MSE of 0.062 ln(seconds)^2 and an $r^2$ of 0.961.  The GAM and RF SDM prediction models show slightly less predictive skill.  The RF model had an MSE of 0.667 ln(seconds)^2 and an $r^2$ of 0.536. Similarly, the GAM model showed an MSE of 0.0126 ln(seconds)^2 and an $r^2$ of 0.523.  The GAMs took significantly less time fit that the SDMs (<10s). One possible reason for their high variance is that there are low level computing processes that affect processes at these time scales that have less impact when working on the longer time scales of the other models (minutes to hours).  A second reason why these models may show less predictive skill is that these models have fewer data points on which to fit the model.  Both the GAM and RF training sets had only 2636 and 2861 data points, respectively. Perhaps the addition of more training data would enhance the model fit. Nonetheless, all four models showed a significant ability to predict execution times, with all four MSEs far less than 1 log-second.  The models explained a significant portion of the variance in the dataset, suggesting that stochastic interactions from the computer system play a relatively minor role in the SDM runtime.
+The model results varied by SDM class, though overall showed considerable skill in predicting both time and accuracy.  Both the MARS and GBM-BRT models showed clear ability to accurately predict the runtimes in the holdout testing set.  The GBM-BRT model had an MSE of 0.076 ln(seconds)^2 and an $r^2$ value of 0.954.  The MARS model slightly exceeded this, with an MSE of 0.062 ln(seconds)^2 and an $r^2$ of 0.961.  The GAM and RF SDM prediction models show slightly less predictive skill.  The RF model had an MSE of 0.667 ln(seconds)^2 and an $r^2$ of 0.536. Similarly, the GAM model showed an MSE of 0.0126 ln(seconds)^2 and an $r^2$ of 0.523.  The GAMs took significantly less time fit that the SDMs (<10s). One possible reason for their high variance is that there are low level computing processes that affect processes at these time scales that have less impact when working on the longer time scales of the other models (minutes to hours).  A second reason why these models may show less predictive skill is that these models have fewer data points on which to fit the model.  Both the GAM and RF training sets had only 2636 and 2861 data points, respectively. Perhaps the addition of more training data would enhance the model fit. Nonetheless, all four models showed a significant ability to predict execution times, with all four MSEs far less than 1 log-second.  The models explained a significant portion of the variance in the dataset, suggesting that stochastic interactions from the computer system play a relatively minor role in the SDM runtime. Figure [x] shows the relative accuracy of each of the four SDM classes.  Note the relative scales, and that some models take several hours to compute, while others converge within several seconds.
 
-The accuracy of the SDM is also well modeled using random forests.  In all cases, the model evaluation metrics are quite similar, suggesting that the model is well suited to predicting accuracy using the given training features.  The MSE is approximately 0.0002 AUC points for all models, and the $r^2$ variance explained ranges between 0.85 and 0.87.  The best performing model is the GBM-BRT accuracy model, with an $r^2$ of 0.870 and an MSE of 0.00024 AUC points.  The visual fit of all models is very good. The fact that all models show such similar skill metrics is surprising.  A potential explanation for this is that there is a minor variable that is currently unaccounted for that could provide the missing ~14% of variance explanation.  However, spanning all SDM classes it is difficult to figure out what this feature might be.
+| Model    | nTrain | nTest | MSE    | $r^2$    |
+| :------------- | :------| :------| :------------- | :------------- |
+| GBM-BRT       | 9256| 2314| 0.07257       | 0.9558       |
+| GAM      |  2636| 659| 0.01319       |  0.5063      |
+| MARS       |  6632| 1657| 0.06155       | 0.9614       |
+| RF       |  2861| 715| 0.68057       | 0.5298      |
 
+The accuracy of the SDM is also well modeled using random forests.  The model evaluation metrics are quite similar, suggesting that the model is well suited to predicting accuracy using the given training features.  The MSE is approximately 0.0002 AUC points for all models, and the $r^2$ variance explained ranges between 0.85 and 0.93.  Statistically, the RF and MARS models were tied for the best performing model, with an $r^2$ of 0.935 and and MSE of 0.000184.  However, the visual fit of the MARS model is significantly better than the RF model. The fact that all models show such similar skill metrics is surprising.  A potential explanation for this is that there is a minor variable that is currently unaccounted for that could provide the missing ~14% of variance explanation.  However, spanning all SDM classes it is difficult to figure out what this feature might be. Figure [x] shows the relative skill of each of the accuracy models.  Notice that while the same
+
+| Model    | nTrain | nTest | MSE    | $r^2$    |
+| :------------- | :------| :------| :------------- | :------------- |
+| GBM-BRT       | 9256| 2314| 0.000235       | 0.8748       |
+| GAM      |  2636| 659| 0.000276      | 0.8507       |
+| MARS       |  6632| 1657| 0.000184      | 0.9350       |
+| RF       |  2861| 715| 0.000184       | 0.9347       |
 
 #### Model Drivers
 The models show similar drivers over all classes, with the exception of the GAM models.  In GBM-BRT, RF, and MARS models, the number of training examples used in model fitting are the single most important variable in determining model runtime, followed by the number of predictors used.  In the GAM model, it appears that model fitting is trivial, and that the majority of the time was spent projecting the model onto the future raster grid, yielding number of cells in the output raster as the most important variable.  In GBM-BRT, additional two additional algorithm input variables were included: tree complexity and learning rate.  These parameters control the number of trees that the algorithm should fit, and so should in theory influence run time.  However, these variables appear relatively minor in relation to number of training examples and predictors.  In the GBM-BRT, MARS, and GAM models, the hardware variables show very little influence in the execution time.  This is to be expected, since they are fit sequentially, there are not able to benefit from additional cores. An analysis of the runtime logs indicates that the models are CPU bound, and that they run out of CPU capacity before they are able to be significantly affected by memory limitations. The RF model is designed to run in parallel, and shows that number of cores can be a driver of model runtime when the algorithm is designed to take advantage of them.  
 
 The accuracy models showed a similar pattern of drivers amongst all model classes. All models were most strongly driven by the inclusion of additional training data. The next most important driver was the number of environmental covariates included.  All other variables appear to play a relatively minor role in model accuracy, as would be expected by theory.  Interestingly, in the GBM-BRT model, learning rate and tree complexity do not increase accuracy significantly.  
 
-####  
-
-
-
-
-
-4.  Selected literature review
-* This will need some serious revision from last spring
-* Focus more on the ecological dimensions of why this is important
-* Then connect to computing, machine learning, etc
-* Finally, review algorithms and optimization techniques
-1. Species distribution models
-  1. What are they? (brief)
-  2. Ecological foundations, niches, use of paleodata to improve accuracy
-    * Data availability
-  3. Machine learning and species distribution models
-    * Models used to be simple (boxcar models)
-    * Now they're very complex
-    * High variance, low bias
-    * Low variance, high bias
-    * Look at cited AUC/accuracy metrics
-    * No clear winner for all tasks
-    * All methods are still widely used
-    * Maxent and its popularity
-    * Ensemble and parallel methods and their application/accuracy
-  4. Prediction and hindcasting using models as a key way to understand the past and future
-    * Cite land manager uses here (this is more than just hypotheses for ecological testing)
-    * These are real issues that need support (invasive species)
-  5.  Meta-analysis/results of targeted reading
-    * Other papers commenting on the growth of the field
-    * This will flow nicely from the review of what people actually use these models for
-2.  Cloud computing as a technology to support researchers
-  1.  Support for machine learning
-  2.  Designed for big data and distributed processing
-    * We've already clarified that ecological data is Big Data, so this will be easy to reinforce here
-  3.  The cloud as a research tool, rather than a market device
-    * Not too much on this, but note the economic underpinnings of the computing as a service
-    * Cite NSF/NASA/others that require cloud computing for research
-3.  Benchmarking, timing, and why it matters
-  1. Systems evaluation and benchmarking
-    * Overview of types of benchmarks
-    * Application level benchmarks are the best
-    * Need for repeated measurements
-    * Point of section: stochastic variance in benchmarks
-      * Non-linear, complex, hard to model
-      * But it's okay
-    * Potentially, consequences of using virtual instances --> few, using monitor scripts
-  2.  Algorithms Optimization
-    1.  What affect's an empirical/theoretical runtime?
-      * Introduce my experimental variables
-      * Need to read more on the theoretical underpinnings of memory/paging/CPU/etc
-      * Briefly touch on theoretical runtime complexity
-    2. Other attempts at empirical runtime modeling
-      * Need to read more on this
-      * We extend this away from just algorithm inputs to hardware inputs too.
-    3. Sensitivity analysis vs. optimization analysis
-      * Maybe we need to change some terminology here,
-      * I think with the alg. opt. literature I can still call it optimization and prediction.
-5.  Problem Formulation
-  * Do I need to update this? Probably more or less close to being done
-6.  Specific components of the framework to address in the thesis
-  * The framework introduces six components involved in the optimization
-  * I just look at one of the central components (time to compute, and address the others tangentially)
-  * Demonstrate the proof of concept of the framework, leave the other components to other researchers
-7. Methods
-  1.  Data collection
-    1. Species distribution modeling inputs
-      * GBIF and Neotoma
-      * Climate model output
-      * Data preparation and cleaning
-    2. Simulated data for large memory experiments
-      * Do I need to do this? Maybe GBIF would let me do a real species.
-      * Simulated data would make more sense from a computing standpoint
-      * Real data would make more sense from a user/thesis standpoint
-    3. Cost model data
-      * Does this go in data? probably
-  2.  Computing experiments
-    1.  Computing set up
-      * Flowchart framework
-      * Google cloud description
-    2. Serial SDM experiments
-      1. Inter-model differences
-      2. Taxonomic differences
-      3. Parameter sensitivity
-      4. Training example sensitivity
-      5. Serial SDMs with large memory requirements
-      * I think this will be a nice flow of experiment descriptions
-    3.  Parallel SDM experiments
-      * Need to specifically introduce that these need to be considered separately in my framework, because they respond to differences in cores
-      * Might have less accuracy or cost more than methods above,
-      * Might have more accuracy than methods above, and can be executed on a single core
-      * Just random forests
-        * Parallel machine learning methods are a topic of active CS research,
-          * This probably needs to go into literature review, or could go into discussion/conclussion
-  3. Predictive Modeling Building
-    1.  Runtime prediction
-      1. Linear model
-        * Do I even need to show results of LM?
-        * Ref: comments from CI
-      2.  GBM
-        * Able to capture non-linearities
-    2.  Accuracy prediction
-      * Build one accuracy model for each SDM class
-      * Can we test this from the literature too?
-    4. Cost optimization model building
-8. Discussion and Results
-  1. Computational runtime prediction accuracy assessment
-      * Should formalize this
-        * Least squares?
-  2.  Accuracy prediction assessment
-    * Parallel methods and their accuracy
-  3. Cost optimization assessment
-    * This will be tricky to assess quantitatively
-    * Need to think about this more
-    * Qualitatively, we can do this fairly easily
-  4. Case study
-      * Need to find a good case study
-    * Illustrate model results and utility
-    * Discuss limitations and uncertainties
-    * Discuss confidence in results
-  5.  Limitations of current approach
-    * How much will the additional components of the framework influence the results?
-    * Modeling expertise can do more than predictive modeling
-    * Stress uncertainties and lack of predictive skill
-    * Scientific realities over modeled optima
-      * we should try to find some literature about compromising workflows to meet computational demands.
-9. Conclusion
-  1. Reiterate and answer research questions
-  2. Next steps to reduce uncertainty remaining in the model
-  3. Areas where additional research is needed
-    * Parallel machine learning methods
-10. Bibliography
-
-Discussion Idea -> R's language design and memory
-
-
-The asymptotic complexity of data-driven models tends to be larger than that of model-driven algorithms, because more passes over the data are typically required.  To fit an additive models with $p$-dimensional inputs and $N$ training examples, the total number of operations needed to fit the models is $pNlogN+mpN$, where m is the number of applications of a smoothing method, typically less than 20 [@Hastie:2009up]. Support vector machines (SVMs) with m support vectors require $m^3 + mN + mpN$.  Multivariate adaptive regression splines (MARS) require $NM^3 + pM^2N$ operations to build an M term model.  Building regression trees require $pNlogN + pNlogN$ operations, suggesting that in the worst cases, trees require $N^2p$ operations.  Random forests build Q full trees and average the results, making their complexity $QN^2P$.  Boosting, a technique that combines many weak learners into a committee ensemble also increases on the complexity of building a standard tree because it sequentially builds trees stagewise until a loss function has been minimized. Specific implementations of any specific algorithm depends on its implementation and language details. Not sure to converge?
+####  Discussion
