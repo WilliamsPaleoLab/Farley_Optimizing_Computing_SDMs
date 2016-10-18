@@ -401,7 +401,7 @@ print(paste("Runtime Model Posterior Mean Standard Deviation: ", gam.post.sdMean
 
 #### Figure 11
 ```{r , echo=F, message=T, warning=F, error=F}
-res <- read.csv("thesis-scripts/data/gbm_all.csv")
+res <- read.csv("thesis-scripts/data/gam_all.csv")
 
 gam.testingInd.acc <- sample(nrow(res), nrow(res) * 0.2)
 gam.testing.acc <- res[gam.testingInd.acc,]
@@ -433,7 +433,7 @@ plot(gam.prediction.acc ~ gam.testing.acc[['testingAUC']],
 abline(0, 1)
 
 print(paste("Accuracy Model Mean Squared Error: ", gam.acc.mse))
-print(paste("Accuracy Model Percent Variance Explained: ", gam.r2, "%"))
+print(paste("Accuracy Model Percent Variance Explained: ", gam.acc.r2, "%"))
 
 gam.post.acc <- bart_machine_get_posterior(gam.acc.rf, gam.testing.predictors.acc)
 gam.post.acc <- data.frame(gam.post.acc$y_hat_posterior_samples)
@@ -487,7 +487,7 @@ mars.mdCor <- cor(mars.prediction, log(mars.testing[['totalTime']]))
 mars.mdDelta <- mars.prediction - log(mars.testing$totalTime)
 mars.mdDelta.mean <- mean(mars.mdDelta)
 mars.mdDelta.sd <- sd(mars.mdDelta)
-mars.mdDelta.RSS <- sum((mars.mdDelta.RSS)^2)
+mars.mdDelta.RSS <- sum((mars.mdDelta)^2)
 mars.r2 <- mars.mdCor^2
 mars.mse <- mars.mdDelta.RSS / length(mars.prediction)
 
@@ -570,21 +570,38 @@ r2.acc.imp = vector()
 
 predNames = vector()
 for (i in 1:length(names(mars.training.predictors.acc))){
-  predName = mars.training.predictors.acc[i]
-  predSet <- mars.training.predictors.acc[-predName]
+  predName = names(mars.training.predictors.acc)[i]
+  predSet <- mars.training.predictors.acc
+  predSet[[predName]] <- NULL
+  
+  testSet <- mars.testing.predictors
+  testSet[[predName]] <- NULL
   
   model <- bartMachine(predSet, mars.training.response.acc)
   
-  p <- predict(model, mars.testing.predictors[predNames])
+  p <- predict(model, testSet)
+  
+  pDelta <- p - mars.testing.acc$testingAUC
+  
+  
+  RSS.acc <- sum((mars.mdDelta.acc)^2)
   
   r2 <- cor(p, mars.testing.acc$testingAUC)^2
-  mse <- sum((p - mars.testing.acc[['testingAUC']]) ^ 2) / length(mars.testing.acc[['testingAUC']])
   
-  mse.acc.imp[i] <- mse
-  r2.acc.imp[i] <- r2
+  mse <- sum(RSS.acc) / length(p)
+  
+  mse.acc.imp[i] <- mse 
+  r2.acc.imp[i] <- r2 
   additionalName[i] <- names(mars.training.predictors.acc)[i]
 }
 
+
+
+imp <- data.frame(additionalName, mse = mse.acc.imp, r2 = r2.acc.imp)
+imp$mse = imp$mse
+imp$r2 = imp$r2
+
+ggplot(imp) + geom_bar(aes(x = additionalName, y = mse), stat='identity') + geom_abline(slope = 0, intercept=mars.mse.acc)
 
 ```
 
@@ -683,7 +700,7 @@ rf.mdDelta.mean.acc <- mean(rf.mdDelta.acc)
 rf.mdDelta.sd.acc <- sd(rf.mdDelta.acc)
 rf.mdDelta.RSS.acc <- sum((rf.mdDelta.acc)^2)
 rf.r2.acc <- rf.mdCor.acc ^ 2
-rf.mse.acc <- rf.mdDelta.acc / length(rf.prediction.acc)
+rf.mse.acc <- rf.mdDelta.RSS.acc / length(rf.prediction.acc)
 
 
 ## Plot
