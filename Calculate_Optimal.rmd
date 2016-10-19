@@ -1,5 +1,5 @@
 ---
-title: "Optimization Routines: Random Forest"
+title: "Optimization Routines"
 output:
   html_document:
     highlight: tango
@@ -28,19 +28,22 @@ output:
 2.  Subset the space produced above to the amount of time and money able to be spent on modelling.  
 3.  Working backwards now, find the accuracies that can be produced in the limited time.
 4.  Using the subset of accuracy space, find the combination of algorithm inputs that maximizes accuracy.
-5.  Optional: Find the combiation of hardware that jointly minimizes time and cost.  This allows you to find out if there's a cheaper way to get the same result that using all of your time and money.
-
 
 ```{r setup}
-library(ggplot2)
-options(java.parameters = "-Xmx1500m")
-library(bartMachine)
-library(reshape2)
 knitr::opts_chunk$set(cache=TRUE, echo=F, warning=F, error = F, message=F)
 knitr::opts_knit$set(root.dir = "/users/scottsfarley/documents")
 setwd("/users/scottsfarley/documents")
 library(parallel)
 library(doParallel)
+library(akima)
+library(ggplot2)
+options(java.parameters = "-Xmx1500m")
+library(bartMachine)
+library(reshape2)
+
+threshold.time <- 22 ##seconds
+threshold.cost <- 30 ##cents
+threshold.numTex <- 45
 ```
 
 
@@ -205,13 +208,13 @@ i.acc <- interp(x = scenario$numPredictors,
 i.acc <- interp2xyz(i.acc, data.frame = T)
 
 
-ggplot(i.acc, aes(x, y, z = z)) +
-  geom_tile(aes(fill=z), height=1, width=1) +
-  stat_contour(binwidth=0.05, col='black', lwd=0.25) +
-  ggtitle("Random Forest Accuracy Surface") +
-  xlab("Number of Covariates") +
-  ylab("Number of Training Examples") +
-  scale_fill_continuous(low='pink', high='forestgreen')
+# ggplot(i.acc, aes(x, y, z = z)) +
+#   geom_tile(aes(fill=z), height=1, width=1) +
+#   stat_contour(binwidth=0.05, col='black', lwd=0.25) +
+#   ggtitle("Random Forest Accuracy Surface") +
+#   xlab("Number of Covariates") +
+#   ylab("Number of Training Examples") +
+#   scale_fill_continuous(low='pink', high='forestgreen')
 ```
 
 
@@ -241,25 +244,13 @@ names(i.acc) <- c("numPredictors", "trainingExamples", "accuracy")
 ## plot the max onto the surface from before
 ggplot(i.acc, aes(numPredictors, trainingExamples, z = accuracy)) +
   geom_tile(aes(fill=accuracy), height=1, width=0.5) +
-  stat_contour(binwidth=0.05, col='black') +
+  stat_contour(binwidth=0.01, col='black') +
   ggtitle("Random Forest Accuracy Surface") +
   xlab("Number of Covariates") +
   ylab("Number of Training Examples") +
   scale_fill_continuous(low='pink', high='forestgreen') +
   geom_point(data=theMaxSet, aes(x = numPredictors , y = trainingExamples), shape=25, fill='red', size=3)
 ```
-
-Now you might say, well that doesn't really loook like it took the combiation that best fit the data.  Did it really choose the highest accuracy? When we plot out all possible accuracies, we see that, yes, it does look really good. 
-
-```{r}
-ggplot(i.acc) +
-  geom_point(aes(y = accuracy, x = seq(1, length(accuracy)))) +
-  geom_point(aes(y = theMax.expectedAccuracy, x=maxID), shape=25, fill='red', size=3) +
-  ggtitle("Potential Accuracies") +
-  ylab("Accuracy (AUC)") +
-  xlab("Combination of Inputs")
-```
-
 
 In theory, the hardware parameters should not affect the SDM accuracy.  We can test this assumption here, by plotting the accuracies obtained for this combination of algorithm inputs against modeled accuracy on the number of CPUs and amount of memory.  If the assumption is valid, the plot should show no change in either the horizontal or vertical directions.  We see that there is, in fact, some change, though.  This is likely due to expeirmental design, and lack of a full factorial design setup.  The effect is realtively minor, and I choose to comment it and move along. 
 
@@ -277,14 +268,25 @@ acc.diffFromExp <- mean(theMaxSet$accuracy) - theMax.expectedAccuracy
 print(paste("Accuracy Range on Hardware: ", acc.diff))
 print(paste("Accuracy Range from Expectation: ", acc.diffFromExp))
 print(paste("Model Posterior Mean Standard Deviation: ", rf.post.acc.sdMean))
+
+print("------")
+print(paste("Fixing accuracy at: ", theMax.expectedAccuracy))
 ```
 
-Now we've fixed accuracy to be a single point (or really a PDF, but we're just working with the posterior means right now).  Project that point into time and cost space using the modeled time and cost for that combination of algorithm inputs.
+Now, fix the algorithm inputs at the accuracy-maximizing point-- effectively fixing expected model accuracy.  An algorithm with these inputs can be run on any combination of hardware. Project how long that specific model would take and how much it would cost on all computing types.  Plot those out on time vs. cost axes.
+
+```{r timeCostProjection}
+ggplot(theMaxSet) +
+  geom_point(aes(x = cores, y = GBMemory))+
+  ggtitle("Random Forest Time/Cost Surface for Accuracy-Maximizing Point") +
+  xlab("Cost (cents)") +
+  ylab('Cost (seconds)') 
+```
 
 ```{r timeCostProjection}
 ggplot(theMaxSet) +
   geom_point(aes(x = cost, y = seconds))+
-  ggtitle("Random Forest Time/Cost Surface") +
+  ggtitle("Random Forest Time/Cost Surface for Accuracy-Maximizing Point") +
   xlab("Cost (cents)") +
   ylab('Cost (seconds)') 
 ```
@@ -293,29 +295,41 @@ The optimal solution is the one that balances time and cost equally during the m
 
 ```{r distCalc}
 origin <- rep(0, length(theMaxSet))
-candidates <- rbind(theMaxSet, origin)
-d <- as.matrix(dist(candidates, "euclidean"))
+pointSet <- theMaxSet[c("seconds", "cost")]
+candidates <- rbind(pointSet, origin)
+d <- as.matrix(dist(candidates))
 fromOrigin <- d[,nrow(candidates)]
 fromOrigin <- fromOrigin[fromOrigin > 0]
 fromOrigin <- as.numeric(fromOrigin)
 minDistIdx <- which.min(fromOrigin)
 optimal <- theMaxSet[minDistIdx, ]
 
+optimalDist <- min(fromOrigin)
+
 xend = optimal$seconds
 yend = optimal$cost
-
 ## Plot the same thing, but now with the optimal marked
 ggplot(theMaxSet) +
   geom_point(aes(x = cost, y = seconds)) +
   ggtitle("Random Forest Time/Cost Surface") +
   xlab("Cost (cents)") +
   ylab('Cost (seconds)')  +
-  geom_segment(aes(x = 0, y=0, xend=cost, yend=seconds), alpha=0.075) +
+  geom_segment(data=theMaxSet, aes(x = 0, y=0, xend=cost, yend=seconds), alpha=0.075) +
   geom_point(data=optimal, aes(x = cost, y = seconds), col='red', size=3, shape=25)
 
 ```
 
-Our job is complete. We've optimized both the harware and software dimensions of the problem. 
+```{r}
+fromOrigin <- data.frame(fromOrigin)
+
+
+ggplot(fromOrigin) + geom_histogram(aes(x=fromOrigin), binwidth=5) +
+  ggtitle("Histogram of Distances from the Origin") +
+  xlab("Euclidean Distance from the Origin") +
+  ylab("Point-Count")
+```
+
+Our job is complete. We've now optimized both the harware and software dimensions of the problem. 
 
 ```{r printRes}
 print("------RANDOM FOREST OPTIMAL--------")
@@ -324,12 +338,11 @@ print(paste("Predicted Optimal Cost (seconds)", optimal$seconds))
 print(paste("Predicted Optimal Cost (cents)", optimal$cost))
 print(paste("Cores: ", optimal$cores))
 print(paste("Memory:", optimal$GBMemory))
-print(paste("Training Examples:", theMax$trainingExamples))
-print(paste("Covariates:", theMax$numPredictors))
+print(paste("Training Examples:", theMax.trainingExamples))
+print(paste("Covariates:", theMax.numPredictors))
 ```
 
-
-This was all done using the mean of the posterior distribution.  This works pretty well, and I'm happy with the results, but I loose a lot of information by throwing away the distribution.  Let's try to incorporate the posterior samples now, when possible. We'll go through the same steps, but instead of putting a single value of time and cost, we'll put 1000 posterior samples. We'll keep accuracy in terms of the posterior mean, though, because it get's really complicated if you are allowed multiple combinations of inputs into the algorithm.
+Everything up to this point was done using the mean of the posterior distribution, a choice which simplifies the process but causes some information loss and may cause over-confidence in the predictions. We can modify our steps to include information from the entire posterior, which may solve this issue.  
 
 ```{r bayesSetup}
 theMaxSet.time <- theMaxSet[c("numPredictors", "trainingExamples", "cells", "cores", "GBMemory")]
@@ -343,9 +356,7 @@ time.post$config <- theMaxSet$config
 time.post$TotalRate <- theMaxSet$TotalRate
 ```
 
-So we've kept the optimal combination of training examples and number of covariates.  Take this combination, and use the model to estimate time and cost for every available combination of hardware.
-
-If you were wondering, we really do use the posterior means.
+Instead of projecting just the mean time and mean cost for use the the distance minimization, use the entire set of posterior samples.  Calculate the distance metric for each sample in the posterior independently.  You're then left with a density distribution of distances, from which we can infer the minimum value.
 
 ```{r}
 library(plyr)
@@ -355,13 +366,13 @@ time.post$postMeanCost <- time.post$postMeanTime * time.post$TotalRate
 
 ggplot(time.post) + 
   geom_point(aes(x = postMeanCost, y = postMeanTime), shape=20, col='green', size=2) +
-  geom_point(data = theMaxSet, aes(x = cost, y = seconds), col='red', size=2, shape=25)
+  geom_point(data = theMaxSet, aes(x = cost, y = seconds), col='blue', size=2, shape=25)
 
 ```
 
 ```{r plot}
 ## get the data frame ready for plotting
-c.d <- melt(time.post, id.vars = c("cores", "GBMemory", "config", "TotalRate"))
+c.d <- melt(time.post, id.vars = c("cores", "GBMemory", "config", "TotalRate", "postMeanTime", "postMeanCost"))
 c.d <- na.omit(c.d)
 c.d$value <- exp(c.d$value)
 c.d$CostSample <- c.d$value * c.d$TotalRate
@@ -375,42 +386,53 @@ ggplot(c.d) +
   ylab("Time")
 ```
 
-Take every point inside of every configuration's distribution, and calculate its distance from the origin. This gives us a density estimate of each configuration's distance from the origin, giving us the ability to quantify the optimality of the minimal solution.
+The posteriors are in a line, since there's a fixed linear relationship between time and cost.
+
+Now, find the distance metrics for all of those points.
+
 ```{r}
 ### okay, so we've got the posteriors for time and cost, now we can use them in calculating the optimal distnace
 
 compDists <- list()
-for (i in 1:nrow(time.post)){
+for (i in 1:nrow(time.post)){ ## all of the candidates in theMaxSet
   compDist <- vector()
   thisRate <- as.numeric(as.character(theMaxSet$TotalRate[i]))
   for (j in 1:1000){ ## 1000 posterior samples
-    t.i <- as.numeric(as.character(time.post[[j]][[i]])) ## psoterior of time for this config
+    t.i <- exp(time.post[[j]][[i]]) ## psoterior of time for this config
     c.i <- t.i * thisRate ## make cost posterior from time samples times rate
     pt <- c(t.i, c.i)
     orig <- c(0, 0)
     m <- rbind(pt, orig)
-    d <- dist(m)
+    d <- as.matrix(dist(m))
+    d <- d[d > 0]
+    d <- as.numeric(d)
     compDist[j] <- d[[1]]
   }
   compDists[[i]] <- compDist
 }
+
 allDistances <- melt(compDists)
 
 p <- na.omit(allDistances)
 p$value <- as.numeric(p$value)
 p$L1 <- as.factor(p$L1)
 ggplot(p) + 
-  geom_density(aes(x=value, group=L1, col=L1), alpha=0.2) +
+  geom_density(aes(x=value, group=L1, col=L1), alpha=0.025) +
   scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
   xlab("Euclidiean Distance From Origin") +
-  ggtitle("Density of Euclidean Distance From Origin") +
-  geom_rug(aes(x =value , group=L1, col=L1))
+  ggtitle("Euclidean Distance From Origin of Posterior") +
+  geom_rug(aes(x= fromOrigin), data=fromOrigin, lwd=0.25, alpha=0.5)
 ```
 
-There's a lot of overlab in this figure, and many points are far away from the optimal.  We don't care about those.  Take the ten closest to the minimum and look at their distributions.
+There's a lot of overlab in this figure, and many points are far away from the optimal.  We don't care about those.  Take the few closest to the minimum and look at their distributions. 
+
 ```{r minimalDistributions}
 post.timeCost.sorted <- p[order(p$value),]
-candidates <- unique(post.timeCost.sorted$L1)[1:10]
+candidates <- unique(post.timeCost.sorted$L1)[1:25]
+
+candidateMeans <- data.frame(fromOrigin$fromOrigin[candidates]) ## the means for each candidate distribution
+names(candidateMeans) <- c("CandidateMeans")
+candidateMeans$L1 <- candidates
 
 ## select their whole distributions
 candidate.dist <- post.timeCost.sorted[post.timeCost.sorted$L1 %in% candidates, ]
@@ -419,100 +441,395 @@ ggplot(candidate.dist) +
   scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
   xlab("Euclidiean Distance From Origin") +
   ggtitle("Density of Euclidean Distance From Origin") +
-  geom_rug(aes(x =value , group=L1, col=L1))
+  # geom_rug(aes(x =value , group=L1, col=L1), alpha=0.025) +
+  geom_rug(data=candidateMeans, aes(x = CandidateMeans, col=L1)) +
+  xlim(0, 200) +
+  geom_vline(xintercept = optimalDist, col='black', lwd=0.5)
+
+  
 
 ```
 
 Now, the optimal configuration may be one of the following:
+
 ```{r minimalDistTable}
-candiateConfigs <- theMaxSet[theMaxSet$config %in% candidates, ]
-candiateConfigs <- candiateConfigs[c("config", "cores", "GBMemory", "seconds", "cost")]
+candidateConfigs <- theMaxSet[theMaxSet$config %in% candidates, ]
+library(plyr)
+distStats <- ddply(allDistances, .(L1), summarise, meanDist = mean(value), sdDist = sd(value))
+candidateDists <- distStats[distStats$L1 %in% candidates, ]
+candidateConfigs$distance.mean = candidateDists$meanDist
+candidateConfigs$distance.sd = candidateDists$sdDist
+candidateConfigs <- candidateConfigs[c("config", "cores", "GBMemory", "seconds", "cost", "distance.mean", "distance.sd")]
+candidateConfigs <- candidateConfigs[order(candidateConfigs$distance.mean, candidateConfigs$distance.sd), ]
 library(knitr)
-kable(candiateConfigs, row.names = F)
+kable(candidateConfigs, row.names = F)
 ```
 
 In the results above, you're accutally seeing the trade off between time and money play out quite nicely.  Adding cores costs money, but, in the case of random forests, reduces time. Here, that tradeoff basically exactly evens out.
 
+
+### Cost-Constrained Optimization
+There are two main types of constraints on this optimization problem: (1) limited time and/or money and (2) limited data.  In the first case, the researcher only has so much time or money (or both) available to be spent on modelling.  She must optimize her workflow so that she can get the most out of the limited funds she has available to her. For one experiment, this doesn't really hold water, since there are only cents and seconds being spent on computing the models. However, when think about global syntheses with many species, these add up to be significant expenditures.  
+
+In this simple example, the researcher has a hard maximum of 10 seconds and 25 cents to be spent on the model.
+
+First, calculate a surface of all the possible configurations, whether or not they meet her threshold.
+
+Now, subset that surface, retaining only the configurations that satisfy her threshold in time and in money. Find the maximum amount of data that can be used, and calculate all the possible accuracies that could be achieved using it.  This down-weights expensive computing types, and encourages the solution to have a high accuracy.
+
 ```{r}
-library(akima)
+
+## interpolate time as a function of algorithm inputs
+time.interp <- interp(x = scenario$trainingExamples, 
+                y = scenario$numPredictors, 
+                z = scenario$seconds, 
+                xo = seq(1, 10000),
+                yo = seq(1, 5),
+                duplicate=T)
+time.interp <- interp2xyz(time.interp, data.frame=T)
+names(time.interp) <- c("trainingExamples", "numPredictors", "seconds")
+
+## interpolate cost as a function of algorithm inputs
+cost.interp <- interp(x = scenario$trainingExamples, 
+                y = scenario$numPredictors, 
+                z = scenario$cost, 
+                xo = seq(1, 10000),
+                yo = seq(1, 5),
+                duplicate=T)
+cost.interp <- interp2xyz(cost.interp, data.frame=T)
+names(cost.interp) <- c("trainingExamples", "numPredictors", "cost")
+
+time.interp$cost <- cost.interp$cost
+
+ggplot() +
+  geom_tile(aes(x = numPredictors, y = trainingExamples, fill = seconds), data=time.interp) +
+  # geom_contour(aes(x = numPredictors, y = trainingExamples, z = seconds), binwidth=1, data = time.interp, col='red') +
+  scale_fill_continuous(low='darkblue', high='red') +
+  ggtitle("Algorithm Input's Influence Execution Time") +
+  xlab("Number of Covariates") +
+  ylab("Number of Training Examples")
+
+
+
+## find only the combinations of algorithm inputs that will result in a time/cost under the threshold
+i.subset <- time.interp[time.interp$cost < threshold.cost & time.interp$seconds < threshold.time, ]
+
+if(nrow(i.subset) == 0){
+  warning("There are no candidate solutions within your thresholds.")
+}else{
+  print(paste("There are ", nrow(i.subset), "candidates."))
+}
+
+## interpolate accuracies on the same combinations of inputs
+i.acc <- interp(x = scenario$numPredictors,
+                       y = scenario$trainingExamples,
+                       z = scenario$accuracy,
+                       xo=seq(1, 5),
+                       yo = seq(0, 10000),
+                       duplicate = T)
+i.acc <- interp2xyz(i.acc, data.frame=T)
+names(i.acc) <- c("numPredictors", "trainingExamples", "accuracy")
+
+## group into combinations of algorithm input
+i.acc$grp <- interaction(i.acc$numPredictors, i.acc$trainingExamples)
+i.subset$grp <- interaction(i.subset$numPredictors, i.subset$trainingExamples)
+
+
+## select only accuracies that can be achieved within time and cost
+i.acc.subset <- i.acc[i.acc$grp %in% i.subset$grp, ]
+
+```
+
+Notice the change is scales.  We're not able to get to a point with more than 4000 training examples now.  Instead, we've limited to low data, and lower accuracy, because of the time/money constraint.
+
+```{r}
+sortedScenario <- i.acc.subset[order(i.acc.subset$trainingExamples,
+                                          i.acc.subset$numPredictors),]
+maxID <- which.max(sortedScenario$accuracy)
+theMax <- sortedScenario[maxID, ]
+print(paste("Accuracy is maximized at", theMax$trainingExamples, "training examples and", theMax$numPredictors, "predictors."))
+
+## select all of the different ways in which that accuracy could be achieved.
+## in this case, there should only be one
+## there should only be one point with both the maximum number of examples and covariates
+theMaxSet <- i.acc.subset[i.acc.subset$trainingExamples == theMax.trainingExamples &
+                              i.acc.subset$numPredictors == theMax.numPredictors, ]
+
+
+## plot the max onto the surface from before
+ggplot(i.acc.subset, aes(numPredictors, trainingExamples, z = accuracy)) +
+  geom_tile(aes(fill=accuracy), height=1, width=0.5) +
+  ggtitle("Random Forest Accuracy Surface") +
+  xlab("Number of Covariates") +
+  ylab("Number of Training Examples") +
+  scale_fill_continuous(low='pink', high='forestgreen') +
+  geom_point(data=theMaxSet, aes(x = numPredictors , 
+                                 y = trainingExamples), shape=25, fill='red', size=3)
+
+
+print(paste("Expected accuracy in this scenario is: ", theMax$accuracy))
+print(paste("Fixing training examples at: ", theMax$trainingExamples))
+print(paste("Fixing covariates at: ", theMax$numPredictors))
+```
+
+```{r}
+
+## interpolate time to all combinations of hardware
 i.time <- interp(x = scenario$cores, 
                 y = scenario$GBMemory, 
                 z = scenario$seconds, 
                 xo = seq(1, 22),
                 yo = seq(1, 22, by=0.25),
                 duplicate=T)
-
 i.time <- interp2xyz(i.time, data.frame=T)
-
 names(i.time) <- c("Cores", "GBMemory", "Seconds")
+
+## group into combinations of hardware
 i.time$config <- interaction(i.time$Cores, i.time$GBMemory)
+
+## get the rate for each combination
 i.time$TotalRate <- 0
-for (value in levels(i.time$config)){
-  testRow <- i.time[which(i.time$config == value), ]
-  testCores <- round(testRow$Cores)
+for (value in levels(i.time$config)){ ## value is the group factor label
+  testRow <- i.time[which(i.time$config == value), ] ## select the rows with this combination of inputs
+  testCores <- round(testRow$Cores) 
   testGB <- round(testRow$GBMemory)
-  rateRow = prices[which(prices$CPUs == testCores & prices$GBsMem == testGB), ]
-  rate = rateRow$TotalRate
+  rateRow = prices[which(prices$CPUs == testCores & prices$GBsMem == testGB), ] ## get the rate for that group from GCE pricing
+  rate = rateRow$TotalRate 
   if(is.null(rate)){
     rate = 0
   }
   if(length(rate) == 0){
     rate = 0
   }
-  i.time$TotalRate[i.time$config == value] = rate
+  i.time$TotalRate[i.time$config == value] = rate ## assign the rate to that group
 }
 
+
+## this is every possible combination of hardware and its rate
 i.time$cost <- i.time$TotalRate * i.time$Seconds
 
+```
 
-threshold.time <- 15 ##seconds
-threshold.cost <- 15 ##cents
-i.subset <- scenario[scenario$cost < threshold.cost & scenario$seconds < threshold.time, ]
 
-maxTex <- max(i.subset$trainingExamples)
-maxNP <- max(i.subset$numPredictors)
+```{r}
+## subset the combinations of hardware to those that can complete the accuracy-maximizing combination under budget
+scenarioOut <- list()
+idx = 1
 
-subset.acc.interp <- interp(x = i.subset$trainingExamples,
-                            y = i.subset$numPredictors,
-                            z = i.subset$accuracy,
-                            xo = seq(0, maxTex),
-                            yo = seq(1, maxNP), duplicate = T)
+## group accuracy based on algorithm inputs
+i.acc$grp <- interaction(i.acc$trainingExamples, i.acc$numPredictors)
 
-subset.acc.interp <- interp2xyz(subset.acc.interp, data.frame=T)
+## group scenario (actual data points, not interpolated) by hardware
+scenario$grp <- interaction(scenario$cores, scenario$GBMemory)
 
-names(subset.acc.interp) <-c("trainingExamples", "numPredictors", "accuracy")
+scenarioOut <- data.frame(grp = vector(), cost=vector(), seconds=vector())
+for (value in levels(scenario$grp)){ ## for each hardware
+  try({
+      thisSubset <- scenario[scenario$grp == value, ] ## subset the actual data points to those with this iteration's hardware combination
+      ## using only those data points, interpolate the time for all possible combinations of input
+  this.timeInterp <- interp(x = thisSubset$trainingExamples,
+                            y = thisSubset$numPredictors, 
+                            z = thisSubset$seconds, duplicate = T, xo= seq(0, 10000, by=1), yo=seq(1,5))
+  ## and for cost
+  this.costInterp <- interp(x = thisSubset$trainingExamples,
+                            y = thisSubset$numPredictors, 
+                            z = thisSubset$cost, duplicate = T, xo= seq(0, 10000, by=1), yo=seq(1,5))
+  
+  ## combine time and cost into a single data frame
+  this.timeInterp <- interp2xyz(this.timeInterp, data.frame=T)
+  this.costInterp <- interp2xyz(this.costInterp, data.frame=T)
+  names(this.timeInterp) <- c("trainingExamples", "numPredictors", "seconds")
+  names(this.costInterp) <- c("trainingExamples", "numPredictors", "cost")
+  
+  this.timeCostInterp <- this.timeInterp
+  this.timeCostInterp$cost <- this.costInterp$cost
+  
+  ## here's the import parts
+  # 1. subset the interpolated time surface to give only the experiments that fall within budget
+  this.timeCost.subset <- this.timeCostInterp[this.timeCostInterp$seconds < threshold.time &
+                                                this.timeCostInterp$cost < threshold.cost, ]
+  
+  # 2. Out of the experiments that fall within budget, select the accuracy-maximizing point
+  maxSubset <- this.timeCost.subset[this.timeCost.subset$trainingExamples == theMax$trainingExamples &
+                                                 this.timeCost.subset$numPredictors == theMax$numPredictors, ]
+  ## recor in the data frame that it is possible to compute this accuracy under budget on this hardware
+  maxSubset$grp <- value ## CPU/Memory grouping
+  scenarioOut[idx, ] <- maxSubset[c("grp", "cost", "seconds")] ## we've already put it into time/cost terms here
+ idx = idx + 1
 
-ggplot(subset.acc.interp, aes(numPredictors, trainingExamples, z = accuracy)) +
-  geom_tile(aes(fill=accuracy), height=1, width=0.5) +
-  stat_contour(binwidth=0.05, col='black') +
-  ggtitle("Random Forest Accuracy Surface") +
-  xlab("Number of Covariates") +
-  ylab("Number of Training Examples") +
-  scale_fill_continuous(low='pink', high='forestgreen') 
+  })
+}
+write.csv(scenarioOut, file="thesis-scripts/data/rf_so.csv")
+
+## split the factor of hardware grouping apart, so we can use them later
+scenarioOut$cores <- sapply(strsplit(as.character(scenarioOut$grp), "\\."), "[", 1)
+scenarioOut$GBMemory <- sapply(strsplit(as.character(scenarioOut$grp), "\\."), "[", 2)
+
+```
+
+
+Finally, come back around, and find the computing hardware that's best for these inputs.
+```{r}
+## now, we've got a set of computing types that are capable of achieving the accuracy maximizing point under budget
+## find the point that minimizes time and cost
+## just like before
+origin <- rep(0, length(scenarioOut))
+pointSet <- scenarioOut[c("seconds", "cost")]
+candidates <- rbind(pointSet, origin)
+d <- as.matrix(dist(candidates))
+fromOrigin <- d[,nrow(candidates)]
+fromOrigin <- fromOrigin[fromOrigin > 0]
+fromOrigin <- as.numeric(fromOrigin)
+minDistIdx <- which.min(fromOrigin)
+optimal <- scenarioOut[minDistIdx, ]
+
+optimalDist <- min(fromOrigin)
+
+xend = optimal$seconds
+yend = optimal$cost
+
+print(paste("Now there are only: ", nrow(scenarioOut), "candidates, instead of ", nrow(prices), "candidates that can complete this scenario under budget."))
+
+## Plot the same thing, but now with the optimal marked
+ggplot(scenarioOut) +
+  geom_point(aes(x = cost, y = seconds)) +
+  ggtitle("Random Forest Time/Cost Surface") +
+  xlab("Cost (cents)") +
+  ylab('Cost (seconds)')  +
+  geom_segment(aes(x = 0, y=0, xend=cost, yend=seconds), alpha=0.075) +
+  geom_point(data=optimal, aes(x = cost, y = seconds), col='red', size=3, shape=25)
+
+print(paste("Recommended # cores: ", optimal$cores))
+print(paste("Recommended Memory: ", optimal$GBMemory))
+print(paste("Expected Cost: ", optimal$cost))
+print(paste("Expected Seconds: ", optimal$seconds))
+```
+
+
+### Data Constraint
+
+In this case, we've got a constraint on the amount of data available to us. 
+
+```{r}
+
+## interpolate accuracy, as before
+i.acc <- interp(x = scenario$numPredictors, 
+                y = scenario$trainingExamples, 
+                z = scenario$accuracy, 
+                xo = seq(1, 5),
+                yo = seq(1, 10000),
+                duplicate=T)
+
+i.acc <- interp2xyz(i.acc, data.frame = T)
+
+
+## subset accuracy interpolation to only include those with data satisfying the constraint
+names(i.acc) <- c("numPredictors", "trainingExamples", "accuracy")
+i.acc.subset <- i.acc[i.acc$trainingExamples < threshold.numTex, ]
+# i.acc.subset.plot <- i.acc
+# i.acc.subset.plot$accuracy[i.acc.subset.plot$trainingExamples > threshold.numTex] <- NA
+#   
+# ggplot(i.acc.subset.plot, aes(numPredictors, trainingExamples, z = accuracy)) +
+#   geom_tile(aes(fill=accuracy), height=1, width=0.5) +
+#   stat_contour(binwidth=0.05, col='black') +
+#   ggtitle("Random Forest Accuracy Surface") +
+#   xlab("Number of Covariates") +
+#   ylab("Number of Training Examples") +
+#   scale_fill_continuous(low='pink', high='forestgreen') 
+
+print(paste("Current data threshold is ", threshold.numTex))
 ```
 
 ```{r}
-sortedScenario <- subset.acc.interp[order(subset.acc.interp$trainingExamples,
-                                          subset.acc.interp$numPredictors),]
+
+## find, from the subsetted accuracies, the combinations of inputs that maximize accuracy
+sortedScenario <- i.acc.subset[order(i.acc.subset$trainingExamples, i.acc.subset$numPredictors),]
 maxID <- which.max(sortedScenario$accuracy)
 theMax <- sortedScenario[maxID, ]
 print(paste("Accuracy is maximized at", theMax$trainingExamples, "training examples and", theMax$numPredictors, "predictors."))
-
-theMax.trainingExamples <- theMax$trainingExamples
-theMax.numPredictors <- theMax$numPredictors
-theMax.expectedAccuracy <- theMax$accuracy
-theMaxSet <- scenario[scenario$trainingExamples == theMax.trainingExamples &
-                              scenario$numPredictors == theMax.numPredictors, ]
-
-
-## plot the max onto the surface from before
-ggplot(subset.acc.interp, aes(numPredictors, trainingExamples, z = accuracy)) +
-  geom_tile(aes(fill=accuracy), height=1, width=0.5) +
-  stat_contour(binwidth=0.05, col='black') +
-  ggtitle("Random Forest Accuracy Surface") +
-  xlab("Number of Covariates") +
-  ylab("Number of Training Examples") +
-  scale_fill_continuous(low='pink', high='forestgreen') +
-  geom_point(data=theMaxSet, aes(x = numPredictors , y = trainingExamples), shape=25, fill='red', size=3)
-
+print(paste("Expected Max Accuracy is ", theMax$accuracy))
 ```
+
+```{r}
+
+
+## now do the same inverse problem we did before
+## using the accuracy, find out how long each will take to compute
+scenarioOut <- list()
+idx = 1
+
+i.acc$grp <- interaction(i.acc$trainingExamples, i.acc$numPredictors)
+i.acc.subset <- i.acc[i.acc$trainingExamples < threshold.numTex, ] ## subset to limited data
+
+
+scenario$grp <- interaction(scenario$cores, scenario$GBMemory)
+
+scenarioOut <- data.frame(grp = vector(), cost=vector(), seconds=vector())
+for (value in levels(scenario$grp)){ ## for each hardware
+  try({
+      thisSubset <- scenario[scenario$grp == value, ]
+  this.timeInterp <- interp(x = thisSubset$trainingExamples,
+                            y = thisSubset$numPredictors, 
+                            z = thisSubset$seconds, duplicate = T, xo= seq(0, 10000, by=1), yo=seq(1,5))
+  this.costInterp <- interp(x = thisSubset$trainingExamples,
+                            y = thisSubset$numPredictors, 
+                            z = thisSubset$cost, duplicate = T, xo= seq(0, 10000, by=1), yo=seq(1,5))
+  this.timeInterp <- interp2xyz(this.timeInterp, data.frame=T)
+  this.costInterp <- interp2xyz(this.costInterp, data.frame=T)
+  names(this.timeInterp) <- c("trainingExamples", "numPredictors", "seconds")
+  names(this.costInterp) <- c("trainingExamples", "numPredictors", "cost")
+  
+  this.timeCostInterp <- this.timeInterp
+  this.timeCostInterp$cost <- this.costInterp$cost
+  
+  
+  ## subset this accuracy surface to only 
+  this.timeCost.subset <- this.timeCostInterp[this.timeCostInterp$trainingExamples < threshold.numTex, ]
+  maxSubset <- this.timeCost.subset[this.timeCost.subset$trainingExamples == theMax$trainingExamples &
+                                                 this.timeCost.subset$numPredictors == theMax$numPredictors, ]
+  maxSubset$grp <- value
+  scenarioOut[idx, ] <- maxSubset[c("grp", "cost", "seconds")]
+ idx = idx + 1
+
+  })
+}
+scenarioOut$cores <- sapply(strsplit(as.character(scenarioOut$grp), "\\."), "[", 1)
+scenarioOut$GBMemory <- sapply(strsplit(as.character(scenarioOut$grp), "\\."), "[", 2)
+```
+
+```{r}
+## this is different here, since we're working with interpolations
+origin <- rep(0, length(scenarioOut))
+pointSet <- scenarioOut[c("seconds", "cost")]
+candidates <- rbind(pointSet, origin)
+d <- as.matrix(dist(candidates))
+fromOrigin <- d[,nrow(candidates)]
+fromOrigin <- fromOrigin[fromOrigin > 0]
+fromOrigin <- as.numeric(fromOrigin)
+minDistIdx <- which.min(fromOrigin)
+optimal <- scenarioOut[minDistIdx, ]
+
+optimalDist <- min(fromOrigin)
+
+xend = optimal$seconds
+yend = optimal$cost
+
+print(paste("Now there are only: ", nrow(scenarioOut), "candidates, instead of ", nrow(prices), "candidates that can complete this scenario under budget."))
+
+## Plot the same thing, but now with the optimal marked
+ggplot(scenarioOut) +
+  geom_point(aes(x = cost, y = seconds)) +
+  ggtitle("Random Forest Time/Cost Surface") +
+  xlab("Cost (cents)") +
+  ylab('Cost (seconds)')  +
+  geom_segment(aes(x = 0, y=0, xend=cost, yend=seconds), alpha=0.075) +
+  geom_point(data=optimal, aes(x = cost, y = seconds), col='red', size=3, shape=25)
+
+print(paste("Recommended # cores: ", optimal$cores))
+print(paste("Recommended Memory: ", optimal$GBMemory))
+print(paste("Expected Cost: ", optimal$cost))
+print(paste("Expected Seconds: ", optimal$seconds))
+```
+
+
+
