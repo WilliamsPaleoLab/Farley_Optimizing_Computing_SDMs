@@ -1,5 +1,5 @@
 ---
-  title: "Optimization Routines"
+title: "Optimization Routines"
 output:
   html_document:
   highlight: tango
@@ -9,10 +9,10 @@ pdf_document:
   toc: yes
 ---
   
-  ## Approach
-  ### Uncontrained Optimization
+## Approach
+### Uncontrained Optimization
   
-  1. Use a combination of prediction and interpolation to predict all values oftime and accuracy under different hardware/software configurations.
+1. Use a combination of prediction and interpolation to predict all values oftime and accuracy under different hardware/software configurations.
 2. Find the minimal combination of algorithm inputs that maximize accuracy. If there are ties, break them by using the point that requires the least data.
 3. Find the costs associated with running the algorithm with those inputs on all different hardware configurations.
 4. Find the combination of hardware that jointly minimizes cost and time.
@@ -41,6 +41,7 @@ options(java.parameters = "-Xmx1500m")
 library(bartMachine)
 bartMachine::set_bart_machine_num_cores(3)
 library(reshape2)
+library(ggdendro)
 
 threshold.time <- 22 ##seconds
 threshold.cost <- 30 ##cents
@@ -128,7 +129,7 @@ i.acc <- interp2xyz(i.acc, data.frame = T)
 # ggplot(i.acc, aes(x, y, z = z)) +
 #   geom_tile(aes(fill=z), height=1, width=1) +
 #   stat_contour(binwidth=0.05, col='black', lwd=0.25) +
-#   ggtitle("Random Forest Accuracy Surface") +
+#   ggtitle("GAM Accuracy Surface") +
 #   xlab("Number of Covariates") +
 #   ylab("Number of Training Examples") +
 #   scale_fill_continuous(low='pink', high='forestgreen')
@@ -162,7 +163,7 @@ names(i.acc) <- c("numPredictors", "trainingExamples", "accuracy")
 ggplot(i.acc, aes(numPredictors, trainingExamples, z = accuracy)) +
 geom_tile(aes(fill=accuracy), height=1, width=0.5) +
 stat_contour(binwidth=0.01, col='black') +
-ggtitle("Random Forest Accuracy Surface") +
+ggtitle("GAM Accuracy Surface") +
 xlab("Number of Covariates") +
 ylab("Number of Training Examples") +
 scale_fill_continuous(low='pink', high='forestgreen') +
@@ -175,7 +176,7 @@ In theory, the hardware parameters should not affect the SDM accuracy.  We can t
 ggplot(theMaxSet) +
 geom_tile(aes(x = cores, y=GBMemory, z=accuracy, fill=accuracy)) +
 #geom_contour(aes(x = cores, y=GBMemory, z=accuracy, fill=accuracy)) +
-ggtitle("Random Forest Hardware/Accuracy Surface") +
+ggtitle("GAM Hardware/Accuracy Surface") +
 xlab("CPU Cores") +
 ylab("RAM (GB)") +
 scale_fill_continuous(low='blue', high='red')
@@ -184,7 +185,6 @@ acc.diff <- max(theMaxSet$accuracy) - min(theMaxSet$accuracy)
 acc.diffFromExp <- mean(theMaxSet$accuracy) - theMax.expectedAccuracy
 print(paste("Accuracy Range on Hardware: ", acc.diff))
 print(paste("Accuracy Range from Expectation: ", acc.diffFromExp))
-print(paste("Model Posterior Mean Standard Deviation: ", rf.post.acc.sdMean))
 
 print("------")
 print(paste("Fixing accuracy at: ", theMax.expectedAccuracy))
@@ -195,15 +195,15 @@ Now, fix the algorithm inputs at the accuracy-maximizing point-- effectively fix
 ```{r timeCostProjection}
 ggplot(theMaxSet) +
 geom_point(aes(x = cores, y = GBMemory))+
-ggtitle("Random Forest Time/Cost Surface for Accuracy-Maximizing Point") +
+ggtitle("GAM Time/Cost Surface for Accuracy-Maximizing Point") +
 xlab("Cost (cents)") +
 ylab('Cost (seconds)') 
 ```
 
-```{r timeCostProjection}
+```{r }
 ggplot(theMaxSet) +
 geom_point(aes(x = cost, y = seconds))+
-ggtitle("Random Forest Time/Cost Surface for Accuracy-Maximizing Point") +
+ggtitle("GAM Time/Cost Surface for Accuracy-Maximizing Point") +
 xlab("Cost (cents)") +
 ylab('Cost (seconds)') 
 ```
@@ -228,7 +228,7 @@ yend = optimal$cost
 ## Plot the same thing, but now with the optimal marked
 ggplot(theMaxSet) +
 geom_point(aes(x = cost, y = seconds)) +
-ggtitle("Random Forest Time/Cost Surface") +
+ggtitle("GAM Time/Cost Surface") +
 xlab("Cost (cents)") +
 ylab('Cost (seconds)')  +
 geom_segment(data=theMaxSet, aes(x = 0, y=0, xend=cost, yend=seconds), alpha=0.075) +
@@ -240,7 +240,7 @@ geom_point(data=optimal, aes(x = cost, y = seconds), col='red', size=3, shape=25
 fromOrigin <- data.frame(fromOrigin)
 
 
-ggplot(fromOrigin) + geom_histogram(aes(x=fromOrigin), binwidth=5) +
+ggplot(fromOrigin) + geom_histogram(aes(x=fromOrigin), binwidth=1) +
 ggtitle("Histogram of Distances from the Origin") +
 xlab("Euclidean Distance from the Origin") +
 ylab("Point-Count")
@@ -249,7 +249,7 @@ ylab("Point-Count")
 Our job is complete. We've now optimized both the harware and software dimensions of the problem. 
 
 ```{r printRes}
-print("------RANDOM FOREST OPTIMAL--------")
+print("------GAM OPTIMAL--------")
 print(paste("Predicted Optimal Accuracy", theMax.expectedAccuracy, "+/-", abs(acc.diffFromExp)))
 print(paste("Predicted Optimal Cost (seconds)", optimal$seconds))
 print(paste("Predicted Optimal Cost (cents)", optimal$cost))
@@ -339,11 +339,13 @@ ggplot(p) +
   geom_rug(aes(x= fromOrigin), data=fromOrigin, lwd=0.25, alpha=0.5)
 ```
 
+
+
 There's a lot of overlab in this figure, and many points are far away from the optimal.  We don't care about those.  Take the few closest to the minimum and look at their distributions. 
 
 ```{r minimalDistributions}
 post.timeCost.sorted <- p[order(p$value),]
-candidates <- unique(post.timeCost.sorted$L1)[1:25]
+candidates <- unique(post.timeCost.sorted$L1)[1:150]
 
 candidateMeans <- data.frame(fromOrigin$fromOrigin[candidates]) ## the means for each candidate distribution
 names(candidateMeans) <- c("CandidateMeans")
@@ -358,7 +360,6 @@ ggplot(candidate.dist) +
   ggtitle("Density of Euclidean Distance From Origin") +
   # geom_rug(aes(x =value , group=L1, col=L1), alpha=0.025) +
   geom_rug(data=candidateMeans, aes(x = CandidateMeans, col=L1)) +
-  xlim(0, 200) +
   geom_vline(xintercept = optimalDist, col='black', lwd=0.5)
 
 ```
@@ -378,7 +379,52 @@ library(knitr)
 kable(candidateConfigs, row.names = F)
 ```
 
-In the results above, you're accutally seeing the trade off between time and money play out quite nicely.  Adding cores costs money, but, in the case of random forests, reduces time. Here, that tradeoff basically exactly evens out.
+```{r}
+clustPred <- candidateConfigs[c("seconds", "cost", "distance.mean", "distance.sd")]
+d <- dist(scale(clustPred))
+fit <- hclust(d, "ave")
+fit$labels <-as.character(candidateConfigs$config)
+
+dend <- as.dendrogram(fit)
+dend_data <- dendro_data(dend, type = "rectangle")
+groups <- cutree(fit, h=1) # cut tree into 5 clusters
+
+dend_data$labels$cluster <- vector('numeric', length=length(groups))
+
+for (i in 1:nrow(dend_data$labels)){
+  thisLabel <- as.character(dend_data$labels$label[i])
+  thisCluster <- groups[thisLabel]
+  dend_data$labels$cluster[i] <- thisCluster
+}
+
+ggplot(dend_data$segments) + 
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend))+
+  geom_text(data = dend_data$labels, aes(x, y, label = label, col=as.factor(cluster)),
+            hjust = 1, angle = 90, size = 3) +
+  xlab("Hardware Configuration") +
+  ylab("Dissimilarity") + theme(
+  axis.text.x = element_blank(),
+  axis.text.y = element_blank(),
+  axis.ticks = element_blank()) +
+  scale_color_discrete() +   ggtitle("GAM Unconstrained Optimal Clustering")
+
+
+candidateConfigs$cluster <- groups
+
+ggplot(candidateConfigs) + 
+  geom_point(aes(y = seconds, x = cost, col=as.factor(cluster), size=distance.sd), alpha=0.5) +
+  scale_color_discrete() +
+  ggtitle("GAM Data-Contrainted Optimal") +
+  ylab("Seconds") +
+  xlab("Cost")
+
+library(knitr)
+
+firstCluster <- candidateConfigs[candidateConfigs$cluster == 1, ]
+kable(firstCluster, row.names = F)
+```
+
+In the results above, you're accutally seeing the trade off between time and money play out quite nicely.  Adding cores costs money, but, in the case of GAMs, reduces time. Here, that tradeoff basically exactly evens out.
 
 
 ### Cost-Constrained Optimization
@@ -454,7 +500,6 @@ i.acc.subset <- i.acc[i.acc$grp %in% i.subset$grp, ]
 ```
 
 Notice the change is scales.  We're not able to get to a point with more than 4000 training examples now.  Instead, we've limited to low data, and lower accuracy, because of the time/money constraint.
-
 ```{r}
 sortedScenario <- i.acc.subset[order(i.acc.subset$trainingExamples,
                                      i.acc.subset$numPredictors),]
@@ -472,7 +517,7 @@ theMaxSet <- i.acc.subset[i.acc.subset$trainingExamples == theMax.trainingExampl
 ## plot the max onto the surface from before
 ggplot(i.acc.subset, aes(numPredictors, trainingExamples, z = accuracy)) +
   geom_tile(aes(fill=accuracy), height=1, width=0.5) +
-  ggtitle("Random Forest Accuracy Surface") +
+  ggtitle("GAM Accuracy Surface") +
   xlab("Number of Covariates") +
   ylab("Number of Training Examples") +
   scale_fill_continuous(low='pink', high='forestgreen') +
@@ -486,98 +531,29 @@ print(paste("Fixing covariates at: ", theMax$numPredictors))
 ```
 
 ```{r}
+subsetScenario <- prices[c("CPUs", "GBsMem")]
+names(subsetScenario) <- c("cores", "GBMemory")
+subsetScenario$trainingExamples <- theMax$trainingExamples
+subsetScenario$numPredictors <- theMax$numPredictors
+subsetScenario$cells <- cells
 
-## interpolate time to all combinations of hardware
-i.time <- interp(x = scenario$cores, 
-                 y = scenario$GBMemory, 
-                 z = scenario$seconds, 
-                 xo = seq(1, 22),
-                 yo = seq(1, 22, by=0.25),
-                 duplicate=T)
-i.time <- interp2xyz(i.time, data.frame=T)
-names(i.time) <- c("Cores", "GBMemory", "Seconds")
+p <- predict(GAM.rf, subsetScenario)
 
-## group into combinations of hardware
-i.time$config <- interaction(i.time$Cores, i.time$GBMemory)
 
-## get the rate for each combination
-i.time$TotalRate <- 0
-for (value in levels(i.time$config)){ ## value is the group factor label
-  testRow <- i.time[which(i.time$config == value), ] ## select the rows with this combination of inputs
-  testCores <- round(testRow$Cores) 
-  testGB <- round(testRow$GBMemory)
-  rateRow = prices[which(prices$CPUs == testCores & prices$GBsMem == testGB), ] ## get the rate for that group from GCE pricing
-  rate = rateRow$TotalRate 
-  if(is.null(rate)){
-    rate = 0
-  }
-  if(length(rate) == 0){
-    rate = 0
-  }
-  i.time$TotalRate[i.time$config == value] = rate ## assign the rate to that group
+scenarioOut <- subsetScenario
+scenarioOut$seconds <- exp(p)
+scenarioOut$TotalRate <- prices$TotalRate
+scenarioOut$cost <- scenarioOut$seconds * scenarioOut$TotalRate
+scenarioOut$config <- prices$ConfigurationNumber
+
+scenarioOut <- scenarioOut[scenarioOut$seconds < threshold.time & 
+                                   scenarioOut$cost < threshold.cost, ]
+
+if(nrow(scenarioOut) == 0){
+  warning("No candidate hardware found matching those thresholds.")
+}else{
+  print(paste(nrow(subsetScenario), "candidates fit within these thresholds."))
 }
-
-
-## this is every possible combination of hardware and its rate
-i.time$cost <- i.time$TotalRate * i.time$Seconds
-
-```
-
-
-```{r}
-## subset the combinations of hardware to those that can complete the accuracy-maximizing combination under budget
-scenarioOut <- list()
-idx = 1
-
-## group accuracy based on algorithm inputs
-i.acc$grp <- interaction(i.acc$trainingExamples, i.acc$numPredictors)
-
-## group scenario (actual data points, not interpolated) by hardware
-scenario$grp <- interaction(scenario$cores, scenario$GBMemory)
-
-scenarioOut <- data.frame(grp = vector(), cost=vector(), seconds=vector())
-for (value in levels(scenario$grp)){ ## for each hardware
-  try({
-    thisSubset <- scenario[scenario$grp == value, ] ## subset the actual data points to those with this iteration's hardware combination
-    ## using only those data points, interpolate the time for all possible combinations of input
-    this.timeInterp <- interp(x = thisSubset$trainingExamples,
-                              y = thisSubset$numPredictors, 
-                              z = thisSubset$seconds, duplicate = T, xo= seq(0, 10000, by=1), yo=seq(1,5))
-    ## and for cost
-    this.costInterp <- interp(x = thisSubset$trainingExamples,
-                              y = thisSubset$numPredictors, 
-                              z = thisSubset$cost, duplicate = T, xo= seq(0, 10000, by=1), yo=seq(1,5))
-    
-    ## combine time and cost into a single data frame
-    this.timeInterp <- interp2xyz(this.timeInterp, data.frame=T)
-    this.costInterp <- interp2xyz(this.costInterp, data.frame=T)
-    names(this.timeInterp) <- c("trainingExamples", "numPredictors", "seconds")
-    names(this.costInterp) <- c("trainingExamples", "numPredictors", "cost")
-    
-    this.timeCostInterp <- this.timeInterp
-    this.timeCostInterp$cost <- this.costInterp$cost
-    
-    ## here's the import parts
-    # 1. subset the interpolated time surface to give only the experiments that fall within budget
-    this.timeCost.subset <- this.timeCostInterp[this.timeCostInterp$seconds < threshold.time &
-                                                  this.timeCostInterp$cost < threshold.cost, ]
-    
-    # 2. Out of the experiments that fall within budget, select the accuracy-maximizing point
-    maxSubset <- this.timeCost.subset[this.timeCost.subset$trainingExamples == theMax$trainingExamples &
-                                        this.timeCost.subset$numPredictors == theMax$numPredictors, ]
-    ## recor in the data frame that it is possible to compute this accuracy under budget on this hardware
-    maxSubset$grp <- value ## CPU/Memory grouping
-    scenarioOut[idx, ] <- maxSubset[c("grp", "cost", "seconds")] ## we've already put it into time/cost terms here
-    idx = idx + 1
-    
-  })
-}
-write.csv(scenarioOut, file="thesis-scripts/data/rf_so.csv")
-
-## split the factor of hardware grouping apart, so we can use them later
-scenarioOut$cores <- sapply(strsplit(as.character(scenarioOut$grp), "\\."), "[", 1)
-scenarioOut$GBMemory <- sapply(strsplit(as.character(scenarioOut$grp), "\\."), "[", 2)
-
 ```
 
 
@@ -606,7 +582,7 @@ print(paste("Now there are only: ", nrow(scenarioOut), "candidates, instead of "
 ## Plot the same thing, but now with the optimal marked
 ggplot(scenarioOut) +
   geom_point(aes(x = cost, y = seconds)) +
-  ggtitle("Random Forest Time/Cost Surface") +
+  ggtitle("GAM Time/Cost Surface") +
   xlab("Cost (cents)") +
   ylab('Cost (seconds)')  +
   geom_segment(aes(x = 0, y=0, xend=cost, yend=seconds), alpha=0.075) +
@@ -618,6 +594,136 @@ print(paste("Expected Cost: ", optimal$cost))
 print(paste("Expected Seconds: ", optimal$seconds))
 ```
 
+
+
+
+```{r}
+
+s <- scenarioOut[c("trainingExamples", "numPredictors", "cores", "GBMemory", "cells")]
+time.post <- bart_machine_get_posterior(GAM.rf, s)$y_hat_posterior_samples
+time.post <- data.frame(time.post)
+time.post$cores <- scenarioOut$cores
+time.post$GBMemory <- scenarioOut$GBMemory
+time.post$config <- scenarioOut$config
+time.post$TotalRate <- scenarioOut$TotalRate
+
+
+time.post$postMeanTime <- rowMeans(time.post[, 1:1000])
+time.post$postMeanTime <- exp(time.post$postMeanTime)
+time.post$postMeanCost <- time.post$postMeanTime * time.post$TotalRate
+
+ggplot(time.post) + 
+  geom_point(aes(x = postMeanCost, y = postMeanTime), shape=20, col='green', size=2) +
+  geom_point(data = scenarioOut, aes(x = cost, y = seconds), col='blue', size=2, shape=25)
+
+
+compDists <- list()
+for (i in 1:nrow(time.post)){ ## all of the candidates in theMaxSet
+  compDist <- vector()
+  thisRate <- as.numeric(as.character(scenarioOut$TotalRate[i]))
+  for (j in 1:1000){ ## 1000 posterior samples
+    t.i <- exp(time.post[[j]][[i]]) ## psoterior of time for this config
+    c.i <- t.i * thisRate ## make cost posterior from time samples times rate
+    pt <- c(t.i, c.i)
+    orig <- c(0, 0)
+    m <- rbind(pt, orig)
+    d <- as.matrix(dist(m))
+    d <- d[d > 0]
+    d <- as.numeric(d)
+    compDist[j] <- d[[1]]
+  }
+  compDists[[i]] <- compDist
+}
+
+allDistances <- melt(compDists)
+fromOrigin <- data.frame(fromOrigin)
+p <- na.omit(allDistances)
+p$value <- as.numeric(p$value)
+p$L1 <- as.factor(p$L1)
+ggplot(p) + 
+  geom_density(aes(x=value, group=L1, col=L1), alpha=0.025) +
+  scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
+  xlab("Euclidiean Distance From Origin") +
+  ggtitle("Euclidean Distance From Origin of Posterior") +
+  geom_rug(aes(x= fromOrigin), data=fromOrigin, lwd=0.25, alpha=0.5)  ## this plots the mean
+
+post.timeCost.sorted <- p[order(p$value),]
+candidates <- unique(post.timeCost.sorted$L1)[1:15]
+
+candidateMeans <- data.frame(fromOrigin$fromOrigin[candidates]) ## the means for each candidate distribution
+names(candidateMeans) <- c("CandidateMeans")
+candidateMeans$L1 <- candidates
+
+## select their whole distributions
+candidate.dist <- post.timeCost.sorted[post.timeCost.sorted$L1 %in% candidates, ]
+ggplot(candidate.dist) + 
+  geom_density(aes(x=value, group=L1, col=L1), alpha=0.2) +
+  scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
+  xlab("Euclidiean Distance From Origin") +
+  ggtitle("Density of Euclidean Distance From Origin") +
+  # geom_rug(aes(x =value , group=L1, col=L1), alpha=0.025) +
+  geom_rug(data=candidateMeans, aes(x = CandidateMeans, col=L1)) +
+  geom_vline(xintercept = optimalDist, col='black', lwd=0.5)
+
+```
+
+```{r }
+candidateConfigs <- scenarioOut[scenarioOut$config %in% candidates, ]
+library(plyr)
+distStats <- ddply(allDistances, .(L1), summarise, meanDist = mean(value), sdDist = sd(value))
+candidateDists <- distStats[distStats$L1 %in% candidates, ]
+candidateConfigs$distance.mean = candidateDists$meanDist
+candidateConfigs$distance.sd = candidateDists$sdDist
+candidateConfigs <- candidateConfigs[c("config", "cores", "GBMemory", "seconds", "cost", "distance.mean", "distance.sd")]
+candidateConfigs <- candidateConfigs[order(candidateConfigs$distance.mean, candidateConfigs$distance.sd), ]
+library(knitr)
+kable(candidateConfigs, row.names = F)
+```
+
+```{r}
+clustPred <- candidateConfigs[c("seconds", "cost", "distance.mean", "distance.sd")]
+d <- dist(scale(clustPred))
+fit <- hclust(d, "ave")
+fit$labels <-as.character(candidateConfigs$config)
+
+dend <- as.dendrogram(fit)
+dend_data <- dendro_data(dend, type = "rectangle")
+groups <- cutree(fit, h=1) # cut tree into 5 clusters
+
+dend_data$labels$cluster <- vector('numeric', length=length(groups))
+
+for (i in 1:nrow(dend_data$labels)){
+  thisLabel <- as.character(dend_data$labels$label[i])
+  thisCluster <- groups[thisLabel]
+  dend_data$labels$cluster[i] <- thisCluster
+}
+
+ggplot(dend_data$segments) + 
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend))+
+  geom_text(data = dend_data$labels, aes(x, y, label = label, col=as.factor(cluster)),
+            hjust = 1, angle = 90, size = 3) +
+  xlab("Hardware Configuration") +
+  ylab("Dissimilarity") + theme(
+  axis.text.x = element_blank(),
+  axis.text.y = element_blank(),
+  axis.ticks = element_blank()) +
+  scale_color_discrete() +   ggtitle("GAM Unconstrained Optimal Clustering")
+
+
+candidateConfigs$cluster <- groups
+
+ggplot(candidateConfigs) + 
+  geom_point(aes(y = seconds, x = cost, col=as.factor(cluster), size=distance.sd), alpha=0.5) +
+  scale_color_discrete() +
+  ggtitle("GAM Data-Contrainted Optimal") +
+  ylab("Seconds") +
+  xlab("Cost")
+
+library(knitr)
+
+firstCluster <- candidateConfigs[candidateConfigs$cluster == 1, ]
+kable(firstCluster, row.names = F)
+```
 
 ### Data Constraint
 
@@ -645,7 +751,7 @@ i.acc.subset <- i.acc[i.acc$trainingExamples < threshold.numTex, ]
 # ggplot(i.acc.subset.plot, aes(numPredictors, trainingExamples, z = accuracy)) +
 #   geom_tile(aes(fill=accuracy), height=1, width=0.5) +
 #   stat_contour(binwidth=0.05, col='black') +
-#   ggtitle("Random Forest Accuracy Surface") +
+#   ggtitle("GAM Accuracy Surface") +
 #   xlab("Number of Covariates") +
 #   ylab("Number of Training Examples") +
 #   scale_fill_continuous(low='pink', high='forestgreen') 
@@ -664,50 +770,20 @@ print(paste("Expected Max Accuracy is ", theMax$accuracy))
 ```
 
 ```{r}
+subsetScenario <- prices[c("CPUs", "GBsMem")]
+names(subsetScenario) <- c("cores", "GBMemory")
+subsetScenario$trainingExamples <- theMax$trainingExamples
+subsetScenario$numPredictors <- theMax$numPredictors
+subsetScenario$cells <- cells
+
+p <- predict(GAM.rf, subsetScenario)
 
 
-## now do the same inverse problem we did before
-## using the accuracy, find out how long each will take to compute
-scenarioOut <- list()
-idx = 1
-
-i.acc$grp <- interaction(i.acc$trainingExamples, i.acc$numPredictors)
-i.acc.subset <- i.acc[i.acc$trainingExamples < threshold.numTex, ] ## subset to limited data
-
-
-scenario$grp <- interaction(scenario$cores, scenario$GBMemory)
-
-scenarioOut <- data.frame(grp = vector(), cost=vector(), seconds=vector())
-for (value in levels(scenario$grp)){ ## for each hardware
-try({
-thisSubset <- scenario[scenario$grp == value, ]
-this.timeInterp <- interp(x = thisSubset$trainingExamples,
-y = thisSubset$numPredictors, 
-z = thisSubset$seconds, duplicate = T, xo= seq(0, 10000, by=1), yo=seq(1,5))
-this.costInterp <- interp(x = thisSubset$trainingExamples,
-y = thisSubset$numPredictors, 
-z = thisSubset$cost, duplicate = T, xo= seq(0, 10000, by=1), yo=seq(1,5))
-this.timeInterp <- interp2xyz(this.timeInterp, data.frame=T)
-this.costInterp <- interp2xyz(this.costInterp, data.frame=T)
-names(this.timeInterp) <- c("trainingExamples", "numPredictors", "seconds")
-names(this.costInterp) <- c("trainingExamples", "numPredictors", "cost")
-
-this.timeCostInterp <- this.timeInterp
-this.timeCostInterp$cost <- this.costInterp$cost
-
-
-## subset this accuracy surface to only 
-this.timeCost.subset <- this.timeCostInterp[this.timeCostInterp$trainingExamples < threshold.numTex, ]
-maxSubset <- this.timeCost.subset[this.timeCost.subset$trainingExamples == theMax$trainingExamples &
-this.timeCost.subset$numPredictors == theMax$numPredictors, ]
-maxSubset$grp <- value
-scenarioOut[idx, ] <- maxSubset[c("grp", "cost", "seconds")]
-idx = idx + 1
-
-})
-}
-scenarioOut$cores <- sapply(strsplit(as.character(scenarioOut$grp), "\\."), "[", 1)
-scenarioOut$GBMemory <- sapply(strsplit(as.character(scenarioOut$grp), "\\."), "[", 2)
+scenarioOut <- subsetScenario
+scenarioOut$seconds <- exp(p)
+scenarioOut$TotalRate <- prices$TotalRate
+scenarioOut$cost <- scenarioOut$seconds * scenarioOut$TotalRate
+scenarioOut$config <- prices$ConfigurationNumber
 ```
 
 ```{r}
@@ -732,7 +808,7 @@ print(paste("Now there are only: ", nrow(scenarioOut), "candidates, instead of "
 ## Plot the same thing, but now with the optimal marked
 ggplot(scenarioOut) +
   geom_point(aes(x = cost, y = seconds)) +
-  ggtitle("Random Forest Time/Cost Surface") +
+  ggtitle("GAM Time/Cost Surface") +
   xlab("Cost (cents)") +
   ylab('Cost (seconds)')  +
   geom_segment(aes(x = 0, y=0, xend=cost, yend=seconds), alpha=0.075) +
@@ -744,5 +820,131 @@ print(paste("Expected Cost: ", optimal$cost))
 print(paste("Expected Seconds: ", optimal$seconds))
 ```
 
+```{r}
+time.post <- bart_machine_get_posterior(GAM.rf, subsetScenario)$y_hat_posterior_samples
+time.post <- data.frame(time.post)
+time.post$cores <- scenarioOut$cores
+time.post$GBMemory <- scenarioOut$GBMemory
+time.post$config <- scenarioOut$config
+time.post$TotalRate <- scenarioOut$TotalRate
+
+time.post$postMeanTime <- rowMeans(time.post[, 1:1000])
+time.post$postMeanTime <- exp(time.post$postMeanTime)
+time.post$postMeanCost <- time.post$postMeanTime * time.post$TotalRate
+
+ggplot(time.post) + 
+  geom_point(aes(x = postMeanCost, y = postMeanTime), shape=20, col='green', size=2) +
+  geom_point(data = scenarioOut, aes(x = cost, y = seconds), col='blue', size=2, shape=25)
+
+
+compDists <- list()
+for (i in 1:nrow(time.post)){ ## all of the candidates in theMaxSet
+  compDist <- vector()
+  thisRate <- as.numeric(as.character(scenarioOut$TotalRate[i]))
+  for (j in 1:1000){ ## 1000 posterior samples
+    t.i <- exp(time.post[[j]][[i]]) ## psoterior of time for this config
+    c.i <- t.i * thisRate ## make cost posterior from time samples times rate
+    pt <- c(t.i, c.i)
+    orig <- c(0, 0)
+    m <- rbind(pt, orig)
+    d <- as.matrix(dist(m))
+    d <- d[d > 0]
+    d <- as.numeric(d)
+    compDist[j] <- d[[1]]
+  }
+  compDists[[i]] <- compDist
+}
+
+allDistances <- melt(compDists)
+
+fromOrigin = data.frame(fromOrigin)
+
+p <- na.omit(allDistances)
+p$value <- as.numeric(p$value)
+p$L1 <- as.factor(p$L1)
+ggplot(p) + 
+  geom_density(aes(x=value, group=L1, col=L1), alpha=0.025) +
+  scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
+  xlab("Euclidiean Distance From Origin") +
+  ggtitle("Euclidean Distance From Origin of Posterior") +
+  geom_rug(aes(x= fromOrigin), data=fromOrigin, lwd=0.25, alpha=0.5)  ## this plots the mean
+
+post.timeCost.sorted <- p[order(p$value),]
+candidates <- unique(post.timeCost.sorted$L1)
+
+candidateMeans <- data.frame(fromOrigin$fromOrigin[candidates]) ## the means for each candidate distribution
+names(candidateMeans) <- c("CandidateMeans")
+candidateMeans$L1 <- candidates
+
+## select their whole distributions
+candidate.dist <- post.timeCost.sorted[post.timeCost.sorted$L1 %in% candidates, ]
+ggplot(candidate.dist) + 
+  geom_density(aes(x=value, group=L1, col=L1), alpha=0.2) +
+  scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
+  xlab("Euclidiean Distance From Origin") +
+  ggtitle("Density of Euclidean Distance From Origin") +
+  # geom_rug(aes(x =value , group=L1, col=L1), alpha=0.025) +
+  geom_rug(data=candidateMeans, aes(x = CandidateMeans, col=L1)) +
+  geom_vline(xintercept = optimalDist, col='black', lwd=0.5)
+
+```
+
+```{r }
+candidateConfigs <- scenarioOut[scenarioOut$config %in% candidates, ]
+library(plyr)
+distStats <- ddply(allDistances, .(L1), summarise, meanDist = mean(value), sdDist = sd(value))
+candidateDists <- distStats[distStats$L1 %in% candidates, ]
+candidateConfigs$distance.mean = candidateDists$meanDist
+candidateConfigs$distance.sd = candidateDists$sdDist
+candidateConfigs <- candidateConfigs[c("config", "cores", "GBMemory", "seconds", "cost", "distance.mean", "distance.sd")]
+candidateConfigs <- candidateConfigs[order(candidateConfigs$distance.mean, candidateConfigs$distance.sd), ]
+library(knitr)
+kable(candidateConfigs, row.names = F)
+```
+
+```{r}
+clustPred <- candidateConfigs[c("seconds", "cost", "distance.mean", "distance.sd")]
+d <- dist(scale(clustPred))
+fit <- hclust(d, "ave")
+fit$labels <-as.character(candidateConfigs$config)
+
+dend <- as.dendrogram(fit)
+dend_data <- dendro_data(dend, type = "rectangle")
+groups <- cutree(fit, h=1) # cut tree into 5 clusters
+
+dend_data$labels$cluster <- vector('numeric', length=length(groups))
+
+for (i in 1:nrow(dend_data$labels)){
+  thisLabel <- as.character(dend_data$labels$label[i])
+  thisCluster <- groups[thisLabel]
+  dend_data$labels$cluster[i] <- thisCluster
+}
+
+ggplot(dend_data$segments) + 
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend))+
+  geom_text(data = dend_data$labels, aes(x, y, label = label, col=as.factor(cluster)),
+            hjust = 1, angle = 90, size = 3) +
+  xlab("Hardware Configuration") +
+  ylab("Dissimilarity") + theme(
+  axis.text.x = element_blank(),
+  axis.text.y = element_blank(),
+  axis.ticks = element_blank()) +
+  scale_color_discrete() +   ggtitle("GAM Unconstrained Optimal Clustering")
+
+
+candidateConfigs$cluster <- groups
+
+ggplot(candidateConfigs) + 
+  geom_point(aes(y = seconds, x = cost, col=as.factor(cluster), size=distance.sd), alpha=0.5) +
+  scale_color_discrete() +
+  ggtitle("GAM Data-Contrainted Optimal") +
+  ylab("Seconds") +
+  xlab("Cost")
+
+library(knitr)
+
+firstCluster <- candidateConfigs[candidateConfigs$cluster == 1, ]
+kable(firstCluster, row.names = F)
+```
 
 

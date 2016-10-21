@@ -160,7 +160,7 @@ A second limitation of the approach described here is that my analysis is limite
 
 I limit my work to the analysis of model classes in the data-driven tier of SDMs, and do not attempt to characterize the computational time of either parametric or Bayesian approaches. Systematic literature review suggests that this is a reasonable simplification to make, because a majority of SDM users utilize these machine learning methods.  Using the same logic, I limit my analyses to the ```R``` implementations of these SDMs, which ensures that all code libraries are well documented and open source.  While there are known limitations to the language design and speed of ```R```, the platform is the most widely used for SDM analyses. Maxent, the most popular modeling algorithm in recent years, is excluded because (1) it is written in Java, with only R bindings linking it to the R platform and (2) it is not open source, it is distributed as a black-box algorithm for SDM.
 
-Finally, my methodological approach was strongly limited by computational cost, both in financial and time contexts. Each SDM configuration was tested between five and ten times to ensure robust results.  Experiments in my set ranged from less than five seconds to greater than five hours. In order to gather enough data to develop a robust predictive model, I limited the number of very long running models.  Similarly, I limited my experimentation on virtual servers with very high vCPU counts or memory allocations. The cost of these instances was more than an order of magnitude of larger than smaller instances (> $1/hr), so experimentation was shifted to less costly servers. More data collected in all areas, particularly on virtual instances with high memory and many CPUs may improve the robustness of my results, particularly for very data-intensive models or severs with advanced hardware capabilities.
+Finally, my methodological approach was strongly limited by computational cost, both in financial and time contexts. Each SDM configuration was tested between five and ten times to ensure robust results.  Experiments in my set ranged from less than five seconds to greater than five hours. In order to gather enough data to develop a robust predictive model, I limited the number of very long running models.  Similarly, I limited my experimentation on virtual servers with very high vCPU counts or memory allocations. The cost of these instances was more than an order of magnitude of larger than smaller instances (> $1/hr), so experimentation was shifted to less costly servers. More data collected in all areas, particularly on virtual instances with high memory and many CPUs may improve the robustness of my results, particularly for very data-intensive models or severs with advanced hardware capabilities.  This limits the ability to predict into very advanced configurations.  The optimization routines I develop here typically call for more data, which is not available, since my training data was truncated due to these limitations.
 
 #### Data Collection
 
@@ -225,6 +225,8 @@ Models were evaluated using the 20% holdout set that was not included in model f
 Model drivers were evaluated by cross validating the performance of a separately built model using only a subset of the predictors.  Each predictor was left out of a model fit, and the $r^2$ of the subset model was evaluated in its absence. The reduction in model skill by removing the additional term is interpreted as the importance of that variable to the model.  Variables with a large reduction in model skill are very important, while variables with small reductions are only slightly important to the overall model fitting. A reduction in $r^2$ is then simply interpreted as the reduction in data variance explained by the model when that predictor is removed.
 
 #### Optimal Prediction
+
+##### Unconstrained Optimization
 To predict the optimal configuration, the runtime and accuracy prediction models for each SDM class were used to generate predictions of execution time and accuracy for a large set of potential experiments.  Ideally, the model would predict the value at every real combination of computing hardware and algorithm inputs, essentially describing every possible experiment.  Although there are a finite number of hardware configurations on the market today, there are an infinite number of ways to combine these with sets of algorithm inputs, which makes the problem intractable. Therefore, it is essential to reduce the scope of the prediction into a large, but finite, selection of possible experimental configurations. To accomplish this, I regularly sampled values along each orthogonal axis of the experimental components, from very small (near zero) values, to very large, but still reasonable, values.  This allowed to to partition the infinite space into a real number of combinations to work with.  Each candidate configuration in the reduced space was assigned a dollar-per-hour rate using the Google Cloud Engine pricing scheme, based on its number of CPUs and amount of RAM.  Using this scheme allows the prediction to be recomputed should a new pricing scheme become available. For every scenario in the candidate set, the execution time (in seconds) and accuracy (in AUC) was predicted.  Finally, the execution time was multiplied by the dollar-per-hour rate to obtain a monetary cost for that experiment.
 
 The candidate experiment generation was done using the expand.grid function in R and the model prediction was completed on a 16-core, 60 GB RAM instance on GCE.  Predictions were spread across all 16 cores using the parallel package and the mclapply functionality provided in that package.  Once each experiment in the hypercube had been predicted, it was possible to predict the optimal configuration under a variety of optimality criteria.
@@ -240,7 +242,17 @@ The candidate experiment generation was done using the expand.grid function in R
 | Learning Rate *(GBM-BRT Only)*     | 0.001       | 0.11  |  0.005 | 22      |
 | Tree Complexity *(GBM-BRT Only)*     | 1       | 5       | 1      | 5      |
 
-To calculate the unconstrained optimal configuration, the predicted values for execution time and accuracy were predicted for all values in the sample set.  The set of all of the configurations was searched for the maximum accuracy, which can be produced by a single combination of algorithm inputs, but can be achieved on every computing type. This means that there are a number of different costs and times that will result when this algorithm is calculated with this input set.  Every possible combination of cores and RAM has a different hourly rate, and thus, a different cost for this experiment.  Each possible computing combination was plotted out on two new orthogonal axes: time elapsed and dollar cost. Using the ```dist``` function in base R, the euclidean distance between each point in the dataset and the origin of these two axes was calculated.  Finally, the element with the minimal distance to the origin was chosen as the optimal point, and the algorithm parameters were advised as the optimal algorithm parameters and the hardware settings chosen as the optimal hardware settings.
+To calculate the unconstrained optimal configuration, the predicted values for execution time and accuracy were predicted for all values in the hypercube set.  Using a bivariate interpolation method, the accuracy for every combiantion of algorithm inputs (training examples and number of predictors) was estimated. This entire space was searched for the minimal set of algorithm inputs that would result in the maximum accuracy the maximum accuracy.  The minimal set of inputs was defined as the one with the least training examples and the least number of predictors.
+
+This maximum-accuracy point, because it is only defined in terms of algorithm inputs, can be calculated on any combination of computer hardware. Holding the algorithm inputs, and thus, the accuracy, fixed at the maximum combination means that there are a number of different costs and times that will result when this algorithm is calculated, due to inherent differences in the hardware capabilities of each configuration. Using data on 287 computing configurations, the execution time model was used to estimate the cost, in seconds and dollars, for each.  Under the Bayesian framework, the model was run 1000 iterations to get a posterior estimate of predicted time.  Each time sample in the posterior was multiplied by the configuration's rate per second to obtain a cost for obtaining the accuracy maximizing point.
+
+The posterior distributions for time and cost were then plotted out on time and cost as orthogonal axes.  Using the ```dist``` function in R, the euclidean distance between each sample in the posterior and the origin of the two axes was calculated to arrive at a density of potential distances for each hardware configuration. To assess the potential for similarly-distributed configurations that might compete for the lowest-cost and lowest-time, 25 distributions with the lowest means were selected as potential optimal candidates. Using hierarchical agglomerative cluster (```hclust```), the posterior distributions of distance were clustered according to their mean and standard deviation.  The optimal point should both have a low mean, and a low standard deviation, and thus, low uncertainty.  The top-25 potential candidate distributions were clustered hierarchically, and then split into distinct clusters at a dissimilarity of 1.  Candidates with dissimilarity in their means and standard deviations larger than one were considered statistically different, and those within a dissimilarity of 1 were considered statistically the same.   The cluster with the lowest mean distance to the time-cost origin was selected as the optimal cluster, and each member of that cluster was considered equally optimal.
+
+##### Data-Constrained Optimization
+Constrained optimization routines proceeded very similarly to the unconstrained analyses above, but a prior constraint was placed on the space to subset it to only potential scenarios that would meet the constraint. A data-constrained optimization was performed by first slicing the accuracy space, as defined by algorithm variables, into reflect only those combinations of algorithm inputs with enough data to meet the constraint.  For example, if the constraint called for a hard limit of 500 training examples, the accuracy maximization search would not search any values beyond 500o training examples.  Similarly, the number of predictors could be limited if there were few covariates available for the researcher to utilize. Once the accuracy space had been subsetted, it was searched to find the accuracy-maximizing space within it. Once found, the analysis proceeded as in an unconstrained analysis, by fixing inputs to maximize accuracy and then minimizing time and cost.
+
+##### Cost-Constrained Optimization
+To calculate a cost- or time-constrained optimal configuration for a given SDM, first, the execution time model for that SDM was used to calculate a regular set of values for average execution time under various algorithm input combinations.  Using bivariate interpolation, these values were interpolated across the entire space so each distinct combination of values had its own predicted time.  Since the algorithm inputs, number of training examples and number of covariates are strong model drivers, these predictions give a time surface, which is subsequently truncated at the user's threshold of time and/or cost.  Once the time space has been subset, its boundaries are used to subset accuracy space.  Next, the accuracy-maximizing point within the time-subset accuracy space is found. As in the data-constrained optimization procedure, the execution time model is used to find the posterior estimates for each hardware type and the time-and-cost minimizing cluster of points.
 
 
 ### Results
@@ -307,9 +319,151 @@ Importantly, with the exception of RF, the computing variables, RAM and cores, h
 
 The accuracy of SDM models can be most effectively predicted by including the number of environmental covariates and the number of training examples.  The number of environmental covariates included in model fitting is also very important.  In the cases of RF and GBM-BRT, these two together can account for nearly 80% of the model's total predictive skill.  In the GAM model, this is the only significant term towards predicting accuracy.  In all models, no other terms consistently increase model skill. Learning rate and tree complexity, designed to regularize the model to prevent overfitting, do not enhance the skill of the GBM-BRT accuracy model.
 
+#### Optimization
+It is instructive to discuss the prediction of the unconstrained optimal point for each SDM type. In addition, a data-constrain optimization will be demonstrated to show its utility in situation were little data is available to model users.  Finally, a time- constrained optimization was performed and is discussed.  
+
+##### Unconstrained Optimal
+In the unconstrained optimization procedure, the algorithm inputs, and therefore the accuracy, were fixed before optimizing the hardware configuration.  Each model presented a different accuracy surface.  In all the models, the accuracy-maximizing point lies at the right-hand size of the training example-covariate space.  However, the individual surface determines the accuracy and the point's exact position. Most points lie close to the very top right of the space, indicating that many training examples and many covariates lead to the highest accuracy, which we would expect from the investigation of the accuracy model drivers as well.  Of course, this space was limited due to experimental design constraints, so if the accuracy-maximizing point lies at the point with the highest data requirements, it may not truly be optimal, but instead require additional data.  More data will nearly always produce a better model.  However, given my review of the SDM literature, in practice the limits I've artificially imposed seem like reasonable limits beyond the data inputs of most SDM studies.  
+
+| Model   | Fixed Accuracy   | Training Examples   | covariates   |
+| :------------- | :------------- | :------------- |  :------------- |
+| GAM     | 0.7131     | 9000      | 5       |
+| GBM-BRT     | 0.8087      | 10000      | 5       |
+| MARS     | 0.7722      | 1000      | 5       |
+| RF     | 0.8523       | 10000      | 5       |
+
+***Table X*** Accuracy-Maximizing Points for each SDM
+
+The GAM model fixed inputs at the lowest predicted accuracy, with a maximum predicted accuracy of only 0.71.  MARS required the least data, with only 1000 training examples needed to reach the maximum accuracy.  The MARS accuracy surface is interesting in that after ~1000 training examples, in which accuracy increases quite quickly, only the addition of more covariates can increase accuracy.  This trend is also seen, to a lesser degree, in the GAM model. However, in the RF and GBM-BRT models, additional training examples continue to increase model accuracy throughout the surface. In all cases, additional covariates continued to increase accuracy significantly up to the five covariates included in this analysis.
+
+Once an accuracy-maximizing point was developed for each SDM class, we can proceed to identify the optimal hardware configuration for running this set of algorithm inputs. Because of the different levels of influence of hardware components on each model type, the optimal for each class different slightly. Using the Bayesian posterior distribution of the predictions, rather than the posterior means, means that there are multiple configurations that were statistically indistinguishable from each other. These clusters were taken together as the optimal if their dissimilarity of mean and standard deviation was less than 1.
+
+| Configuration Number |	CPUs |	RAM |	Seconds |	Dollars | Mean Distance	| Distance SD |
+| :------------- | :------------- | :------------- | :------------- | :------------- | :------------- | | :------------- |
+|13	| 2	| 2	| 5.302108 |	0.3187628|	5.330181|	0.4410313	|
+|25 |	3	| 2	| 5.302108	| 0.4781441|	5.342165|	0.4420229	|
+|37	|4	|2	|5.302108	|0.6375255	|5.358898	|0.4434074	|
+
+***Table X*** GAM unconstrained optimal predictions for computing hardware for achieving the accuracy-maximizing point.
+
+
+| Configuration Number |	CPUs |	RAM |	Seconds |	Dollars | Mean Distance	| Distance SD |
+| :------------- | :------------- | :------------- | :------------- | :------------- | :------------- | | :------------- |
+|13|	2|	2	|1489.020|	89.51986|	1796.690	|1545.021|
+
+***Table X*** GBM-BRT unconstrained optimal predictions for computing hardware for achieving the accuracy-maximizing point.
+
+
+| Configuration Number |	CPUs |	RAM |	Seconds |	Dollars | Mean Distance	| Distance SD |
+| :------------- | :------------- | :------------- | :------------- | :------------- | :------------- | | :------------- |
+|145|	13|	2|	21.86844|	8.545748|	24.84752|	8.630945|
+|157|	14|	2| 21.78000|	9.165896|	25.03071|	8.703743|
+|169|	15|	2|	21.71175|	9.789829|	25.19974|	8.699931|
+|133|	12|	2|	22.60012|	8.152314|	25.38249|	8.675544|
+|121|	11|	2|	22.74969|	7.522412|	25.38255|	9.059256|
+|181|	16|	2|	21.73022|	10.451368|	25.52088|	8.824121|
+|109|	10|	2|	23.31605|	7.008804|	25.83321|	9.269416|
+|193|	17|	2|	21.50065|	10.987265|	25.85966|	9.837260|
+|97 |9	|2|	24.22601|	6.554105|	26.64450|	9.645858|
+
+***Table X*** RF unconstrained optimal predictions for computing hardware for achieving the accuracy-maximizing point.
+
+
+| Configuration Number |	CPUs |	RAM |	Seconds |	Dollars | Mean Distance	| Distance SD |
+| :------------- | :------------- | :------------- | :------------- | :------------- | :------------- | | :------------- |
+|81	|7|	16|	9.111372|	10.86422|	14.28928|	1.688315|
+|93	|8|	16|	9.111372|	12.41625|	15.52028|	1.833760|
+|105|	9	|16|	9.111372|	13.96828|	16.80676|	1.985762|
+|117|	10|	16|	9.111372|	15.52031|	18.13693|	2.142924|
+|129|	11|	16|	9.111372|	17.07234|	19.50185|	2.304192|
+|141|	12|	16|	9.111372|	18.62437|	20.89470|	2.468761|
+|153|	13|	16|	9.111372|	20.17640|	22.31026|	2.636013|
+|165|	14|	16|	9.111372|	21.72844|	23.74446|	2.805468|
+|177|	15|	16|	9.111372|	23.28047|	25.19413|	2.976750|
+|189|	16|	16|	9.111372|	24.83250|	26.65673|	3.149560|
+
+***Table X*** MARS unconstrained optimal predictions for computing hardware for achieving the accuracy-maximizing point.
+
+Only the GBM-BRT model had a clearly defined optimal solution for this problem, with only one distribution significantly different than the rest.  The GAM class also called for a cluster of only three similar solutions. RF and MARS, however, each had larger clusters, 9 and 10, respectively. The optimal solution for GAM and GBM-BRT each called for very low hardware requirements, with only two cores and two GB memory.  The RF model, as expected because of its ability to run on parallel cores, suggests an optimal with between 7 and 16 cores, though with little memory required.  The MARS model, oddly, requires a high number of cores, even though it runs sequentially, and a high amount of memory.  The other models all suggest that 2GB of RAM is sufficient to run the model optimally.
+
+#### Data-Constrained Optimization
+To demonstrate the ability to predict the optimal configuration under a data-constraint, it is demonstrated here.  This is clearly a very common occurrence in SDM applications, where there is simply no more data with which to fit the model.  In this case, we'll choose a relatively extreme example, and fit an optimal configuration with only 45 training examples.  Covariates are still allowed to range between one and five.  
+
+
+| Model   | Fixed Accuracy   | Training Examples   | covariates   |
+| :------------- | :------------- | :------------- |  :------------- |
+| GAM     | 0.6776    | 45      | 5       |
+| GBM-BRT     | XXX     | XXX     | XXX       |
+| MARS     | 0.69457     | 45      | 5       |
+| RF     | 0.7863      | 1      | 5       |
+
+***Table X*** Accuracy-Maximizing Points for each SDM under a strict data constraint of 45 training examples.
+
+Once the accuracy is maximized at this low point, a significant decrease in the maximized accuracy is apparent, and expected.  This decrease was about 0.05-0.1 points on the AUC, which corresponds with a good predictive model with a fair predictive model (FIND CITATION FOR THIS).  As expected, most models require all 45 training points, and all require all five covariates to achieve maximum accuracy. The RF suggestion of accuracy maximization of 1 training example seems like a statistical artifact and should be treated with caution.
+
+
+| Configuration Number |	CPUs |	RAM |	Seconds |	Dollars | Mean Distance	| Distance SD |
+| :------------- | :------------- | :------------- | :------------- | :------------- | :------------- | | :------------- |
+| 13|	2|	2|	5.224851|	0.3141180|	5.257580|	0.4889995|
+| 25| 3|	2	|5.224851	|0.4711771|	5.269401|	0.4900990|
+| 37|	4|	2|	5.224851|	0.6282361	|5.285905	|0.4916341|
+
+***Table X*** Optimal Hardware for GAM under a strict data constraint of 45 training examples.
+
+XXXX NEED GBM-BRT TABLE HERE XXXX
+
+| Configuration Number |	CPUs |	RAM |	Seconds |	Dollars | Mean Distance	| Distance SD |
+| :------------- | :------------- | :------------- | :------------- | :------------- | :------------- | | :------------- |
+|109	|10|	2	|4.738573|	1.4244151|	5.274748|	2.201935|
+|97	|9 |	2|	4.807257|	1.3005552|	5.298139|	2.156391|
+|133|	12|	2|	4.677079|	1.6871158|	5.298231|	2.211611	|
+|121|	11|	2|	4.732381|	1.5648092|	5.315057|	2.235309	|
+|145|	13|	2|	4.683376|	1.8301697|	5.353266|	2.217866	|
+|157|	14|	2|	4.679844|	1.9694656|	5.411921|	2.308578	|
+|169|	15|	2|	4.885003|	2.2026478	|5.706941|	2.324732	|
+|61	|6|	2|	5.679106|	1.0242836|	5.988099|	1.690359	|
+|49	|5|	2|	5.949659|	0.8942338|	6.257268|	1.810588	|
+
+***Table X*** Optimal Hardware for RF under a strict data constraint of 45 training examples.
+
+
+| Configuration Number |	CPUs |	RAM |	Seconds |	Dollars | Mean Distance	| Distance SD |
+| :------------- | :------------- | :------------- | :------------- | :------------- | :------------- | | :------------- |
+|81|	7|	16|	1.796767|	2.142429|	3.580441|	2.695402|
+|93|	8|	16|	1.796767|	2.448490|	3.888889|	2.927606|
+|21	|2|	16|	3.274177|	1.115447|	4.152403|	2.109742|
+|105|	9	|16|	1.796767|	2.754551|	4.211241|	3.170276|
+|117|	10|	16|	1.796767|	3.060613|	4.544539|	3.421187|
+|33	|3	|16|	3.380755|	1.727634|	4.577421|	2.314046|
+|45|	4|	16|	3.380755|	2.303511|	4.932269|	2.493434|
+|57|	5|	16|	3.211710|	2.735413|	5.080262|	2.563458|
+|69|	6|	16|	3.211710|	3.282496|	5.530223|	2.790505|
+
+***Table X*** Optimal Hardware for MARS under a strict data constraint of 45 training examples.
+
+The data-constrained optimals showed significant overlap with the unconstrained optimal predictions.  One major difference between the two, however, is the decreased costs, in both time and money, of running the constrained experiment, since less data is used to fit the experiment.
+
+In the case of MARS, we see that number of CPU cores is clearly not a big factor in the optimality of the solution, since everywhere between 2 and 10 CPU cores shows a statistically identical distribution.  Again, we see that the memory requirement is large compared to the otehr SDM classes, however, this is likely still due to sampling design and unlikely to be a real recommendation. GAM suggested the same optimal set of 2, 3, or 4 cores with 2 GB of RAM. This makes sense that the GAM optimal is the same as from the unconstrained.  There is very little hardware influence on the run time of the model, which predicts an unconstrained optimal will use the lowest amount of hardware.  So, any experiment that requires less time than the unconstrained optimal would thus also need only the minimum amount of ahrdware. XXX about GBM-BRT.  RF showed wide variability between the number of cores that would result in the optimal solution as well. It is likely to involve multiple cores, however, there is high uncertainty about the exact number required.  Nevertheless, only two GB of RAM are suggested regardless of the number of CPU cores. This high degree of uncertainty is surprising, since the model shows high predictive skill of the test set, it would appear that the model itself should be able to differentiate between the different number of cores.  
+
+##### Cost-Constrained Optimization
+A second type of constraint on the hardware configuration choice is a cost-limit or time-limit imposed by the user. In this case, the user has identified a limit that should not be surpassed, and a solution that falls within it should then be identified.  In this particular example, the user has an unlimited supply of data with which to fit the model. However, the techniques from this section and the section above could be applied together to create a real-world situation in which both cost and and data are limited. In this example, the user has a limit of 22 seconds in which to run the model.  This scenario could occur in a centralized web-based modeling application, in which the application requires latency to be below a certain time, so that user's don't get lost or distracted.  
+
+
+| Model   | Fixed Accuracy   | Training Examples   | covariates   |
+| :------------- | :------------- | :------------- |  :------------- |
+| GAM     | 0.71311   | 9000     | 5       |
+| GBM-BRT     | 0.7001     | 110     | 5       |
+| MARS     | 0.7016    | 130      | 5       |
+| RF     | 0.8136     | 1951     | 4       |
+
+
+
+
 ####  Discussion
 Because the training time of most SDMs, excluding random forests, is not driven by hardware capabilities, they are unlikely to be able to cope with the massive influx of data.  These models have been designed in to run sequentially, either to fit into typical R design patterns, which traditionally limit code to a single core, or for methodological reasons -- many learning methods, such as GBM-BRT require models to be fit stagewise.  [@Austin:2007jwa] has posited that a solid foundation of ecological theory is essential to the correct prediction and interpretation of species distribution models. He notes that the ecological underpinnings of the statistics are, perhaps, more important the statistical method itself. [@Elith:2009gj] further suggest that additional improvements in species distribution modeling will come from the incorporation of additional, ecological relevant information in the statistical model itself, and the covariates used to fit it. Indeed, "further advances in SDM are more likely to come from better integration of theory, concepts, and practice than from improved methods per se" [@Elith:2009gj].  
 
 However, I argue that an additional concern should be added to the priorities of modelers working to develop novel statistical approaches to SDM.  While ecological datasets may not have been large in the recent past, they are clearly beginning to surpass any definition of Big Data.  Therefore, new model developments should be undertaken to develop models that more effectively leverage advanced computing infrastructure, including multiple cores and more effective memory management. While incorporation of additional ecological relevant information will help to strengthen the the ecological inference made from the model, incorporation of algorithm design techniques that facilitate the inclusion of Big Data will facilitate the inclusion of information from far more data points. More training data is nearly always associated with a better model fit, suggesting that the ability to better leverage large collections of data will improve the robustness of SDM models and their interpretations.
 
 Once the models are fit, prediction, even for large datasets, is not a particularly large problem, rather, it is the model fitting process that must be differently designed.  My results indicate that prediction takes only a fraction of the fitting time, even when a high spatial resolution is specified, and many thousands (or even millions) of points must be predicted. In the case of additive tree models, this is only a matter of evaluating the predictor set at each splitting point in the internal nodes of the tree, and averaging the predicted response of each tree in the ensemble. So even with very large datasets, this term is relatively small.  The more important term is the fitting time. Random forests are a model that is considered embarrassingly parallel.  Each tree can be grown in isolation, and the only step that must be done sequentially is when the trees are combined into the ensemble.  Conversely, additive regression trees (GBM-BRT) are exceptionally difficult to parallelize, since each tree must be built in sequence, so it can develop a model that reduces residual variance.  The overhead of cross-core communication is prohibitively high if the trees are built in parallel.  While it is difficult, some attempts to build these models in parallel have been successful [@Tyree:2011bx].  This study used very large datasets, and novel implementations of the regression tree approach to parallelize it.
+
+The models here are clearly not taking advantage of the advanced hardware, even which 
