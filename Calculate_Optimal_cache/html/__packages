@@ -12,6 +12,6 @@ itertools
 missForest
 bartMachine
 reshape2
+ggdendro
 plyr
 knitr
-ggdendro
