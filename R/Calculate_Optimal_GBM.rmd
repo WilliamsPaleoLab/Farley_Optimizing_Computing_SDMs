@@ -48,6 +48,9 @@ library(ggdendro)
 threshold.time <- 20 ##seconds
 threshold.cost <- Inf ##cents
 threshold.numTex <- 2500
+
+numKeep = 100
+dissimilarityCut <- 0.5
 ```
 
 
@@ -163,25 +166,25 @@ scenario$numPredictors == theMax.numPredictors, ]
 names(i.acc) <- c("numPredictors", "trainingExamples", "accuracy")
 ## plot the max onto the surface from before
 ggplot(i.acc, aes(numPredictors, trainingExamples, z = accuracy)) +
-geom_tile(aes(fill=accuracy), height=1, width=0.5) +
-stat_contour(binwidth=0.01, col='black') +
-ggtitle("GBM-BRT Accuracy Surface") +
-xlab("Number of Covariates") +
-ylab("Number of Training Examples") +
-scale_fill_continuous(low='pink', high='forestgreen') +
-geom_point(data=theMaxSet, aes(x = numPredictors , y = trainingExamples), shape=25, fill='red', size=3)
+  geom_tile(aes(fill=accuracy), height=1, width=0.5) +
+  stat_contour(binwidth=0.01, col='black') +
+  ggtitle("GBM-BRT Accuracy Surface") +
+  xlab("Number of Covariates") +
+  ylab("Number of Training Examples") +
+  scale_fill_continuous(low='pink', high='forestgreen') +
+  geom_point(data=theMaxSet, aes(x = numPredictors , y = trainingExamples), shape=25, fill='red', size=3)
 ```
 
 In theory, the hardware parameters should not affect the SDM accuracy.  We can test this assumption here, by plotting the accuracies obtained for this combination of algorithm inputs against modeled accuracy on the number of CPUs and amount of memory.  If the assumption is valid, the plot should show no change in either the horizontal or vertical directions.  We see that there is, in fact, some change, though.  This is likely due to expeirmental design, and lack of a full factorial design setup.  The effect is realtively minor, and I choose to comment it and move along. 
 
 ```{r accAssumptionCheck}
-ggplot(theMaxSet) +
-geom_tile(aes(x = cores, y=GBMemory, z=accuracy, fill=accuracy)) +
-#geom_contour(aes(x = cores, y=GBMemory, z=accuracy, fill=accuracy)) +
-ggtitle("GBM-BRT Hardware/Accuracy Surface") +
-xlab("CPU Cores") +
-ylab("RAM (GB)") +
-scale_fill_continuous(low='blue', high='red')
+# ggplot(theMaxSet) +
+#   geom_tile(aes(x = cores, y=GBMemory, z=accuracy, fill=accuracy)) +
+#   #geom_contour(aes(x = cores, y=GBMemory, z=accuracy, fill=accuracy)) +
+#   ggtitle("GBM-BRT Hardware/Accuracy Surface") +
+#   xlab("CPU Cores") +
+#   ylab("RAM (GB)") +
+#   scale_fill_continuous(low='blue', high='red')
 
 acc.diff <- max(theMaxSet$accuracy) - min(theMaxSet$accuracy)
 acc.diffFromExp <- mean(theMaxSet$accuracy) - theMax.expectedAccuracy
@@ -195,19 +198,19 @@ print(paste("Fixing accuracy at: ", theMax.expectedAccuracy))
 Now, fix the algorithm inputs at the accuracy-maximizing point-- effectively fixing expected model accuracy.  An algorithm with these inputs can be run on any combination of hardware. Project how long that specific model would take and how much it would cost on all computing types.  Plot those out on time vs. cost axes.
 
 ```{r timeCostProjection}
-ggplot(theMaxSet) +
-geom_point(aes(x = cores, y = GBMemory))+
-ggtitle("GBM-BRT Time/Cost Surface for Accuracy-Maximizing Point") +
-xlab("Cost (cents)") +
-ylab('Cost (seconds)') 
+# ggplot(theMaxSet) +
+# geom_point(aes(x = cores, y = GBMemory))+
+# ggtitle("GBM-BRT Time/Cost Surface for Accuracy-Maximizing Point") +
+# xlab("Cost (cents)") +
+# ylab('Cost (seconds)') 
 ```
 
 ```{r }
-ggplot(theMaxSet) +
-geom_point(aes(x = cost, y = seconds))+
-ggtitle("GBM-BRT Time/Cost Surface for Accuracy-Maximizing Point") +
-xlab("Cost (cents)") +
-ylab('Cost (seconds)') 
+# ggplot(theMaxSet) +
+# geom_point(aes(x = cost, y = seconds))+
+# ggtitle("GBM-BRT Time/Cost Surface for Accuracy-Maximizing Point") +
+# xlab("Cost (cents)") +
+# ylab('Cost (seconds)') 
 ```
 
 The optimal solution is the one that balances time and cost equally during the minimization. We use euclidean distance here, which normalizes each dimension by its standard deviation, so they are weighted equally. For each candidate combiantion of hardware, we calculate the distance between it and the origin of these two axes.  We then find the minimum of that distance matrix and call that point the optimal.
@@ -228,38 +231,36 @@ optimalDist <- min(fromOrigin)
 xend = optimal$seconds
 yend = optimal$cost
 ## Plot the same thing, but now with the optimal marked
-ggplot(theMaxSet) +
-geom_point(aes(x = cost, y = seconds)) +
-ggtitle("GBM-BRT Time/Cost Surface") +
-xlab("Cost (cents)") +
-ylab('Cost (seconds)')  +
-geom_segment(data=theMaxSet, aes(x = 0, y=0, xend=cost, yend=seconds), alpha=0.075) +
-geom_point(data=optimal, aes(x = cost, y = seconds), col='red', size=3, shape=25)
+# ggplot(theMaxSet) +
+# geom_point(aes(x = cost, y = seconds)) +
+# ggtitle("GBM-BRT Time/Cost Surface") +
+# xlab("Cost (cents)") +
+# ylab('Cost (seconds)')  +
+# geom_segment(data=theMaxSet, aes(x = 0, y=0, xend=cost, yend=seconds), alpha=0.075) +
+# geom_point(data=optimal, aes(x = cost, y = seconds), col='red', size=3, shape=25)
 
 ```
 
 ```{r}
 fromOrigin <- data.frame(fromOrigin)
-
-
-ggplot(fromOrigin) + geom_histogram(aes(x=fromOrigin), binwidth=1) +
-ggtitle("Histogram of Distances from the Origin") +
-xlab("Euclidean Distance from the Origin") +
-ylab("Point-Count")
+# ggplot(fromOrigin) + geom_histogram(aes(x=fromOrigin), binwidth=1) +
+# ggtitle("Histogram of Distances from the Origin") +
+# xlab("Euclidean Distance from the Origin") +
+# ylab("Point-Count")
 ```
 
 Our job is complete. We've now optimized both the harware and software dimensions of the problem. 
 
 ```{r printRes}
-print("------GBM-BRT OPTIMAL--------")
-print(paste("Predicted Optimal Accuracy", theMax.expectedAccuracy, "+/-", abs(acc.diffFromExp)))
-print(paste("Predicted Optimal Cost (seconds)", optimal$seconds))
-print(paste("Predicted Optimal Cost (cents)", optimal$cost))
-print(paste("Cores: ", optimal$cores))
-print(paste("Memory:", optimal$GBMemory))
-print(paste("Training Examples:", theMax.trainingExamples))
-print(paste("Covariates:", theMax.numPredictors))
-print(paste("Distance from origin is: ", optimalDist))
+# print("------GBM-BRT OPTIMAL--------")
+# print(paste("Predicted Optimal Accuracy", theMax.expectedAccuracy, "+/-", abs(acc.diffFromExp)))
+# print(paste("Predicted Optimal Cost (seconds)", optimal$seconds))
+# print(paste("Predicted Optimal Cost (cents)", optimal$cost))
+# print(paste("Cores: ", optimal$cores))
+# print(paste("Memory:", optimal$GBMemory))
+# print(paste("Training Examples:", theMax.trainingExamples))
+# print(paste("Covariates:", theMax.numPredictors))
+# print(paste("Distance from origin is: ", optimalDist))
 ```
 
 Everything up to this point was done using the mean of the posterior distribution, a choice which simplifies the process but causes some information loss and may cause over-confidence in the predictions. We can modify our steps to include information from the entire posterior, which may solve this issue.  
@@ -282,9 +283,9 @@ time.post$postMeanTime <- rowMeans(time.post[, 1:1000])
 time.post$postMeanTime <- exp(time.post$postMeanTime)
 time.post$postMeanCost <- time.post$postMeanTime * time.post$TotalRate
 
-ggplot(time.post) + 
-geom_point(aes(x = postMeanCost, y = postMeanTime), shape=20, col='green', size=2) +
-geom_point(data = theMaxSet, aes(x = cost, y = seconds), col='blue', size=2, shape=25)
+# ggplot(time.post) + 
+#   geom_point(aes(x = postMeanCost, y = postMeanTime), shape=20, col='green', size=2) +
+#   geom_point(data = theMaxSet, aes(x = cost, y = seconds), col='blue', size=2, shape=25)
 
 ```
 
@@ -296,12 +297,12 @@ c.d$value <- exp(c.d$value)
 c.d$CostSample <- c.d$value * c.d$TotalRate
 c.d$config <- as.factor(c.d$config)
 ggplot(c.d) +
-geom_point(aes(x = CostSample, y = value, col=config), alpha=0.05) +
-scale_color_discrete(guide=F) +
-geom_point(data=time.post, aes(x = postMeanCost, y = postMeanTime), shape=20, size=2) +
-ggtitle("Time/Cost Posterior Estimates") +
-xlab("Cost") +
-ylab("Time")
+  geom_point(aes(x = CostSample, y = value, col=config), alpha=0.05) +
+  scale_color_discrete(guide=F) +
+  geom_point(data=time.post, aes(x = postMeanCost, y = postMeanTime), shape=20, size=2) +
+  ggtitle("Time/Cost Posterior Estimates") +
+  xlab("Cost") +
+  ylab("Time")
 ```
 
 The posteriors are in a line, since there's a fixed linear relationship between time and cost.
@@ -346,7 +347,7 @@ There's a lot of overlab in this figure, and many points are far away from the o
 
 ```{r minimalDistributions}
 post.timeCost.sorted <- p[order(p$value),]
-candidates <- unique(post.timeCost.sorted$L1)[1:25]
+candidates <- unique(post.timeCost.sorted$L1)
 
 candidateMeans <- data.frame(fromOrigin$fromOrigin[candidates]) ## the means for each candidate distribution
 names(candidateMeans) <- c("CandidateMeans")
@@ -354,22 +355,23 @@ candidateMeans$L1 <- candidates
 
 ## select their whole distributions
 candidate.dist <- post.timeCost.sorted[post.timeCost.sorted$L1 %in% candidates, ]
-ggplot(candidate.dist) + 
-  geom_density(aes(x=value, group=L1, col=L1), alpha=0.2) +
-  scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
-  xlab("Euclidiean Distance From Origin") +
-  ggtitle("Density of Euclidean Distance From Origin") +
-  # geom_rug(aes(x =value , group=L1, col=L1), alpha=0.025) +
-  geom_rug(data=candidateMeans, aes(x = CandidateMeans, col=L1)) +
-  geom_vline(xintercept = optimalDist, col='black', lwd=0.5)
-
-
+# ggplot(candidate.dist) + 
+#   geom_density(aes(x=value, group=L1, col=L1), alpha=0.2) +
+#   scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
+#   xlab("Euclidiean Distance From Origin") +
+#   ggtitle("Density of Euclidean Distance From Origin") +
+#   # geom_rug(aes(x =value , group=L1, col=L1), alpha=0.025) +
+#   geom_rug(data=candidateMeans, aes(x = CandidateMeans, col=L1)) +
+#   geom_vline(xintercept = optimalDist, col='black', lwd=0.5)
+# 
+# 
 
 ```
 
 Now, the optimal configuration may be one of the following:
   
 ```{r minimalDistTable}
+candidates <- candidates[1:numKeep]
 candidateConfigs <- theMaxSet[theMaxSet$config %in% candidates, ]
 library(plyr)
 distStats <- ddply(allDistances, .(L1), summarise, meanDist = mean(value), sdDist = sd(value))
@@ -379,7 +381,7 @@ candidateConfigs$distance.sd = candidateDists$sdDist
 candidateConfigs <- candidateConfigs[c("config", "cores", "GBMemory", "seconds", "cost", "distance.mean", "distance.sd")]
 candidateConfigs <- candidateConfigs[order(candidateConfigs$distance.mean, candidateConfigs$distance.sd), ]
 library(knitr)
-kable(candidateConfigs, row.names = F)
+#kable(candidateConfigs, row.names = F)
 ```
 
 ```{r}
@@ -390,7 +392,7 @@ fit$labels <-as.character(candidateConfigs$config)
 
 dend <- as.dendrogram(fit)
 dend_data <- dendro_data(dend, type = "rectangle")
-groups <- cutree(fit, h=1) # cut tree into 5 clusters
+groups <- cutree(fit, h=dissimilarityCut) # cut tree
 
 dend_data$labels$cluster <- vector('numeric', length=length(groups))
 
@@ -405,21 +407,19 @@ ggplot(dend_data$segments) +
   geom_text(data = dend_data$labels, aes(x, y, label = label, col=as.factor(cluster)),
             hjust = 1, angle = 90, size = 3) +
   xlab("Hardware Configuration") +
-  ylab("Dissimilarity") + theme(
-  axis.text.x = element_blank(),
-  axis.text.y = element_blank(),
+  ylab("Dissimilarity") + theme(axis.text.x = element_blank(),
   axis.ticks = element_blank()) +
   scale_color_discrete() +   ggtitle("RF Unconstrained Optimal Clustering")
 
 
 candidateConfigs$cluster <- groups
 
-ggplot(candidateConfigs) + 
-  geom_point(aes(y = seconds, x = cost, col=as.factor(cluster), size=distance.sd), alpha=0.5) +
-  scale_color_discrete() +
-  ggtitle("RF Data-Contrainted Optimal") +
-  ylab("Seconds") +
-  xlab("Cost")
+# ggplot(candidateConfigs) +
+#   geom_point(aes(y = seconds, x = cost, col=as.factor(cluster), size=distance.sd), alpha=0.5) +
+#   scale_color_discrete() +
+#   ggtitle("RF Data-Contrainted Optimal") +
+#   ylab("Seconds") +
+#   xlab("Cost")
 
 clusterStats <- ddply(candidateConfigs, .(cluster), summarize, meanDistance = mean(distance.mean), sdDistance = mean(distance.sd))
 
@@ -433,12 +433,8 @@ bestCluster = clusterStats[1, ]$cluster
 
 firstCluster <- candidateConfigs[candidateConfigs$cluster == bestCluster, ]
 kable(firstCluster, row.names = F)
+
 ```
-
-
-
-In the results above, you're accutally seeing the trade off between time and money play out quite nicely.  Adding cores costs money, but, in the case of GBM-BRTs, reduces time. Here, that tradeoff basically exactly evens out.
-
 
 
 
@@ -522,14 +518,14 @@ yend = optimal$cost
 
 print(paste("Now there are only: ", nrow(scenarioOut), "candidates, instead of ", nrow(prices), "candidates that can complete this scenario under budget."))
 
-## Plot the same thing, but now with the optimal marked
-ggplot(scenarioOut) +
-  geom_point(aes(x = cost, y = seconds)) +
-  ggtitle("Random Forest Time/Cost Surface") +
-  xlab("Cost (cents)") +
-  ylab('Cost (seconds)')  +
-  geom_segment(aes(x = 0, y=0, xend=cost, yend=seconds), alpha=0.075) +
-  geom_point(data=optimal, aes(x = cost, y = seconds), col='red', size=3, shape=25)
+# ## Plot the same thing, but now with the optimal marked
+# ggplot(scenarioOut) +
+#   geom_point(aes(x = cost, y = seconds)) +
+#   ggtitle("Random Forest Time/Cost Surface") +
+#   xlab("Cost (cents)") +
+#   ylab('Cost (seconds)')  +
+#   geom_segment(aes(x = 0, y=0, xend=cost, yend=seconds), alpha=0.075) +
+#   geom_point(data=optimal, aes(x = cost, y = seconds), col='red', size=3, shape=25)
 
 print(paste("Recommended # cores: ", optimal$cores))
 print(paste("Recommended Memory: ", optimal$GBMemory))
@@ -549,10 +545,10 @@ time.post$postMeanTime <- rowMeans(time.post[, 1:1000])
 time.post$postMeanTime <- exp(time.post$postMeanTime)
 time.post$postMeanCost <- time.post$postMeanTime * time.post$TotalRate
 
-ggplot(time.post) + 
-  geom_point(aes(x = postMeanCost, y = postMeanTime), shape=20, col='green', size=2) +
-  geom_point(data = scenarioOut, aes(x = cost, y = seconds), col='blue', size=2, shape=25)
-
+# ggplot(time.post) + 
+#   geom_point(aes(x = postMeanCost, y = postMeanTime), shape=20, col='green', size=2) +
+#   geom_point(data = scenarioOut, aes(x = cost, y = seconds), col='blue', size=2, shape=25)
+# 
 
 compDists <- list()
 for (i in 1:nrow(time.post)){ ## all of the candidates in theMaxSet
@@ -587,7 +583,7 @@ ggplot(p) +
   geom_rug(aes(x= fromOrigin), data=fromOrigin, lwd=0.25, alpha=0.5)  ## this plots the mean
 
 post.timeCost.sorted <- p[order(p$value),]
-candidates <- unique(post.timeCost.sorted$L1)[1:15]
+candidates <- unique(post.timeCost.sorted$L1)[1:numKeep ]
 
 candidateMeans <- data.frame(fromOrigin$fromOrigin[candidates]) ## the means for each candidate distribution
 names(candidateMeans) <- c("CandidateMeans")
@@ -595,15 +591,15 @@ candidateMeans$L1 <- candidates
 
 ## select their whole distributions
 candidate.dist <- post.timeCost.sorted[post.timeCost.sorted$L1 %in% candidates, ]
-ggplot(candidate.dist) + 
-  geom_density(aes(x=value, group=L1, col=L1), alpha=0.2) +
-  scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
-  xlab("Euclidiean Distance From Origin") +
-  ggtitle("Density of Euclidean Distance From Origin") +
-  # geom_rug(aes(x =value , group=L1, col=L1), alpha=0.025) +
-  geom_rug(data=candidateMeans, aes(x = CandidateMeans, col=L1)) +
-  xlim(0, 50) +
-  geom_vline(xintercept = optimalDist, col='black', lwd=0.5)
+# ggplot(candidate.dist) + 
+#   geom_density(aes(x=value, group=L1, col=L1), alpha=0.2) +
+#   scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
+#   xlab("Euclidiean Distance From Origin") +
+#   ggtitle("Density of Euclidean Distance From Origin") +
+#   # geom_rug(aes(x =value , group=L1, col=L1), alpha=0.025) +
+#   geom_rug(data=candidateMeans, aes(x = CandidateMeans, col=L1)) +
+#   xlim(0, 50) +
+#   geom_vline(xintercept = optimalDist, col='black', lwd=0.5)
 
 ```
 
@@ -617,7 +613,7 @@ candidateConfigs$distance.sd = candidateDists$sdDist
 candidateConfigs <- candidateConfigs[c("config", "cores", "GBMemory", "seconds", "cost", "distance.mean", "distance.sd")]
 candidateConfigs <- candidateConfigs[order(candidateConfigs$distance.mean, candidateConfigs$distance.sd), ]
 library(knitr)
-kable(candidateConfigs, row.names = F)
+#kable(candidateConfigs, row.names = F)
 ```
 
 ```{r}
@@ -628,7 +624,7 @@ fit$labels <-as.character(candidateConfigs$config)
 
 dend <- as.dendrogram(fit)
 dend_data <- dendro_data(dend, type = "rectangle")
-groups <- cutree(fit, h=1) # cut tree into 5 clusters
+groups <- cutree(fit, h=dissimilarityCut) # cut tree into 5 clusters
 
 dend_data$labels$cluster <- vector('numeric', length=length(groups))
 
@@ -645,19 +641,18 @@ ggplot(dend_data$segments) +
   xlab("Hardware Configuration") +
   ylab("Dissimilarity") + theme(
   axis.text.x = element_blank(),
-  axis.text.y = element_blank(),
   axis.ticks = element_blank()) +
-  scale_color_discrete() +   ggtitle("RF Unconstrained Optimal Clustering")
+  scale_color_discrete() +   ggtitle("GBM-BRT Data-Constrained Optimal Clustering")
 
 
 candidateConfigs$cluster <- groups
 
-ggplot(candidateConfigs) + 
-  geom_point(aes(y = seconds, x = cost, col=as.factor(cluster), size=distance.sd), alpha=0.5) +
-  scale_color_discrete() +
-  ggtitle("RF Data-Contrainted Optimal") +
-  ylab("Seconds") +
-  xlab("Cost")
+# ggplot(candidateConfigs) + 
+#   geom_point(aes(y = seconds, x = cost, col=as.factor(cluster), size=distance.sd), alpha=0.5) +
+#   scale_color_discrete() +
+#   ggtitle( Data-Contrainted Optimal") +
+#   ylab("Seconds") +
+#   xlab("Cost")
 
 clusterStats <- ddply(candidateConfigs, .(cluster), summarize, meanDistance = mean(distance.mean), sdDistance = mean(distance.sd))
 
@@ -674,7 +669,7 @@ kable(firstCluster, row.names = F)
 ```
 
 
-### Cost Constraint II
+### Cost Constraint 
 ```{r}
 
 # accMaxResults <- data.frame(cost = vector(),
@@ -758,9 +753,9 @@ time.post$postMeanTime <- rowMeans(time.post[, 1:1000])
 time.post$postMeanTime <- exp(time.post$postMeanTime)
 time.post$postMeanCost <- time.post$postMeanTime * accMaxSet$TotalRate
 
-ggplot(time.post) +
-  geom_point(aes(x = postMeanCost, y = postMeanTime), shape=20, col='green', size=2) +
-  geom_point(data = accMaxSet, aes(x = cost, y = seconds), col='blue', size=2, shape=25)
+# ggplot(time.post) +
+#   geom_point(aes(x = postMeanCost, y = postMeanTime), shape=20, col='green', size=2) +
+#   geom_point(data = accMaxSet, aes(x = cost, y = seconds), col='blue', size=2, shape=25)
 
 
 compDists <- list()
@@ -796,21 +791,21 @@ ggplot(p) +
   geom_rug(aes(x= meanFromOrigin), data=fromOrigin, lwd=0.25, alpha=0.5)  ## this plots the mean
 
 post.timeCost.sorted <- p[order(p$value),]
-candidates <- unique(post.timeCost.sorted$L1)[1:15]
+candidates <- unique(post.timeCost.sorted$L1)[1:numKeep]
 
 candidateMeans <- data.frame(fromOrigin$meanFromOrigin[candidates]) ## the means for each candidate distribution
 names(candidateMeans) <- c("CandidateMeans")
 candidateMeans$L1 <- candidates
 
-## select their whole distributions
-candidate.dist <- post.timeCost.sorted[post.timeCost.sorted$L1 %in% candidates, ]
-ggplot(candidate.dist) +
-  geom_density(aes(x=value, group=L1, col=L1), alpha=0.2) +
-  scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
-  xlab("Euclidiean Distance From Origin") +
-  ggtitle("Density of Euclidean Distance From Origin") +
-  # geom_rug(aes(x =value , group=L1, col=L1), alpha=0.025) +
-  geom_rug(data=candidateMeans, aes(x = CandidateMeans, col=L1)) 
+# ## select their whole distributions
+# candidate.dist <- post.timeCost.sorted[post.timeCost.sorted$L1 %in% candidates, ]
+# ggplot(candidate.dist) +
+#   geom_density(aes(x=value, group=L1, col=L1), alpha=0.2) +
+#   scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
+#   xlab("Euclidiean Distance From Origin") +
+#   ggtitle("Density of Euclidean Distance From Origin") +
+#   # geom_rug(aes(x =value , group=L1, col=L1), alpha=0.025) +
+#   geom_rug(data=candidateMeans, aes(x = CandidateMeans, col=L1)) 
 
 ```
 
@@ -824,7 +819,7 @@ candidateConfigs$distance.sd = candidateDists$sdDist
 candidateConfigs <- candidateConfigs[c("config", "cores", "GBMemory", "seconds", "cost", "distance.mean", "distance.sd")]
 candidateConfigs <- candidateConfigs[order(candidateConfigs$distance.mean, candidateConfigs$distance.sd), ]
 library(knitr)
-kable(candidateConfigs, row.names = F)
+#kable(candidateConfigs, row.names = F)
 ```
 
 ```{r}
@@ -835,7 +830,7 @@ fit$labels <-as.character(candidateConfigs$config)
 
 dend <- as.dendrogram(fit)
 dend_data <- dendro_data(dend, type = "rectangle")
-groups <- cutree(fit, h=1) # cut tree into 5 clusters
+groups <- cutree(fit, h=dissimilarityCut) # cut tree into 5 clusters
 
 dend_data$labels$cluster <- vector('numeric', length=length(groups))
 
@@ -851,20 +846,18 @@ ggplot(dend_data$segments) +
             hjust = 1, angle = 90, size = 3) +
   xlab("Hardware Configuration") +
   ylab("Dissimilarity") + theme(
-  axis.text.x = element_blank(),
-  axis.text.y = element_blank(),
-  axis.ticks = element_blank()) +
-  scale_color_discrete() +   ggtitle("RF Unconstrained Optimal Clustering")
+  axis.text.x = element_blank()) +
+  scale_color_discrete() +   ggtitle("GBM-BRT Cost-Constrained Optimal Clustering")
 
 
 candidateConfigs$cluster <- groups
-
-ggplot(candidateConfigs) + 
-  geom_point(aes(y = seconds, x = cost, col=as.factor(cluster), size=distance.sd), alpha=0.5) +
-  scale_color_discrete() +
-  ggtitle("RF Data-Contrainted Optimal") +
-  ylab("Seconds") +
-  xlab("Cost")
+# 
+# ggplot(candidateConfigs) + 
+#   geom_point(aes(y = seconds, x = cost, col=as.factor(cluster), size=distance.sd), alpha=0.5) +
+#   scale_color_discrete() +
+#   ggtitle("RF Data-Contrainted Optimal") +
+#   ylab("Seconds") +
+#   xlab("Cost")
 
 clusterStats <- ddply(candidateConfigs, .(cluster), summarize, meanDistance = mean(distance.mean), sdDistance = mean(distance.sd))
 
