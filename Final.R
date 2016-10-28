@@ -18,20 +18,19 @@ setwd("/home/rstudio")
 
 #### Fit the timing model
 res <- read.csv("thesis-scripts/data/GBM_ALL.csv")
-res <- res[c("totalTime", "cores", "GBMemory", "trainingExamples", "numPredictors", "cells", "treeComplexity", "learningRate")]
+res <- res[c("totalTime", "cores", "GBMemory", "trainingExamples", "numPredictors", "cells")]
 
 gbm.testingInd <- sample(nrow(res), nrow(res) * 0.2)
 gbm.testing <- res[gbm.testingInd,]
 gbm.training <- res[-gbm.testingInd,]
-gbm.training.predictors <- gbm.training[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells', "treeComplexity", "learningRate")]
+gbm.training.predictors <- gbm.training[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells')]
 gbm.training.predictors <- data.frame(gbm.training.predictors)
 gbm.training.response <- log(gbm.training[[c("totalTime")]]) ## take the log for prediction
 gbm.rf <- bartMachine(gbm.training.predictors, gbm.training.response, serialize = T)
 
 
 ## do prediction
-gbm.testing.predictors <- gbm.testing[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells', 
-                                         "treeComplexity", "learningRate")]
+gbm.testing.predictors <- gbm.testing[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells')]
 gbm.testing.predictors <- data.frame(gbm.testing.predictors)
 gbm.prediction <- predict(gbm.rf, gbm.testing.predictors)
 
@@ -66,14 +65,14 @@ gbm.testingInd.acc <- sample(nrow(res), nrow(res) * 0.2)
 gbm.testing.acc <- res[gbm.testingInd.acc,]
 gbm.training.acc <- res[-gbm.testingInd.acc,]
 
-gbm.training.predictors.acc <- gbm.training.acc[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells',  "learningRate", "treeComplexity")]
+gbm.training.predictors.acc <- gbm.training.acc[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells')]
 gbm.training.predictors.acc <- data.frame(gbm.training.predictors.acc)
 gbm.training.response.acc <- gbm.training.acc[[c("testingAUC")]] 
 
 gbm.acc.rf <- bartMachine(gbm.training.predictors.acc, gbm.training.response.acc, serialize=T)
 
 ## do prediction
-gbm.testing.predictors.acc <- gbm.testing.acc[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells',  "learningRate", "treeComplexity")]
+gbm.testing.predictors.acc <- gbm.testing.acc[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells')]
 gbm.testing.predictors.acc <- data.frame(gbm.testing.predictors.acc)
 gbm.prediction.acc <- predict(gbm.acc.rf, gbm.testing.predictors.acc)
 
@@ -525,14 +524,14 @@ res$par[res$method == "PARALLEL"] <- 1
 rf.testingInd <- sample(nrow(res), nrow(res) * 0.2)
 rf.testing <- res[rf.testingInd,]
 rf.training <- res[-rf.testingInd,]
-rf.training.predictors <- rf.training[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells', "par", "seq")]
+rf.training.predictors <- rf.training[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells')]
 rf.training.predictors <- data.frame(rf.training.predictors)
 rf.training.response <- log(rf.training[[c("totalTime")]]) ## take the log for prediction
 rf.rf <- bartMachine(rf.training.predictors, rf.training.response, serialize=T)
 
 
 ## do prediction
-rf.testing.predictors <- rf.testing[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells', "par", "seq")]
+rf.testing.predictors <- rf.testing[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells')]
 rf.testing.predictors <- data.frame(rf.testing.predictors)
 rf.prediction <- predict(rf.rf, rf.testing.predictors)
 
