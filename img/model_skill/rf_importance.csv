@@ -1,0 +1,11 @@
+"","absentName","variable","value"
+"1","numPredictors","timing.reduction",-0.000259467607078678
+"2","cores","timing.reduction",-0.0555303585329237
+"3","GBMemory","timing.reduction",-0.00654483878225709
+"4","trainingExamples","timing.reduction",-0.383623040326908
+"5","cells","timing.reduction",0.000117036473304855
+"6","numPredictors","acc.reduction",-0.343886166917075
+"7","cores","acc.reduction",-0.00092169442704626
+"8","GBMemory","acc.reduction",-0.000203771443354928
+"9","trainingExamples","acc.reduction",-0.457224937249977
+"10","cells","acc.reduction",-3.25817471842349e-05
