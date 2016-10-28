@@ -719,6 +719,11 @@ accMaxSet <- do.call(rbind.data.frame, accMaxResults)
 write.csv(accMaxSet, "/users/scottsfarley/documents/thesis-scripts/data/gam_constrained_accMax.csv")
 ```
 
+```{r}
+
+accMaxSet <- accMaxSet[order(accMaxSet$accuracy, accMaxSet$cost, accMaxSet$seconds), ]
+print(paste("Best Configuration: ", accMaxSet[1, ]))
+```
 
 
 ```{r}
@@ -856,6 +861,12 @@ bestCluster = clusterStats[1, ]$cluster
 
 firstCluster <- candidateConfigs[candidateConfigs$cluster == bestCluster, ]
 kable(firstCluster, row.names = F)
+```
+
+```{r}
+
+print(accMaxS)
+
 ```
 
 

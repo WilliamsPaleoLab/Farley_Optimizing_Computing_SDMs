@@ -44,7 +44,7 @@ library(bartMachine)
 library(reshape2)
 library(ggdendro)
 
-threshold.time <- 22 ##seconds
+threshold.time <- 20 ##seconds
 threshold.cost <- Inf ##cents
 threshold.numTex <- 45
 
@@ -743,6 +743,12 @@ accMaxSet <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/rf_cons
 accMaxSet$seconds <- accMaxSet$seconds
 accMaxSet$cells <- cells
 time.post <- bart_machine_get_posterior(rf.rf, accMaxSet[c("numPredictors", "trainingExamples", "cores", "GBMemory", "cells")])
+```
+
+```{r}
+
+accMaxSet <- accMaxSet[order(accMaxSet$accuracy, accMaxSet$cost, accMaxSet$seconds), ]
+print(paste("Best Configuration: ", accMaxSet[1, ]))
 ```
 
 ```{r}

@@ -45,7 +45,7 @@ bartMachine::set_bart_machine_num_cores(3)
 library(reshape2)
 library(ggdendro)
 
-threshold.time <- 22 ##seconds
+threshold.time <- 20 ##seconds
 threshold.cost <- Inf ##cents
 threshold.numTex <- 45
 
@@ -793,6 +793,8 @@ for (grpName in unique(subsetScenario$grp)){
 
 accMaxSet <- do.call(rbind.data.frame, accMaxResults)
 
+
+
 write.csv(accMaxSet, "/users/scottsfarley/documents/thesis-scripts/data/mars_constrained_accMax.csv")
 ```
 
@@ -801,6 +803,12 @@ accMaxSet <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/gam_con
 accMaxSet$seconds <- accMaxSet$seconds
 accMaxSet$cells <- cells
 time.post <- bart_machine_get_posterior(MARS.rf, accMaxSet[c("numPredictors", "trainingExamples", "cores", "GBMemory", "cells")])
+```
+
+```{r}
+
+accMaxSet <- accMaxSet[order(accMaxSet$accuracy, accMaxSet$cost, accMaxSet$seconds), ]
+print(paste("Best Configuration: ", accMaxSet[1, ]))
 ```
 
 ```{r}
