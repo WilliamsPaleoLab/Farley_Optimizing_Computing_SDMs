@@ -7,7 +7,7 @@ library(matrixStats)
 options(java.parameters = "-Xmx50g") ## change memory allotment to RJava
 library(bartMachine)
 bartMachine::set_bart_machine_num_cores(16)
-setwd("/home/rstudio")
+setwd("/users/scottsfarley/documents")
 
 res <- read.csv("thesis-scripts/data/GBM_ALL.csv")
 res <- res[c("totalTime", "cores", "GBMemory", "trainingExamples", "numPredictors", "cells", "treeComplexity", "learningRate")]

@@ -33,7 +33,7 @@ pdf_document:
 4.  Using the subset of accuracy space, find the combination of algorithm inputs that maximizes accuracy.
 
 ```{r setup}
-knitr::opts_chunk$set(cache=TRUE, echo=F, warning=F, error = F, message=F)
+knitr::opts_chunk$set(cache=F, echo=F, warning=F, error = F, message=F)
 knitr::opts_knit$set(root.dir = "/users/scottsfarley/documents")
 setwd("/users/scottsfarley/documents")
 library(parallel)
@@ -78,7 +78,7 @@ trainingExamples <- seq(0, 10000, by=1000)
 numPredictors <- seq(1, 5)
 cells <- 100000
 
-prices <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/costs.csv")
+prices <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/costs2.csv")
 
 ## make the hypergrid
 scenario <- expand.grid(numPredictors = numPredictors,
@@ -863,10 +863,5 @@ firstCluster <- candidateConfigs[candidateConfigs$cluster == bestCluster, ]
 kable(firstCluster, row.names = F)
 ```
 
-```{r}
-
-print(accMaxS)
-
-```
 
 

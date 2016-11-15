@@ -32,7 +32,7 @@ output:
 4.  Using the subset of accuracy space, find the combination of algorithm inputs that maximizes accuracy.
 
 ```{r setup}
-knitr::opts_chunk$set(cache=TRUE, echo=F, warning=F, error = F, message=F)
+knitr::opts_chunk$set(cache=F, echo=F, warning=F, error = F, message=F)
 knitr::opts_knit$set(root.dir = "/users/scottsfarley/documents")
 setwd("/users/scottsfarley/documents")
 library(parallel)

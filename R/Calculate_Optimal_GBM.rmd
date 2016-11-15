@@ -1,12 +1,12 @@
 ---
 title: "Optimization Routines"
-output:
-  html_document:
-  highlight: tango
-theme: spacelab
-toc: no
 pdf_document:
   toc: yes
+theme: spacelab
+output:
+  html_document: default
+  pdf_document: default
+toc: no
 ---
   
   
@@ -33,7 +33,7 @@ pdf_document:
 4.  Using the subset of accuracy space, find the combination of algorithm inputs that maximizes accuracy.
 
 ```{r setup}
-knitr::opts_chunk$set(cache=TRUE, echo=F, warning=F, error = F, message=F)
+knitr::opts_chunk$set(cache=F, echo=F, warning=F, error = F, message=F)
 knitr::opts_knit$set(root.dir = "/users/scottsfarley/documents")
 setwd("/users/scottsfarley/documents")
 library(parallel)
@@ -47,7 +47,7 @@ library(reshape2)
 library(ggdendro)
 threshold.time <- 20 ##seconds
 threshold.cost <- Inf ##cents
-threshold.numTex <- 2500
+threshold.numTex <- 45
 
 numKeep = 100
 dissimilarityCut <- 0.5
@@ -81,7 +81,7 @@ trainingExamples <- seq(0, 10000, by=1000)
 numPredictors <- seq(1, 5)
 cells <- 100000
 
-prices <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/costs.csv")
+prices <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/costs2.csv")
 
 ## make the hypergrid
 scenario <- expand.grid(numPredictors = numPredictors,
@@ -432,7 +432,7 @@ candidateConfigs <- join(candidateConfigs, clusterStats, by = "cluster")
 bestCluster = clusterStats[1, ]$cluster
 
 firstCluster <- candidateConfigs[candidateConfigs$cluster == bestCluster, ]
-kable(firstCluster, row.names = F)
+kable(candidateConfigs, row.names = F)
 
 ```
 
@@ -665,7 +665,7 @@ candidateConfigs <- join(candidateConfigs, clusterStats, by = "cluster")
 bestCluster = clusterStats[1, ]$cluster
 
 firstCluster <- candidateConfigs[candidateConfigs$cluster == bestCluster, ]
-kable(firstCluster, row.names = F)
+kable(candidateConfigs, row.names = F)
 ```
 
 
@@ -813,7 +813,7 @@ candidateMeans$L1 <- candidates
 
 ```
 
-```{r }
+```{r}
 candidateConfigs <- accMaxSet[accMaxSet$config %in% candidates, ]
 library(plyr)
 distStats <- ddply(allDistances, .(L1), summarise, meanDist = mean(value), sdDist = sd(value))
@@ -874,5 +874,5 @@ candidateConfigs <- join(candidateConfigs, clusterStats, by = "cluster")
 bestCluster = clusterStats[1, ]$cluster
 
 firstCluster <- candidateConfigs[candidateConfigs$cluster == bestCluster, ]
-kable(firstCluster, row.names = F)
+kable(candidateConfigs, row.names = F)
 ```

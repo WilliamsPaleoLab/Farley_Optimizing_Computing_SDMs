@@ -1,0 +1,94 @@
+---
+title: "Inter-Model Differences"
+output: html_document
+---
+
+
+```{r setup}
+
+library(ggplot2)
+library(reshape2)
+library(plyr)
+library(xlsx)
+
+```
+
+```{r unconstrained}
+mars <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/MARS-unconstrained.xlsx", 1)
+gam <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/gam-unconstrained.xlsx", 1)
+rf <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/rf-unconstrained.xlsx", 1)
+gbmbrt <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/GBM-BRT-unconstrained.xlsx", 1)
+
+
+mars$model <- "MARS"
+gam$model <- "GAM"
+rf$model <- "RF"
+gbmbrt$model <- "GBM-BRT"
+
+q <- rbind(mars, gam, rf, gbmbrt)
+
+ggplot(mars) + 
+  geom_point(aes(x = distance.mean, y = distance.sd, col=cores)) +
+  geom_point(aes(x = meanDistance, y = sdDistance), shape=1, fill=NA, alpha=0.1, size=5) +
+  scale_color_continuous(low='steelblue', high='darkred') +
+  ggtitle("MARS Optimality")
+
+ggplot(gam) + 
+  geom_point(aes(x = distance.mean, y = distance.sd, col=cores)) +
+  geom_point(aes(x = meanDistance, y = sdDistance), shape=1, fill=NA, alpha=0.1, size=5) +
+  scale_color_continuous(low='steelblue', high='darkred') +
+  ggtitle("GAM Optimality")
+
+ggplot(gbmbrt) + 
+  geom_point(aes(x = distance.mean, y = distance.sd, col=cores)) +
+  geom_point(aes(x = meanDistance, y = sdDistance), shape=1, fill=NA, alpha=0.1, size=5) +
+  scale_color_continuous(low='steelblue', high='darkred') +
+  ggtitle("GBM-BRT Optimality")
+
+ggplot(rf) + 
+  geom_point(aes(x = distance.mean, y = distance.sd, col=cores)) +
+  geom_point(aes(x = meanDistance, y = sdDistance), shape=1, fill=NA, alpha=0.1, size=5) +
+  scale_color_continuous(low='steelblue', high='darkred') +
+  ggtitle("rf Optimality")
+```
+
+```{r}
+
+ggplot(rf) + geom_tile(aes(x = cores, y = GBMemory, fill=distance.mean)) +
+  scale_fill_continuous(low='steelblue', high='darkred') +
+  ggtitle("RF Clusters") +
+  geom_text(aes(x = cores, y = GBMemory, label=cluster), size=3.5)
+
+ggplot(rf) + geom_point(aes(x = cores, y = GBMemory, col=distance.mean, size= (distance.sd / distance.mean)*100)) +
+  scale_color_continuous(low='steelblue', high='darkred') +
+  ggtitle("RF Uncertainty")
+
+ggplot(gam) + geom_tile(aes(x = cores, y = GBMemory, fill=distance.mean)) +
+  scale_fill_continuous(low='steelblue', high='darkred') +
+  ggtitle("GAM Clusters") +
+  geom_text(aes(x = cores, y = GBMemory, label=cluster), size=3.5)
+
+ggplot(gam) + geom_point(aes(x = cores, y = GBMemory, col=distance.mean, size= (distance.sd / distance.mean)*100)) +
+  scale_color_continuous(low='steelblue', high='darkred') +
+  ggtitle("GAM Uncertainty")
+
+ggplot(mars) + geom_tile(aes(x = cores, y = GBMemory, fill=distance.mean)) +
+  scale_fill_continuous(low='steelblue', high='darkred') +
+  ggtitle("MARS Clusters") +
+  geom_text(aes(x = cores, y = GBMemory, label=cluster), size=3.5)
+
+ggplot(mars) + geom_point(aes(x = cores, y = GBMemory, col=distance.mean, size= (distance.sd / distance.mean)*100)) +
+  scale_color_continuous(low='steelblue', high='darkred') +
+  ggtitle("MARS Uncertainty")
+
+ggplot(gbmbrt) + geom_tile(aes(x = cores, y = GBMemory, fill=distance.mean)) +
+  scale_fill_continuous(low='steelblue', high='darkred') +
+  ggtitle("GBM-BRT Clusters") +
+  geom_text(aes(x = cores, y = GBMemory, label=cluster), size=3.5)
+
+ggplot(gbmbrt) + geom_point(aes(x = cores, y = GBMemory, col=distance.mean, size= (distance.sd / distance.mean)*100)) +
+  scale_color_continuous(low='steelblue', high='darkred') +
+  ggtitle("GBM-BRT Uncertainty")
+
+```
+

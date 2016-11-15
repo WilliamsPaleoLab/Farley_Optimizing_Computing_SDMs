@@ -1,12 +1,12 @@
 ---
 title: "Scott's Thesis Images"
 output:
+  pdf_document:
+    toc: yes
   html_document:
     highlight: tango
     theme: spacelab
     toc: no
-  pdf_document:
-    toc: yes
 ---
 
 ```{r, setup, echo=FALSE, warning=FALSE, error=FALSE, message=FALSE}
@@ -23,7 +23,7 @@ library(gbm)
 library(randomForest)
 library(knitr)
 library(matrixStats)
-options(java.parameters = "-Xmx2500m") ## change memory allotment to RJava
+options(java.parametesrs = "-Xmx2500m") ## change memory allotment to RJava
 library(bartMachine)
 bartMachine::set_bart_machine_num_cores(3)
 prices <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/costs.csv")
