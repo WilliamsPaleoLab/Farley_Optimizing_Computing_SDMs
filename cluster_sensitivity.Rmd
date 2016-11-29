@@ -1,0 +1,357 @@
+---
+title: "cluster_sensitivity"
+output: html_document
+---
+```{r setup}
+
+library(ggplot2)
+library(reshape2)
+library(plyr)
+library(ggdendro)
+library(xlsx)
+library(ggrepel)
+library(knitr)
+```
+
+```{r dissimCut1}
+dissimilarityCut <- 4
+candidateConfigs <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/GBM-BRT-unconstrained.xlsx", 1)
+
+clustPred <- candidateConfigs[c("seconds", "cost", "distance.mean", "distance.sd")]
+d <- dist(scale(clustPred))
+fit <- hclust(d, "ave")
+fit$labels <-as.character(candidateConfigs$config)
+
+dend <- as.dendrogram(fit)
+dend_data <- dendro_data(dend, type = "rectangle")
+groups <- cutree(fit, h=dissimilarityCut) # cut tree into 5 clusters
+
+dend_data$labels$cluster <- vector('numeric', length=length(groups))
+
+for (i in 1:nrow(dend_data$labels)){
+  thisLabel <- as.character(dend_data$labels$label[i])
+  thisCluster <- groups[thisLabel]
+  dend_data$labels$cluster[i] <- thisCluster
+}
+
+ggplot(dend_data$segments) + 
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend))+
+  geom_text(data = dend_data$labels, aes(x, y, label = label, col=as.factor(cluster)),
+            hjust = 1, angle = 90, size = 3) +
+  xlab("Hardware Configuration") +
+  ylab("Dissimilarity") + theme(
+  axis.text.x = element_blank(),
+  axis.text.y = element_blank(),
+  axis.ticks = element_blank()) +
+  scale_color_discrete() +
+  ggtitle(paste("Clustering.  Distance=", dissimilarityCut))
+  ggtitle(paste())
+
+
+
+candidateConfigs$cluster <- groups
+
+
+clusterStats <- ddply(candidateConfigs, .(cluster), summarize, meanDistance = mean(distance.mean), sdDistance = mean(distance.sd))
+
+
+## sort by mean distance and then by sd distance
+clusterStats <- clusterStats[order(clusterStats$meanDistance, clusterStats$sdDistance ), ]
+
+candidateConfigs <- join(candidateConfigs, clusterStats, by = "cluster")
+
+bestCluster = clusterStats[1, ]$cluster
+
+firstCluster <- candidateConfigs[candidateConfigs$cluster == bestCluster, ]
+kable(candidateConfigs[1:50,], row.names = F)
+
+uniqueClusters <- unique(candidateConfigs[ c("cluster", "meanDistance", "sdDistance")])
+
+uniqueClusters <- ddply(uniqueClusters, .(cluster), summarize, meanDistance = mean(meanDistance), sdDistance = mean(sdDistance))
+
+ggplot(candidateConfigs) + 
+  geom_point(aes(x = distance.mean, y = distance.sd, col=as.factor(cluster))) +
+  geom_point(aes(x = meanDistance, y = sdDistance), shape=8, fill='forestgreen', alpha=0.5, size=2, data=uniqueClusters) +
+    geom_text_repel(aes(x = meanDistance, y = sdDistance, label=cluster), data=uniqueClusters) +
+  ggtitle("GBM-BRT Optimality")
+
+ggplot(candidateConfigs) + geom_tile(aes(x = cores, y = GBMemory, fill=as.factor(cluster))) +
+  ggtitle("GBM-BRT Clusters") +
+  geom_text(aes(x = cores, y = GBMemory, label=cluster), size=3.5)
+```
+
+
+
+```{r dissimCut2}
+dissimilarityCut <- 2
+candidateConfigs <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/GBM-BRT-unconstrained.xlsx", 1)
+
+clustPred <- candidateConfigs[c("seconds", "cost", "distance.mean", "distance.sd")]
+d <- dist(scale(clustPred))
+fit <- hclust(d, "ave")
+fit$labels <-as.character(candidateConfigs$config)
+
+dend <- as.dendrogram(fit)
+dend_data <- dendro_data(dend, type = "rectangle")
+groups <- cutree(fit, h=dissimilarityCut) # cut tree into 5 clusters
+
+dend_data$labels$cluster <- vector('numeric', length=length(groups))
+
+for (i in 1:nrow(dend_data$labels)){
+  thisLabel <- as.character(dend_data$labels$label[i])
+  thisCluster <- groups[thisLabel]
+  dend_data$labels$cluster[i] <- thisCluster
+}
+
+ggplot(dend_data$segments) + 
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend))+
+  geom_text(data = dend_data$labels, aes(x, y, label = label, col=as.factor(cluster)),
+            hjust = 1, angle = 90, size = 3) +
+  xlab("Hardware Configuration") +
+  ylab("Dissimilarity") + theme(
+  axis.text.x = element_blank(),
+  axis.text.y = element_blank(),
+  axis.ticks = element_blank()) +
+  scale_color_discrete() +
+  ggtitle(paste("Clustering.  Distance=", dissimilarityCut))
+  ggtitle(paste())
+
+
+
+candidateConfigs$cluster <- groups
+
+
+clusterStats <- ddply(candidateConfigs, .(cluster), summarize, meanDistance = mean(distance.mean), sdDistance = mean(distance.sd))
+
+
+## sort by mean distance and then by sd distance
+clusterStats <- clusterStats[order(clusterStats$meanDistance, clusterStats$sdDistance ), ]
+
+candidateConfigs <- join(candidateConfigs, clusterStats, by = "cluster")
+
+bestCluster = clusterStats[1, ]$cluster
+
+firstCluster <- candidateConfigs[candidateConfigs$cluster == bestCluster, ]
+kable(candidateConfigs[1:50,], row.names = F)
+
+uniqueClusters <- unique(candidateConfigs[ c("cluster", "meanDistance", "sdDistance")])
+
+uniqueClusters <- ddply(uniqueClusters, .(cluster), summarize, meanDistance = mean(meanDistance), sdDistance = mean(sdDistance))
+
+ggplot(candidateConfigs) + 
+  geom_point(aes(x = distance.mean, y = distance.sd, col=as.factor(cluster))) +
+  geom_point(aes(x = meanDistance, y = sdDistance), shape=8, fill='forestgreen', alpha=0.5, size=2, data=uniqueClusters) +
+    geom_text_repel(aes(x = meanDistance, y = sdDistance, label=cluster), data=uniqueClusters) +
+  ggtitle(paste("GBM-BRT Optimality. Distance=", dissimilarityCut))
+
+ggplot(candidateConfigs) + geom_tile(aes(x = cores, y = GBMemory, fill=as.factor(cluster))) +
+  ggtitle(paste("GBM-BRT Clusters. Distance=", dissimilarityCut)) +
+  geom_text(aes(x = cores, y = GBMemory, label=cluster), size=3.5)
+```
+
+```{r dissimCut3}
+dissimilarityCut <- 1
+candidateConfigs <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/GBM-BRT-unconstrained.xlsx", 1)
+
+clustPred <- candidateConfigs[c("seconds", "cost", "distance.mean", "distance.sd")]
+d <- dist(scale(clustPred))
+fit <- hclust(d, "ave")
+fit$labels <-as.character(candidateConfigs$config)
+
+dend <- as.dendrogram(fit)
+dend_data <- dendro_data(dend, type = "rectangle")
+groups <- cutree(fit, h=dissimilarityCut) # cut tree into 5 clusters
+
+dend_data$labels$cluster <- vector('numeric', length=length(groups))
+
+for (i in 1:nrow(dend_data$labels)){
+  thisLabel <- as.character(dend_data$labels$label[i])
+  thisCluster <- groups[thisLabel]
+  dend_data$labels$cluster[i] <- thisCluster
+}
+
+ggplot(dend_data$segments) + 
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend))+
+  geom_text(data = dend_data$labels, aes(x, y, label = label, col=as.factor(cluster)),
+            hjust = 1, angle = 90, size = 3) +
+  xlab("Hardware Configuration") +
+  ylab("Dissimilarity") + theme(
+  axis.text.x = element_blank(),
+  axis.text.y = element_blank(),
+  axis.ticks = element_blank()) +
+  scale_color_discrete() +
+  ggtitle(paste("Clustering.  Distance=", dissimilarityCut))
+  ggtitle(paste())
+
+
+
+candidateConfigs$cluster <- groups
+
+
+clusterStats <- ddply(candidateConfigs, .(cluster), summarize, meanDistance = mean(distance.mean), sdDistance = mean(distance.sd))
+
+
+## sort by mean distance and then by sd distance
+clusterStats <- clusterStats[order(clusterStats$meanDistance, clusterStats$sdDistance ), ]
+
+candidateConfigs <- join(candidateConfigs, clusterStats, by = "cluster")
+
+bestCluster = clusterStats[1, ]$cluster
+
+firstCluster <- candidateConfigs[candidateConfigs$cluster == bestCluster, ]
+kable(candidateConfigs[1:50,], row.names = F)
+
+uniqueClusters <- unique(candidateConfigs[ c("cluster", "meanDistance", "sdDistance")])
+
+uniqueClusters <- ddply(uniqueClusters, .(cluster), summarize, meanDistance = mean(meanDistance), sdDistance = mean(sdDistance))
+
+ggplot(candidateConfigs) + 
+  geom_point(aes(x = distance.mean, y = distance.sd, col=as.factor(cluster))) +
+  geom_point(aes(x = meanDistance, y = sdDistance), shape=8, fill='forestgreen', alpha=0.5, size=2, data=uniqueClusters) +
+    geom_text_repel(aes(x = meanDistance, y = sdDistance, label=cluster), data=uniqueClusters) +
+  ggtitle(paste("GBM-BRT Optimality. Distance=", dissimilarityCut))
+
+ggplot(candidateConfigs) + geom_tile(aes(x = cores, y = GBMemory, fill=as.factor(cluster))) +
+  ggtitle(paste("GBM-BRT Clusters. Distance = ", dissimilarityCut)) +
+  geom_text(aes(x = cores, y = GBMemory, label=cluster), size=3.5)
+```
+
+
+```{r dissimCut4}
+dissimilarityCut <- 0.5
+candidateConfigs <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/GBM-BRT-unconstrained.xlsx", 1)
+
+clustPred <- candidateConfigs[c("seconds", "cost", "distance.mean", "distance.sd")]
+d <- dist(scale(clustPred))
+fit <- hclust(d, "ave")
+fit$labels <-as.character(candidateConfigs$config)
+
+dend <- as.dendrogram(fit)
+dend_data <- dendro_data(dend, type = "rectangle")
+groups <- cutree(fit, h=dissimilarityCut) # cut tree into 5 clusters
+
+dend_data$labels$cluster <- vector('numeric', length=length(groups))
+
+for (i in 1:nrow(dend_data$labels)){
+  thisLabel <- as.character(dend_data$labels$label[i])
+  thisCluster <- groups[thisLabel]
+  dend_data$labels$cluster[i] <- thisCluster
+}
+
+ggplot(dend_data$segments) + 
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend))+
+  geom_text(data = dend_data$labels, aes(x, y, label = label, col=as.factor(cluster)),
+            hjust = 1, angle = 90, size = 3) +
+  xlab("Hardware Configuration") +
+  ylab("Dissimilarity") + theme(
+  axis.text.x = element_blank(),
+  axis.text.y = element_blank(),
+  axis.ticks = element_blank()) +
+  scale_color_discrete() +
+  ggtitle(paste("Clustering.  Distance=", dissimilarityCut))
+  ggtitle(paste())
+
+
+
+candidateConfigs$cluster <- groups
+
+
+clusterStats <- ddply(candidateConfigs, .(cluster), summarize, meanDistance = mean(distance.mean), sdDistance = mean(distance.sd))
+
+
+## sort by mean distance and then by sd distance
+clusterStats <- clusterStats[order(clusterStats$meanDistance, clusterStats$sdDistance ), ]
+
+candidateConfigs <- join(candidateConfigs, clusterStats, by = "cluster")
+
+bestCluster = clusterStats[1, ]$cluster
+
+firstCluster <- candidateConfigs[candidateConfigs$cluster == bestCluster, ]
+kable(candidateConfigs[1:50,], row.names = F)
+
+uniqueClusters <- unique(candidateConfigs[ c("cluster", "meanDistance", "sdDistance")])
+
+uniqueClusters <- ddply(uniqueClusters, .(cluster), summarize, meanDistance = mean(meanDistance), sdDistance = mean(sdDistance))
+
+ggplot(candidateConfigs) + 
+  geom_point(aes(x = distance.mean, y = distance.sd, col=as.factor(cluster))) +
+  geom_point(aes(x = meanDistance, y = sdDistance), shape=8, fill='forestgreen', alpha=0.5, size=2, data=uniqueClusters) +
+    geom_text_repel(aes(x = meanDistance, y = sdDistance, label=cluster), data=uniqueClusters) +
+  ggtitle(paste("GBM-BRT Optimality. Distance =",dissimilarityCut))
+
+ggplot(candidateConfigs) + geom_tile(aes(x = cores, y = GBMemory, fill=as.factor(cluster))) +
+  ggtitle(paste("GBM-BRT Clusters. Distance=", dissimilarityCut)) +
+  geom_text(aes(x = cores, y = GBMemory, label=cluster), size=3.5)
+```
+
+```{r loadStuff}
+
+
+mars <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/MARS-unconstrained.xlsx", 1)
+gam <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/gam-unconstrained.xlsx", 1)
+rf <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/rf-unconstrained.xlsx", 1)
+gbmbrt <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/GBM-BRT-unconstrained.xlsx", 1)
+
+```
+
+
+```{r clustEval}
+method = "ave"
+
+marsClust <- NbClust(mars[c("distance.mean", "distance.sd")], method = method)
+
+mars$cluster <- marsClust$Best.partition
+
+ggplot(mars) + 
+  geom_point(aes(x = distance.mean, y = distance.sd, col=as.factor(cluster))) +
+  ggtitle(paste("MARS Clustered by Majority Rule"))
+
+ggplot(mars) + geom_tile(aes(x = cores, y = GBMemory, fill=as.factor(cluster))) +
+  ggtitle(paste("MARS Cluster by Majority Rule")) +
+  geom_text(aes(x = cores, y = GBMemory, label=cluster), size=3.5)
+
+
+
+
+rfClust <- NbClust(rf[c("distance.mean", "distance.sd")], method = method)
+
+rf$cluster <- rfClust$Best.partition
+
+ggplot(rf) + 
+  geom_point(aes(x = distance.mean, y = distance.sd, col=as.factor(cluster))) +
+  ggtitle(paste("RF Clustered by Majority Rule"))
+
+ggplot(rf) + geom_tile(aes(x = cores, y = GBMemory, fill=as.factor(cluster))) +
+  ggtitle(paste("RF Cluster by Majority Rule")) +
+  geom_text(aes(x = cores, y = GBMemory, label=cluster), size=3.5)
+
+
+
+
+gamClust <- NbClust(gam[c("distance.mean", "distance.sd")], method = method)
+
+gam$cluster <- gamClust$Best.partition
+
+ggplot(gam) + 
+  geom_point(aes(x = distance.mean, y = distance.sd, col=as.factor(cluster))) +
+  ggtitle(paste("GAM Clustered by Majority Rule"))
+
+ggplot(gam) + geom_tile(aes(x = cores, y = GBMemory, fill=as.factor(cluster))) +
+  ggtitle(paste("GAM Cluster by Majority Rule")) +
+  geom_text(aes(x = cores, y = GBMemory, label=cluster), size=3.5)
+
+
+
+gbmClust <- NbClust(gbmbrt[c("distance.mean", "distance.sd")], method = method)
+
+gbmbrt$cluster <- gbmClust$Best.partition
+
+ggplot(gbmbrt) + 
+  geom_point(aes(x = distance.mean, y = distance.sd, col=as.factor(cluster))) +
+  ggtitle(paste("GBM-BRT Clustered by Majority Rule"))
+
+ggplot(gbmbrt) + geom_tile(aes(x = cores, y = GBMemory, fill=as.factor(cluster))) +
+  ggtitle(paste("GBM-BRT Cluster by Majority Rule")) +
+  geom_text(aes(x = cores, y = GBMemory, label=cluster), size=3.5)
+
+````  

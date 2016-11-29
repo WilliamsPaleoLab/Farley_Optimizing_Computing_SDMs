@@ -12,7 +12,7 @@ output:
 
 Load libraries, set constants, define SDM class.
 ```{r setup}
-knitr::opts_chunk$set(cache=F, echo=F, warning=F, error = F, message=F)
+knitr::opts_chunk$set(cache=F, echo=F, warning=F, error = F, message=F, results = F)
 knitr::opts_knit$set(root.dir = "/users/scottsfarley/documents")
 setwd("/users/scottsfarley/documents")
 library(parallel)
@@ -26,6 +26,8 @@ library(reshape2)
 library(ggdendro)
 library(plyr)
 library(knitr)
+library(matrixStats)
+library(NbClust)
 
 threshold.time <- 20 ##seconds
 threshold.cost <- Inf ##cents
@@ -142,22 +144,22 @@ dev.off()
 
 Calculate the distance from the origin and get the posterior samples.
 ```{r calcDists}
-origin <- rep(0, length(theMaxSet))
-pointSet <- theMaxSet[c("seconds", "cost")]
-candidates <- rbind(pointSet, origin)
-d <- as.matrix(dist(candidates))
-fromOrigin <- d[,nrow(candidates)]
-fromOrigin <- fromOrigin[fromOrigin > 0]
-fromOrigin <- as.numeric(fromOrigin)
-minDistIdx <- which.min(fromOrigin)
-optimal <- theMaxSet[minDistIdx, ]
-
-optimalDist <- min(fromOrigin)
-
-xend = optimal$seconds
-yend = optimal$cost
-fromOrigin <- data.frame(fromOrigin)
-
+# origin <- rep(0, length(theMaxSet))
+# pointSet <- theMaxSet[c("seconds", "cost")]
+# candidates <- rbind(pointSet, origin)
+# d <- as.matrix(dist(candidates))
+# fromOrigin <- d[,nrow(candidates)]
+# fromOrigin <- fromOrigin[fromOrigin > 0]
+# fromOrigin <- as.numeric(fromOrigin)
+# minDistIdx <- which.min(fromOrigin)
+# optimal <- theMaxSet[minDistIdx, ]
+# 
+# optimalDist <- min(fromOrigin)
+# 
+# xend = optimal$seconds
+# yend = optimal$cost
+# fromOrigin <- data.frame(fromOrigin)
+# 
 theMaxSet.time <- theMaxSet[c("numPredictors", "trainingExamples", "cells", "cores", "GBMemory")]
 
 
@@ -170,319 +172,89 @@ time.post$TotalRate <- theMaxSet$TotalRate
 
 time.post$postMeanTime <- rowMeans(time.post[, 1:1000])
 time.post$postMeanTime <- exp(time.post$postMeanTime)
+X <- transform(time.post[, 1:1000], SD=apply(time.post[, 1:1000],1, sd, na.rm = TRUE))
+time.post$postSDTime <- exp(X$SD)
 time.post$postMeanCost <- time.post$postMeanTime * time.post$TotalRate
+time.post$postSDCost <- time.post$postSDTime * time.post$TotalRate
 ```
 
 Plot the distribution of posterior samples on time-cost.
 ```{r plotDists}
-c.d <- melt(time.post, id.vars = c("cores", "GBMemory", "config", "TotalRate", "postMeanTime", "postMeanCost"))
-c.d <- na.omit(c.d)
-c.d$cores <- as.numeric(c.d$cores)
-c.d$GBMemory <- as.numeric(c.d$GBMemory)
-c.d$value <- exp(c.d$value)
-c.d$CostSample <- c.d$value * c.d$TotalRate
-c.d$config <- as.factor(c.d$config)
-pdf(paste("thesis-scripts/img/", class, "_Posteriors_Unconstrained.pdf", sep=""))
-ggplot(c.d) +
-  geom_point(aes(x = CostSample, y = value, col=config), alpha=0.05) +
-  ##scale_color_discrete(guide=F) +
-  geom_point(data=time.post, aes(x = postMeanCost, y = postMeanTime), shape=20, size=2) +
-  ggtitle(paste(class, "Posterior Estimates")) +
-  xlab("Cost") +
-  ylab("Time")
-dev.off()
+# c.d <- melt(time.post, id.vars = c("cores", "GBMemory", "config", "TotalRate", "postMeanTime", "postMeanCost", "postSDTime", "postSDCost"))
+# c.d <- na.omit(c.d)
+# c.d$cores <- as.numeric(c.d$cores)
+# c.d$GBMemory <- as.numeric(c.d$GBMemory)
+# c.d$value <- exp(c.d$value)
+# c.d$CostSample <- c.d$value * c.d$TotalRate
+# c.d$config <- as.factor(c.d$config)
+# pdf(paste("thesis-scripts/img/", class, "_Posteriors_Unconstrained.pdf", sep=""))
+# ggplot(c.d) +
+#   geom_point(aes(x = CostSample, y = value, col=config), alpha=0.05) +
+#   ##scale_color_discrete(guide=F) +
+#   geom_point(data=time.post, aes(x = postMeanCost, y = postMeanTime), shape=20, size=2) +
+#   ggtitle(paste(class, "Posterior Estimates")) +
+#   xlab("Cost") +
+#   ylab("Time")
+# dev.off()
 ```
 
+```{r clustCut}
+
+method = "complete"
+index = "all"
+
+hardwareVars <- time.post[c("cores", "GBMemory")]
+clusterVars <- time.post[c("postMeanTime", "postMeanCost", "postSDTime")]
+clusterVars$uncertainty <- (time.post$postSDTime / time.post$postMeanTime) * 100
+hardwareVars$uncertainty <- (time.post$postSDTime / time.post$postMeanTime) * 100
+clusterScale <- scale(clusterVars)
+
+clust <- NbClust(clusterScale, method = method, index=index, max.nc=10, min.nc=3)
+
+nc = max(clust$Best.partition)
+
+clusterScale <- data.frame(clusterScale)
+rownames(clusterScale) <- c(1:nrow(clusterScale))
+hc       <- hclust(dist(clusterScale), "ave")           # heirarchal clustering
+dendr    <- dendro_data(hc, type="rectangle") # convert for ggplot
+clust    <- cutree(hc,k=nc)                    # find 2 clusters
+clust.df <- data.frame(label=names(clust), cluster=factor(clust))
+
+# dendr[["labels"]] has the labels, merge with clust.df based on label column
+dendr[["labels"]] <- merge(dendr[["labels"]],clust.df, by="label")
+# plot the dendrogram; note use of color=cluster in geom_text(...)
 
 
-Find the distance to the origin for all points in the posterior sample.
-```{r posteriorDistances}
-compDists <- list()
-for (i in 1:nrow(time.post)){ ## all of the candidates in theMaxSet
-  compDist <- vector()
-  thisRate <- as.numeric(as.character(theMaxSet$TotalRate[i]))
-  for (j in 1:1000){ ## 1000 posterior samples
-    t.i <- exp(time.post[[j]][[i]]) ## psoterior of time for this config
-    c.i <- t.i * thisRate ## make cost posterior from time samples times rate
-    pt <- c(t.i, c.i)
-    orig <- c(0, 0)
-    m <- rbind(pt, orig)
-    d <- as.matrix(dist(m))
-    d <- d[d > 0]
-    d <- as.numeric(d)
-    compDist[j] <- d[[1]]
-  }
-  compDists[[i]] <- compDist
-}
+ggplot() + 
+  geom_segment(data=segment(dendr), aes(x=x, y=y, xend=xend, yend=yend)) + 
+  geom_text(data=label(dendr), aes(x, y, label=label, hjust=0, color=cluster), 
+           size=3) +
+  coord_flip() + scale_y_reverse(expand=c(0.2, 0)) + 
+  theme(axis.line.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        panel.background=element_rect(fill="white"),
+        panel.grid=element_blank())
 
-allDistances <- melt(compDists)
 
-p <- na.omit(allDistances)
-p$value <- as.numeric(p$value)
-p$L1 <- as.factor(p$L1)
-pdf(paste("thesis-scripts/img/", class, "_posterior_distances.pdf", sep=""))
-ggplot(p) + 
-  geom_density(aes(x=value, group=L1, col=L1), alpha=0.025) +
-  scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
-  xlab("Distance from Origin") +
-  ggtitle(paste(class, "Posterior Samples Distance from Origin")) +
-  geom_rug(aes(x= fromOrigin), data=fromOrigin, lwd=0.25, alpha=0.5)  ## this plots the mean
+clusterScale$cluster <- clust.df$cluster
+hardwareVars$cluster <- clust.df$cluster
 
-dev.off()
+ggplot(data.frame(clusterScale)) + 
+  geom_point(aes(x = postMeanTime, y = postMeanCost, col=as.numeric(cluster), alpha=uncertainty)) +
+    scale_color_continuous(low = 'lightgreen', high='darkred', name='Suitability') +
+  ggtitle(paste(class, "Clustered"))
+
+
+
+ggplot(hardwareVars) + geom_tile(aes(x = cores, y = GBMemory, fill=as.numeric(cluster), alpha=uncertainty)) +
+    scale_fill_continuous(low = 'lightgreen', high='darkred', name='Suitability') +
+  scale_alpha_continuous(trans="reverse") +
+  ggtitle(paste(class, " Cluster by ", index)) +
+  geom_text(aes(x = cores, y = GBMemory, label=cluster), size=3.5)
+
+
+time.post$cluster <- hardwareVars$cluster
+write.csv(time.post, paste("thesis-scripts/", class, ".csv", sep=""))
 ```
-
-```{r debug}
-prices$L1 <- prices$ConfigurationNumber
-
-q <- join(p, prices, by = "L1")
-
-ggplot(q) + geom_density(aes(x = value, group = L1, col=CPUs), lwd=0.25) +
-  scale_color_continuous(low='darkred', high='forestgreen') +
-  ggtitle(paste(class, "Posterior Distance Densities II"))
-
-```
-
-Identify a set of candidates close to the origin.
-```{r candidates}
-post.timeCost.sorted <- p[order(p$value),]
-candidates <- as.numeric(as.character(unique(post.timeCost.sorted$L1)))[1:numKeep ]
-
-candidateMeans <- data.frame(fromOrigin$fromOrigin[candidates]) ## the means for each candidate distribution
-names(candidateMeans) <- c("CandidateMeans")
-candidateMeans$L1 <- candidates
-
-## select their whole distributions
-candidate.dist <- post.timeCost.sorted[post.timeCost.sorted$L1 %in% candidates, ]
-
-candidateConfigs <- theMaxSet[theMaxSet$config %in% candidates, ]
-
-distStats <- ddply(p, .(L1), summarise, meanDist = mean(value), sdDist = sd(value))
-candidateDists <- distStats[distStats$L1 %in% candidates, ]
-candidateConfigs$distance.mean = candidateDists$meanDist
-candidateConfigs$distance.sd = candidateDists$sdDist
-candidateConfigs <- candidateConfigs[c("config", "cores", "GBMemory", "seconds", "cost", "distance.mean", "distance.sd")]
-candidateConfigs <- candidateConfigs[order(candidateConfigs$distance.mean, candidateConfigs$distance.sd), ]
-```
-
-```{r cluster}
-clustPred <- candidateConfigs[c("seconds", "cost", "distance.mean", "distance.sd")]
-d <- dist(scale(clustPred))
-fit <- hclust(d, "ave")
-fit$labels <-as.character(candidateConfigs$config)
-
-dend <- as.dendrogram(fit)
-dend_data <- dendro_data(dend, type = "rectangle")
-groups <- cutree(fit, h=dissimilarityCut) # cut tree into 5 clusters
-
-dend_data$labels$cluster <- vector('numeric', length=length(groups))
-
-for (i in 1:nrow(dend_data$labels)){
-  thisLabel <- as.character(dend_data$labels$label[i])
-  thisCluster <- groups[thisLabel]
-  dend_data$labels$cluster[i] <- thisCluster
-}
-
-pdf(paste(class, "_clusters_unconstrained.pdf", sep=""))
-ggplot(dend_data$segments) + 
-  geom_segment(aes(x = x, y = y, xend = xend, yend = yend))+
-  geom_text(data = dend_data$labels, aes(x, y, label = label, col=as.factor(cluster)),
-            hjust = 1, angle = 90, size = 3) +
-  xlab("Hardware Configuration") +
-  ylab("Dissimilarity") + theme(
-  axis.text.x = element_blank(),
-  axis.text.y = element_blank(),
-  axis.ticks = element_blank()) +
-  scale_color_discrete() +
-  ggtitle(paste(class, "Clustering"))
-  ggtitle(paste())
-dev.off()
-
-
-candidateConfigs$cluster <- groups
-
-
-clusterStats <- ddply(candidateConfigs, .(cluster), summarize, meanDistance = mean(distance.mean), sdDistance = mean(distance.sd))
-
-
-## sort by mean distance and then by sd distance
-clusterStats <- clusterStats[order(clusterStats$meanDistance, clusterStats$sdDistance ), ]
-
-candidateConfigs <- join(candidateConfigs, clusterStats, by = "cluster")
-
-bestCluster = clusterStats[1, ]$cluster
-
-firstCluster <- candidateConfigs[candidateConfigs$cluster == bestCluster, ]
-kable(candidateConfigs, row.names = F)
-
-ggplot(candidateConfigs) + geom_point(aes(x = meanDistance, y = sdDistance, col = cores))
-```
-
-#########################################
-#########################################
-#########################################
-
-2. Data Constrained Optimization
-```{r data-constrain}
-i.acc.subset <- i.acc[i.acc$trainingExamples < threshold.numTex, ]
-sortedScenario <- i.acc.subset[order(i.acc.subset$trainingExamples, i.acc.subset$numPredictors),]
-maxID <- which.max(sortedScenario$accuracy)
-theMax <- sortedScenario[maxID, ]
-```
-
-
-Predict execution time for accuracy maximizing point.
-```{r constrain-predict}
-subsetScenario <- prices[c("CPUs", "GBsMem")]
-names(subsetScenario) <- c("cores", "GBMemory")
-subsetScenario$trainingExamples <- theMax$trainingExamples
-subsetScenario$numPredictors <- theMax$numPredictors
-subsetScenario$cells <- cells
-
-p <- predict(rf, subsetScenario)
-
-
-scenarioOut <- subsetScenario
-scenarioOut$seconds <- p
-scenarioOut$TotalRate <- prices$TotalRate
-scenarioOut$cost <- scenarioOut$seconds * scenarioOut$TotalRate
-scenarioOut$config <- prices$ConfigurationNumber
-```
-
-Predict the means of each configuration.
-```{r constrain-mean-optimal}
-
-origin <- rep(0, length(scenarioOut))
-pointSet <- scenarioOut[c("seconds", "cost")]
-candidates <- rbind(pointSet, origin)
-d <- as.matrix(dist(candidates))
-fromOrigin <- d[,nrow(candidates)]
-fromOrigin <- fromOrigin[fromOrigin > 0]
-fromOrigin <- as.numeric(fromOrigin)
-minDistIdx <- which.min(fromOrigin)
-optimal <- scenarioOut[minDistIdx, ]
-
-optimalDist <- min(fromOrigin)
-
-xend = optimal$seconds
-yend = optimal$cost
-
-fromOrigin <- data.frame(fromOrigin)
-
-```
-
-Predict the posterior at 1000 samples.
-```{r constrain-posterior}
-time.post <- bart_machine_get_posterior(rf, subsetScenario)$y_hat_posterior_samples
-time.post <- data.frame(time.post)
-time.post$cores <- scenarioOut$cores
-time.post$GBMemory <- scenarioOut$GBMemory
-time.post$config <- scenarioOut$config
-time.post$TotalRate <- scenarioOut$TotalRate
-
-time.post$postMeanTime <- rowMeans(time.post[, 1:1000])
-time.post$postMeanTime <- exp(time.post$postMeanTime)
-time.post$postMeanCost <- time.post$postMeanTime * time.post$TotalRate
-```
-
-Calculate the distance from the origin for each of the posterior samples.
-```{r}
-compDists <- list()
-for (i in 1:nrow(time.post)){ ## all of the candidates in theMaxSet
-  compDist <- vector()
-  thisRate <- as.numeric(as.character(scenarioOut$TotalRate[i]))
-  for (j in 1:1000){ ## 1000 posterior samples
-    t.i <- exp(time.post[[j]][[i]]) ## psoterior of time for this config
-    c.i <- t.i * thisRate ## make cost posterior from time samples times rate
-    pt <- c(t.i, c.i)
-    orig <- c(0, 0)
-    m <- rbind(pt, orig)
-    d <- as.matrix(dist(m))
-    d <- d[d > 0]
-    d <- as.numeric(d)
-    compDist[j] <- d[[1]]
-  }
-  compDists[[i]] <- compDist
-}
-
-allDistances <- melt(compDists)
-
-p <- na.omit(allDistances)
-p$value <- as.numeric(p$value)
-p$L1 <- as.factor(p$L1)
-.timeCost.sorted <- p[order(p$value),]
-candidates <- unique(post.timeCost.sorted$L1)[1:numKeep]
-
-candidateMeans <- data.frame(fromOrigin$fromOrigin[candidates]) ## the means for each candidate distribution
-names(candidateMeans) <- c("CandidateMeans")
-candidateMeans$L1 <- candidates
-
-## select their whole distributions
-candidate.dist <- post.timeCost.sorted[post.timeCost.sorted$L1 %in% candidates, ]
-pdf(paste(class, "_data_constrain_distributions.pdf", sep=""))
-ggplot(candidate.dist) + 
-  geom_density(aes(x=value, group=L1, col=L1), alpha=0.2) +
-  scale_fill_brewer('Dark2', guide=FALSE) + guides(colour=FALSE, L1=F) +
-  xlab("Euclidiean Distance From Origin") +
-  ggtitle(paste(class, "Distance from Origin -- Data Constrained")) +
-  geom_rug(data=candidateMeans, aes(x = CandidateMeans, col=L1)) +
-  xlim(0, 50)
-dev.off()
-```
-
-Predict the optimal from the sorted posterior distribution.
-```{r constrin-cluster}
-candidateConfigs <- scenarioOut[scenarioOut$config %in% candidates, ]
-distStats <- ddply(allDistances, .(L1), summarise, meanDist = mean(value), sdDist = sd(value))
-candidateDists <- distStats[distStats$L1 %in% candidates, ]
-candidateConfigs$distance.mean = candidateDists$meanDist
-candidateConfigs$distance.sd = candidateDists$sdDist
-candidateConfigs <- candidateConfigs[c("config", "cores", "GBMemory", "seconds", "cost", "distance.mean", "distance.sd")]
-candidateConfigs <- candidateConfigs[order(candidateConfigs$distance.mean, candidateConfigs$distance.sd), ]
-
-clustPred <- candidateConfigs[c("seconds", "cost", "distance.mean", "distance.sd")]
-d <- dist(scale(clustPred))
-fit <- hclust(d, "ave")
-fit$labels <-as.character(candidateConfigs$config)
-
-dend <- as.dendrogram(fit)
-dend_data <- dendro_data(dend, type = "rectangle")
-groups <- cutree(fit, h=dissimilarityCut) # cut tree into 5 clusters
-
-dend_data$labels$cluster <- vector('numeric', length=length(groups))
-
-for (i in 1:nrow(dend_data$labels)){
-  thisLabel <- as.character(dend_data$labels$label[i])
-  thisCluster <- groups[thisLabel]
-  dend_data$labels$cluster[i] <- thisCluster
-}
-
-pdf(paste(class, "_constrained-cluster.pdf", sep=""))
-ggplot(dend_data$segments) + 
-  geom_segment(aes(x = x, y = y, xend = xend, yend = yend))+
-  geom_text(data = dend_data$labels, aes(x, y, label = label, col=as.factor(cluster)),
-            hjust = 1, angle = 90, size = 3) +
-  xlab("Hardware Configuration") +
-  ylab("Dissimilarity") + theme(
-  axis.text.x = element_blank(),
-  axis.ticks = element_blank()) +
-  scale_color_discrete() +   ggtitle(paste(class, "Data-Constrained Optimal Clustering"))
-dev.off()
-
-candidateConfigs$cluster <- groups
-
-clusterStats <- ddply(candidateConfigs, .(cluster), summarize, meanDistance = mean(distance.mean), sdDistance = mean(distance.sd))
-
-
-## sort by mean distance and then by sd distance
-clusterStats <- clusterStats[order(clusterStats$meanDistance, clusterStats$sdDistance ), ]
-
-candidateConfigs <- join(candidateConfigs, clusterStats, by = "cluster")
-
-bestCluster = clusterStats[1, ]$cluster
-
-firstCluster <- candidateConfigs[candidateConfigs$cluster == bestCluster, ]
-kable(candidateConfigs, row.names = F)
-ggplot(candidateConfigs) + geom_point(aes(x = meanDistance, y = sdDistance, col = cores))
-```
-
-

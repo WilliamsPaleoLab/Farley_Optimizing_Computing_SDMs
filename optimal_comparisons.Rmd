@@ -10,6 +10,7 @@ library(ggplot2)
 library(reshape2)
 library(plyr)
 library(xlsx)
+library(ggrepel)
 
 ```
 
@@ -19,35 +20,43 @@ gam <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimi
 rf <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/rf-unconstrained.xlsx", 1)
 gbmbrt <- read.xlsx("/Users/scottsfarley/documents/thesis-scripts/data/final-optimization/GBM-BRT-unconstrained.xlsx", 1)
 
+marsClusters <- unique(mars[c( "cluster", "meanDistance", "sdDistance")])
+rfClusters <- unique(rf[c("cluster", "meanDistance", "sdDistance")])
+gbmClusters <- unique(gbmbrt[ c("cluster", "meanDistance", "sdDistance")])
+gamClusters <- unique(gam[c( "cluster", "meanDistance", "sdDistance")])
 
 mars$model <- "MARS"
 gam$model <- "GAM"
 rf$model <- "RF"
 gbmbrt$model <- "GBM-BRT"
 
-q <- rbind(mars, gam, rf, gbmbrt)
+
 
 ggplot(mars) + 
   geom_point(aes(x = distance.mean, y = distance.sd, col=cores)) +
-  geom_point(aes(x = meanDistance, y = sdDistance), shape=1, fill=NA, alpha=0.1, size=5) +
+  geom_point(aes(x = meanDistance, y = sdDistance), shape=8, fill='forestgreen', alpha=0.5, size=2, data=marsClusters) +
+    geom_text_repel(aes(x = meanDistance, y = sdDistance, label=cluster), data=marsClusters) +
   scale_color_continuous(low='steelblue', high='darkred') +
   ggtitle("MARS Optimality")
 
 ggplot(gam) + 
   geom_point(aes(x = distance.mean, y = distance.sd, col=cores)) +
-  geom_point(aes(x = meanDistance, y = sdDistance), shape=1, fill=NA, alpha=0.1, size=5) +
+  geom_point(aes(x = meanDistance, y = sdDistance), shape=8, fill='forestgreen', alpha=0.5, size=2, data=gamClusters) +
+  geom_text_repel(aes(x = meanDistance, y = sdDistance, label=cluster), data=gamClusters) +
   scale_color_continuous(low='steelblue', high='darkred') +
   ggtitle("GAM Optimality")
 
 ggplot(gbmbrt) + 
   geom_point(aes(x = distance.mean, y = distance.sd, col=cores)) +
-  geom_point(aes(x = meanDistance, y = sdDistance), shape=1, fill=NA, alpha=0.1, size=5) +
+  geom_point(aes(x = meanDistance, y = sdDistance), shape=8, fill='forestgreen', alpha=0.5, size=2, data=gbmClusters) +
+    geom_text_repel(aes(x = meanDistance, y = sdDistance, label=cluster), data=gbmClusters) +
   scale_color_continuous(low='steelblue', high='darkred') +
   ggtitle("GBM-BRT Optimality")
 
 ggplot(rf) + 
   geom_point(aes(x = distance.mean, y = distance.sd, col=cores)) +
-  geom_point(aes(x = meanDistance, y = sdDistance), shape=1, fill=NA, alpha=0.1, size=5) +
+  geom_point(aes(x = meanDistance, y = sdDistance), shape=8, fill='forestgreen', alpha=0.5, size=2, data=rfClusters) +
+    geom_text_repel(aes(x = meanDistance, y = sdDistance, label=cluster), data=rfClusters) +
   scale_color_continuous(low='steelblue', high='darkred') +
   ggtitle("rf Optimality")
 ```

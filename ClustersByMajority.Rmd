@@ -1,0 +1,148 @@
+---
+title: "ClustersByMajority"
+output: html_document
+---
+
+```{r setup, echo=F, results='hide'}
+
+library(ggplot2)
+library(reshape2)
+library(plyr)
+library(ggdendro)
+library(xlsx)
+library(ggrepel)
+library(knitr)
+library(NbClust)
+library(scatterplot3d)
+library(rgl)
+```
+
+
+
+```{r loadStuff, echo=F, results=F}
+class = 'rf'
+
+if (class == "mars"){
+  time.post <- read.csv("/Users/scottsfarley/documents/thesis-scripts/mars.csv", 1)
+}else if (class == "gam"){
+  time.post <- read.csv("/Users/scottsfarley/documents/thesis-scripts/gam.csv", 1)
+}else if (class == "rf"){
+  time.post <- read.csv("/Users/scottsfarley/documents/thesis-scripts/rf.csv", 1)
+}else if (class == 'gbm-brt'){
+  time.post <- read.csv("/Users/scottsfarley/documents/thesis-scripts/gbm-brt.csv", 1)
+}
+
+method = "complete"
+index = "silhouette"
+fields = c("postMeanTime", "postMeanCost")
+
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
+
+hardwareVars <- time.post[c("cores", "GBMemory")]
+clusterVars <- time.post[fields]
+clusterVars$TimeUncertainty <- time.post$postSDTime
+hardwareVars$TimeUncertainty <- time.post$postSDTime 
+# clusterVars$CostUncertainty <- (time.post$postSDCost / time.post$postMeanCost) * 100
+# hardwareVars$CostUncertainty <- (time.post$postSDCost / time.post$postMeanCost) * 100
+# clusterScale <- data.frame(scale(clusterVars))
+clusterScale <- data.frame(clusterVars)
+
+clust <- NbClust(clusterScale, method = method, index=index, min.nc = 3)
+
+nc = max(clust$Best.partition)
+
+colors = gg_color_hue(nc)
+
+clusterScale <- data.frame(clusterScale)
+rownames(clusterScale) <- c(1:nrow(clusterScale))
+hc       <- hclust(dist(clusterScale), "ave")           # heirarchal clustering
+dendr    <- dendro_data(hc, type="rectangle") # convert for ggplot
+clust    <- cutree(hc,k=nc)                    # find 2 clusters
+clust.df <- data.frame(label=names(clust), cluster=factor(clust))
+
+# dendr[["labels"]] has the labels, merge with clust.df based on label column
+dendr[["labels"]] <- merge(dendr[["labels"]],clust.df, by="label")
+# plot the dendrogram; note use of color=cluster in geom_text(...)
+
+
+clusterScale$cluster <- clust.df$cluster
+
+# plot3d(clusterScale$postMeanTime,
+#                     clusterScale$postMeanCost,
+#                     clusterScale$TimeUncertainty,
+#                     col=colors[clusterScale$cluster],
+#                     xlab="Seconds (Posterior Mean)",
+#                     ylab = "Cost (Posterior Mean)",
+#                     zlab="Posterior SD")
+
+par(mfrow=c(1,1))
+scatterplot3d(clusterScale$postMeanTime,
+                    clusterScale$postMeanCost,
+                    clusterScale$TimeUncertainty,
+                    color=colors[clusterScale$cluster],
+                    type='h',
+                    main=paste(class, "Cluster Space"),
+                    xlab="Seconds (Posterior Mean)",
+                    ylab = "Cost (Posterior Mean)",
+                    zlab="Posterior SD")
+
+
+ggplot() + 
+  geom_segment(data=segment(dendr), aes(x=x, y=y, xend=xend, yend=yend)) + 
+  geom_text(data=label(dendr), aes(x, y, label=label, hjust=0, color=cluster), 
+           size=3) +
+  xlab("Configuration Dissimilarity") +
+  coord_flip() + scale_y_reverse(expand=c(0.2, 0)) + 
+  theme(axis.line.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        panel.background=element_rect(fill="white"),
+        panel.grid=element_blank())
+
+
+clusterScale$cluster <- clust.df$cluster
+hardwareVars$cluster <- clust.df$cluster
+
+ggplot(data.frame(clusterScale)) + 
+  geom_point(aes(x = postMeanTime, y = postMeanCost, col=cluster)) +
+    scale_color_discrete( name='ClusterID') +
+  ggtitle(paste(class, "Clustered"))
+
+centroids <- ddply(clusterScale, .(cluster), summarise, 
+                   TimeUncertainty = mean(TimeUncertainty),
+                   time = mean(postMeanTime),
+                   cost = mean(postMeanCost))
+origin <- rep(0, length(centroids))
+centroids <- rbind(centroids, origin)
+
+d <- as.matrix(dist(scale(centroids[c('time', 'cost', "TimeUncertainty")])))
+fromOrigin <- d[,nrow(centroids)]
+fromOrigin <- fromOrigin[fromOrigin > 0]
+fromOrigin <- as.numeric(fromOrigin)
+minDistIdx <- which.min(fromOrigin)
+centroids$fromOrigin <- c(fromOrigin, 0)
+print(minDistIdx)
+optimal <- centroids[minDistIdx, ]
+print(centroids)
+print(optimal)
+centroids <- na.omit(centroids)
+
+centroids <- centroids[order(centroids$fromOrigin), ]
+
+centroids$choice <- seq(from=1, to=nrow(centroids))
+
+hardwareChoices <- join(hardwareVars, centroids, by = 'cluster') 
+
+
+ggplot(hardwareChoices) + geom_tile(aes(x = cores, y = GBMemory, fill=choice)) +
+  scale_fill_continuous(high='darkblue', low='green', name='ClusterID') +
+  scale_alpha_continuous(trans="reverse") +
+  ggtitle(paste(class, " Cluster by ", index)) +
+  geom_text(aes(x = cores, y = GBMemory, label=choice), size=3.5)
+```
+

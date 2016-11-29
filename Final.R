@@ -287,7 +287,7 @@ for (i in 1:length(names(gam.training.predictors))){
   RSS <- sum((pDelta)^2)
   r2 <- cor(p, log(gam.testing$totalTime))^2
   mse <- sum(RSS) / length(p)
-  gam.imp[i] <- r2
+  gam.imp[i] <- mse
   
   additionalName.gam[i] <- predName
 }
@@ -313,7 +313,7 @@ for (i in 1:length(names(gam.training.predictors.acc))){
   RSS <- sum((pDelta)^2)
   r2 <- cor(p, gam.testing.acc$testingAUC)^2
   mse <- sum(RSS) / length(p)
-  gam.imp.acc[i] <- r2
+  gam.imp.acc[i] <- mse
   
   additionalName.gam[i] <- predName
 }
@@ -460,7 +460,7 @@ for (i in 1:length(names(mars.training.predictors))){
   RSS <- sum((pDelta)^2)
   r2 <- cor(p, log(mars.testing$totalTime))^2
   mse <- RSS / length(p)
-  mars.imp[i] <- r2
+  mars.imp[i] <- mse
   
   additionalName.mars[i] <- predName
 }
@@ -483,7 +483,7 @@ for (i in 1:length(names(mars.training.predictors.acc))){
   RSS <- sum((pDelta)^2)
   r2 <- cor(p, mars.testing.acc$testingAUC)^2
   mse <- sum(RSS) / length(p)
-  mars.imp.acc[i] <- r2
+  mars.imp.acc[i] <- mse
   
   additionalName.mars[i] <- predName
 }
@@ -635,7 +635,7 @@ for (i in 1:length(names(rf.training.predictors))){
   RSS <- sum((pDelta)^2)
   r2 <- cor(p, log(rf.testing$totalTime))^2
   mse <- sum(RSS) / length(p)
-  rf.imp[i] <- r2
+  rf.imp[i] <- mse
   
   additionalName.rf[i] <- predName
 }
@@ -659,7 +659,7 @@ for (i in 1:length(names(rf.training.predictors.acc))){
   RSS <- sum((pDelta)^2)
   r2 <- cor(p, rf.testing.acc$testingAUC)^2
   mse <- sum(RSS) / length(p)
-  rf.imp.acc[i] <- r2
+  rf.imp.acc[i] <- mse
   
   plot(p, rf.testing.acc$testingAUC )
   
