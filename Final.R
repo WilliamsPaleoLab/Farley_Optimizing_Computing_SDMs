@@ -6,10 +6,10 @@
 library(ggplot2)
 library(matrixStats)
 library(reshape2)
-options(java.parameters = "-Xmx30g") ## change memory allotment to RJava
+options(java.parameters = "-Xmx1500m") ## change memory allotment to RJava
 library(bartMachine)
-bartMachine::set_bart_machine_num_cores(16)
-setwd("/home/rstudio")
+bartMachine::set_bart_machine_num_cores(3)
+setwd("/users/scottsfarley/documents")
 
 
 ############################################################################################################
@@ -123,7 +123,7 @@ for (i in 1:length(names(gbm.training.predictors))){
   RSS <- sum((pDelta)^2)
   r2 <- cor(p, log(gbm.testing$totalTime))^2
   mse <- sum(RSS) / length(p)
-  gbm.imp[i] <- r2
+  gbm.imp[i] <- mse
   
   additionalName.gbm[i] <- predName
 }
@@ -147,7 +147,7 @@ for (i in 1:length(names(gbm.training.predictors.acc))){
   RSS <- sum((pDelta)^2)
   r2 <- cor(p, gbm.testing.acc$testingAUC)^2
   mse <- RSS / length(p)
-  gbm.imp.acc[i] <- r2
+  gbm.imp.acc[i] <- mse
   
   additionalName.gbm[i] <- predName
 }
@@ -155,14 +155,21 @@ for (i in 1:length(names(gbm.training.predictors.acc))){
 gbm.importance <- data.frame(absentName = additionalName.gbm, r2.acc = gbm.imp.acc, r2.timing = gbm.imp)
 
 
-gbm.importance$acc.reduction <- gbm.importance$r2.acc - gbm.r2.acc
-gbm.importance$timing.reduction <- gbm.importance$r2.timing - gbm.r2
+gbm.importance$acc.reduction <- gbm.importance$r2.acc - gbm.mse.acc
+gbm.importance$timing.reduction <- gbm.importance$r2.timing - gbm.mse
 
 
 gbm.importance.plot <- gbm.importance[c("timing.reduction", "acc.reduction", "absentName")]
 gbm.importance.plot <- melt(gbm.importance.plot, id.vars="absentName")
 
-ggplot(gbm.importance.plot) + 
+ggplot(gbm.importance.plot[gbm.importance.plot$variable == "timing.reduction", ]) + 
+  geom_bar(aes(x = absentName, y = value, group= variable, fill=variable), 
+           stat='identity', position = "dodge") +
+  ylab("Reduction in Explained Variance") +
+  ggtitle("GBM-BRT Model Drivers") +
+  theme(axis.text.x = element_text(angle = 90)) 
+
+ggplot(gbm.importance.plot[gbm.importance.plot$variable == "acc.reduction", ]) + 
   geom_bar(aes(x = absentName, y = value, group= variable, fill=variable), 
            stat='identity', position = "dodge") +
   ylab("Reduction in Explained Variance") +
@@ -321,18 +328,25 @@ for (i in 1:length(names(gam.training.predictors.acc))){
 gam.importance <- data.frame(absentName = additionalName.gam, r2.acc = gam.imp.acc, r2.timing = gam.imp)
 
 
-gam.importance$acc.reduction <- gam.importance$r2.acc - gam.acc.r2
-gam.importance$timing.reduction <- gam.importance$r2.timing - gam.r2
+gam.importance$acc.reduction <- gam.importance$r2.acc - gam.acc.mse
+gam.importance$timing.reduction <- gam.importance$r2.timing - gam.mse
 
 
 gam.importance.plot <- gam.importance[c("timing.reduction", "acc.reduction", "absentName")]
 gam.importance.plot <- melt(gam.importance.plot, id.vars="absentName")
 
-ggplot(gam.importance.plot) + 
+ggplot(gam.importance.plot[gbm.importance.plot$variable == "timing.reduction", ]) + 
   geom_bar(aes(x = absentName, y = value, group= variable, fill=variable), 
            stat='identity', position = "dodge") +
   ylab("Reduction in Explained Variance") +
-  ggtitle("GAM Model Drivers") + 
+  ggtitle("GAM Model Drivers") +
+  theme(axis.text.x = element_text(angle = 90)) 
+
+ggplot(gam.importance.plot[gbm.importance.plot$variable == "acc.reduction", ]) + 
+  geom_bar(aes(x = absentName, y = value, group= variable, fill=variable), 
+           stat='identity', position = "dodge") +
+  ylab("Reduction in Explained Variance") +
+  ggtitle("GAM Model Drivers") +
   theme(axis.text.x = element_text(angle = 90)) 
 
 
@@ -492,14 +506,21 @@ for (i in 1:length(names(mars.training.predictors.acc))){
 mars.importance <- data.frame(absentName = additionalName.mars, r2.acc = mars.imp.acc, r2.timing = mars.imp)
 
 
-mars.importance$acc.reduction <- mars.importance$r2.acc - mars.r2.acc
-mars.importance$timing.reduction <- mars.importance$r2.timing - mars.r2
+mars.importance$acc.reduction <- mars.importance$r2.acc - mars.mse.acc
+mars.importance$timing.reduction <- mars.importance$r2.timing - mars.mse
 
 
 mars.importance.plot <- mars.importance[c("timing.reduction", "acc.reduction", "absentName")]
 mars.importance.plot <- melt(mars.importance.plot, id.vars="absentName")
 
-ggplot(mars.importance.plot) + 
+ggplot(mars.importance.plot[gbm.importance.plot$variable == "timing.reduction", ]) + 
+  geom_bar(aes(x = absentName, y = value, group= variable, fill=variable), 
+           stat='identity', position = "dodge") +
+  ylab("Reduction in Explained Variance") +
+  ggtitle("MARS Model Drivers") +
+  theme(axis.text.x = element_text(angle = 90)) 
+
+ggplot(mars.importance.plot[gbm.importance.plot$variable == "acc.reduction", ]) + 
   geom_bar(aes(x = absentName, y = value, group= variable, fill=variable), 
            stat='identity', position = "dodge") +
   ylab("Reduction in Explained Variance") +
@@ -527,7 +548,7 @@ rf.training <- res[-rf.testingInd,]
 rf.training.predictors <- rf.training[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells')]
 rf.training.predictors <- data.frame(rf.training.predictors)
 rf.training.response <- log(rf.training[[c("totalTime")]]) ## take the log for prediction
-rf.rf <- bartMachine(rf.training.predictors, rf.training.response, serialize=T)
+rf.rf <- bartMachine(rf.training.predictors, rf.training.response, serialize=T, run_in_sample = F)
 
 
 ## do prediction
@@ -577,7 +598,7 @@ rf.training.predictors.acc <- rf.training.acc[c( "numPredictors", "cores", "GBMe
 rf.training.predictors.acc <- data.frame(rf.training.predictors.acc)
 rf.training.response.acc <- rf.training.acc[[c("testingAUC")]] 
 
-rf.acc.rf <- bartMachine(rf.training.predictors.acc, rf.training.response.acc, serialize=T)
+rf.acc.rf <- bartMachine(rf.training.predictors.acc, rf.training.response.acc, serialize=T, run_in_sample=F)
 
 ## do prediction
 rf.testing.predictors.acc <- rf.testing.acc[c( "numPredictors", "cores", "GBMemory", "trainingExamples", 'cells')]
@@ -672,18 +693,25 @@ rf.imp.acc <-c(rf.imp.acc, NA, NA)
 rf.importance <- data.frame(absentName = additionalName.rf, r2.acc = rf.imp.acc, r2.timing = rf.imp)
 
 
-rf.importance$acc.reduction <- rf.importance$r2.acc - rf.r2.acc
-rf.importance$timing.reduction <- rf.importance$r2.timing - rf.r2
+rf.importance$acc.reduction <- rf.importance$r2.acc - rf.mse.acc
+rf.importance$timing.reduction <- rf.importance$r2.timing - rf.mse
 
 
 rf.importance.plot <- rf.importance[c("timing.reduction", "acc.reduction", "absentName")]
 rf.importance.plot <- melt(rf.importance.plot, id.vars="absentName")
 
-ggplot(rf.importance.plot) + 
+ggplot(rf.importance.plot[gbm.importance.plot$variable == "timing.reduction", ]) + 
   geom_bar(aes(x = absentName, y = value, group= variable, fill=variable), 
            stat='identity', position = "dodge") +
   ylab("Reduction in Explained Variance") +
-  ggtitle("RF Model Drivers") +
+  ggtitle("GBM-BRT Model Drivers") +
+  theme(axis.text.x = element_text(angle = 90)) 
+
+ggplot(rf.importance.plot[gbm.importance.plot$variable == "acc.reduction", ]) + 
+  geom_bar(aes(x = absentName, y = value, group= variable, fill=variable), 
+           stat='identity', position = "dodge") +
+  ylab("Reduction in Explained Variance") +
+  ggtitle("GBM-BRT Model Drivers") +
   theme(axis.text.x = element_text(angle = 90)) 
 
 ############################################################################################################

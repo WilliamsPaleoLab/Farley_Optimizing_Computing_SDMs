@@ -15,15 +15,16 @@ library(knitr)
 library(NbClust)
 library(scatterplot3d)
 library(rgl)
+library(cluster)
 ```
 
 
 
 ```{r loadStuff, echo=F, results=F}
-class = 'rf'
+class = 'gam'
 
 if (class == "mars"){
-  time.post <- read.csv("/Users/scottsfarley/documents/thesis-scripts/mars.csv", 1)
+  time.post <- read.csv("/Users/scottsfarley/documents/thesis-scripts/marssrs.csv", 1)
 }else if (class == "gam"){
   time.post <- read.csv("/Users/scottsfarley/documents/thesis-scripts/gam.csv", 1)
 }else if (class == "rf"){
@@ -137,12 +138,61 @@ centroids <- centroids[order(centroids$fromOrigin), ]
 centroids$choice <- seq(from=1, to=nrow(centroids))
 
 hardwareChoices <- join(hardwareVars, centroids, by = 'cluster') 
-
+hardwareChoices <- hardwareChoices[order(hardwareChoices$fromOrigin), ]
 
 ggplot(hardwareChoices) + geom_tile(aes(x = cores, y = GBMemory, fill=choice)) +
   scale_fill_continuous(high='darkblue', low='green', name='ClusterID') +
   scale_alpha_continuous(trans="reverse") +
   ggtitle(paste(class, " Cluster by ", index)) +
   geom_text(aes(x = cores, y = GBMemory, label=choice), size=3.5)
+
+ggplot(hardwareChoices) + geom_line(aes(y = hardwareChoices$cores[1], x = fromOrigin)) + geom_point(aes(y = cores, x = fromOrigin)) + ggtitle(paste(class, "Optimal Cores")) + ylab("Cores")
+
+ggplot(hardwareChoices) + geom_line(aes(y = hardwareChoices$GBMemory[1], x = fromOrigin)) + geom_point(aes(y = GBMemory, x = fromOrigin)) + ggtitle(paste(class, "Optimal Cores")) + ylab("Memory")
+```
+
+```{r}
+library(reshape2)
+library(ggplot2)
+cores = c(1:24)
+mem = c(1:24)
+ntex = c(1000)
+cells = 10000
+ncov = 3
+
+
+q <- data.frame(cores = vector('numeric', length=length(cores) * length(ntex)),
+                GBMemory = vector('numeric', length = length(cores) * length(ntex)),
+                cells = vector('numeric', length=length(cores) * length(ntex)),
+                numPredictors = vector('numeric', length=length(cores) * length(ntex)),
+                trainingExamples = vector('numeric', length=length(cores) * length(ntex)))
+idx = 1
+for (i in cores){
+  for (t in ntex){
+    r = c(i, 1, cells, ncov, t)
+    q[idx, ] <- r
+    idx = idx + 1
+  }
+}
+print(q)
+
+q.pred <- predict(gam.rf, q)
+
+q$pred <- q.pred
+
+
+q.plot  <- melt(q, id.vars = c("cores","trainingExamples", "GBMemory", "cells", "numPredictors"))
+
+ggplot(q.plot) + geom_line(aes(x = cores, 
+                               y = as.numeric(value), 
+                               group=as.factor(trainingExamples), 
+                               col=as.factor(trainingExamples))) + 
+            ylab("Predicted execution time (log-seconds)") +
+  scale_color_discrete(guide = F) + 
+  ggtitle("GAM: cores") + theme(text = element_text(size=20))
+
+
+
+
 ```
 
