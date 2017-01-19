@@ -21,7 +21,7 @@ library(cluster)
 
 
 ```{r loadStuff, echo=F, results=F}
-class = 'gam'
+class = 'gbm-brt'
 
 if (class == "mars"){
   time.post <- read.csv("/Users/scottsfarley/documents/thesis-scripts/marssrs.csv", 1)
@@ -33,9 +33,9 @@ if (class == "mars"){
   time.post <- read.csv("/Users/scottsfarley/documents/thesis-scripts/gbm-brt.csv", 1)
 }
 
-method = "complete"
+method = "average"
 index = "silhouette"
-fields = c("postMeanTime", "postMeanCost")
+fields = c("postMeanTime", "postMeanCost", "postSDTime")
 
 gg_color_hue <- function(n) {
   hues = seq(15, 375, length = n + 1)
@@ -149,6 +149,10 @@ ggplot(hardwareChoices) + geom_tile(aes(x = cores, y = GBMemory, fill=choice)) +
 ggplot(hardwareChoices) + geom_line(aes(y = hardwareChoices$cores[1], x = fromOrigin)) + geom_point(aes(y = cores, x = fromOrigin)) + ggtitle(paste(class, "Optimal Cores")) + ylab("Cores")
 
 ggplot(hardwareChoices) + geom_line(aes(y = hardwareChoices$GBMemory[1], x = fromOrigin)) + geom_point(aes(y = GBMemory, x = fromOrigin)) + ggtitle(paste(class, "Optimal Cores")) + ylab("Memory")
+
+
+fname = paste("/Users/scottsfarley/documents/thesis-scripts/data/", class, "-unconstrained-hardware.csv", sep="")
+write.csv(hardwareChoices, fname)
 ```
 
 ```{r}

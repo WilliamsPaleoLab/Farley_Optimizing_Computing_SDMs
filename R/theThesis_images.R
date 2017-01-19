@@ -1,6 +1,6 @@
 library(akima)
-prices <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/costs.csv")
-prices <- prices[-which(prices$TotalRate > 10),]
+prices <- read.csv("/users/scottsfarley/documents/thesis-scripts/data/costs2.csv")
+# prices <- prices[-which(prices$TotalRate > 10),]
 
 
 ## Computing Costs
@@ -11,7 +11,7 @@ filled.contour(i, xlab='CPU', ylab='Memory (GB)', main="Computing Hourly Rate",
                col=rev(heat.colors(n=30, alpha=0.7)))
 
 
-## Neotoma and GBIF Figure
+p## Neotoma and GBIF Figure
 
 library(devtools)
 library(rgbif)
