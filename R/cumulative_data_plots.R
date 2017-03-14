@@ -1,17 +1,17 @@
 
+## load libraries
 library(devtools)
-library(rgbif)
-library(earthlife)
 library(neotoma)
-library(paleobioDB)
 library(lubridate)
 library(reshape2)
 library(ggplot2)
+library(ggthemes)
+library(ggalt)
 
-
+## get the dataset info from neotoma
 neotoma_datasets <- get_dataset()
 
-
+## parse the fields into indivudal objects
 neotoma_sub_dates = vector()
 neotoma_sub_names = vector()
 neotoma_sub_types = vector()
@@ -69,7 +69,7 @@ toPlot$date <- as.Date(as.character(toPlot$variable))
 
 totalCum <- toPlot[which(toPlot$type == "Neotoma"),]
 
-
+## plot total cumulative datasets
 neotomaplot <- ggplot(totalCum, aes(x = date, y = value, group = type)) + 
   geom_line(aes(color = type)) +
   theme_bw() +
@@ -80,55 +80,55 @@ neotomaplot
 
 
 
-# ### PBDB
-counts <- vector()
-yearSeq <- seq(1996,2016)
-n <- length(yearSeq) - 1
-for (idx in 1:n){
-  try({
-    yr <- yearSeq[idx]
-    print(yr)
-    start <- paste(yr, "01", "01", sep='-')
-    end <- paste(yearSeq[idx+1], "12", "31", sep='-')
-    theseRecords <- pbdb_occurrences(limit='all', show=c('crmod', 'coords'), created_before=end, created_after=start)
-    write.csv(theseRecords, file=paste("/Users/scottsfarley/documents/thesis-scripts/data/PBDB_", yr, ".csv"))
-    counts[idx] <- nrow(theseRecords)
-    print(nrow(theseRecords))
-  })
-}
-
-
-save(pbdb_all, file="/users/scottsfarley/documents/thesis-scripts/data/pbdb_mods.RData")
-
-
-
+# # ### PBDB
+# counts <- vector()
+# yearSeq <- seq(1996,2016)
+# n <- length(yearSeq) - 1
+# for (idx in 1:n){
+#   try({
+#     yr <- yearSeq[idx]
+#     print(yr)
+#     start <- paste(yr, "01", "01", sep='-')
+#     end <- paste(yearSeq[idx+1], "12", "31", sep='-')
+#     theseRecords <- pbdb_occurrences(limit='all', show=c('crmod', 'coords'), created_before=end, created_after=start)
+#     write.csv(theseRecords, file=paste("/Users/scottsfarley/documents/thesis-scripts/data/PBDB_", yr, ".csv"))
+#     counts[idx] <- nrow(theseRecords)
+#     print(nrow(theseRecords))
+#   })
+# }
+# 
+# 
+# save(pbdb_all, file="/users/scottsfarley/documents/thesis-scripts/data/pbdb_mods.RData")
 
 
 
 
-##GBIF
-gbif_occs = occ_count(type='year')
-years = vector()
-counts <- vector()
-idx = 1
-for (i in names(gbif_occs)){
- years[idx] = i
- counts[idx] <- gbif_occs[[idx]]
-  idx = idx  + 1
-}
 
-gbif_all <- data.frame(value=counts, year=years)
 
-gbif_all$cumsum <- cumsum(gbif_all$value)
-gbif_all$year <- as.numeric(as.character(gbif_all$year))
 
-ggplot(gbif_all, aes(x=year, y=cumsum)) + 
-  geom_line() 
-  xlab("Year") +
-  ylab("Number of Occurrences") +
-  ggtitle("GBIF Occurrences")
+# ##GBIF
+# gbif_occs = occ_count(type='year')
+# years = vector()
+# counts <- vector()
+# idx = 1
+# for (i in names(gbif_occs)){
+#  years[idx] = i
+#  counts[idx] <- gbif_occs[[idx]]
+#   idx = idx  + 1
+# }
+# 
+# gbif_all <- data.frame(value=counts, year=years)
+# 
+# gbif_all$cumsum <- cumsum(gbif_all$value)
+# gbif_all$year <- as.numeric(as.character(gbif_all$year))
+# 
+# ggplot(gbif_all, aes(x=year, y=cumsum)) + 
+#   geom_line() 
+#   xlab("Year") +
+#   ylab("Number of Occurrences") +
+#   ggtitle("GBIF Occurrences")
 
-### Map geographic distr
+### Map geographic distribution of neotoma datasets through time
 ND1995 <- list()
 ND2000 <- list()
 ND2005 <- list()
@@ -171,8 +171,7 @@ for (idx in 1:length(neotoma_datasets)){
   }
 }
 
-library(ggthemes)
-library(ggalt)
+
 hist(y)
 map("world", main="Neotoma Holdings, 1995")
 lats <- vector()
@@ -245,13 +244,10 @@ for (i in 1:length(neotoma_datasets)){
   if (length(v) == 3){
     df[i,] <- v 
   }
-  print(i)
+  # print(i)
 }
 
 df$yearCat <- cut(as.numeric(df$year), breaks=c(1990, 1995, 2000, 2005, 2010, 2016))
-
-library(ggalt)    # devtools::install_github("hrbrmstr/ggalt")
-library(ggthemes) # theme_map and tableau colors
 
 world = map_data("world")
 gg <- ggplot()
@@ -277,16 +273,18 @@ ggplot(df, aes(df$type)) + geom_bar() +
   ggtitle("Dataset Types in Neotoma") +
   xlab("") + ylab("Count")
 
-gbif_occ_types <- occ_count(type="basisOfRecord")
-gbif_occ_types <- melt(gbif_occ_types, data.frame)
-names(gbif_occ_types) <- c("numOfType", "Type")
-ggplot(gbif_occ_types, aes(x=Type, y=numOfType)) + 
-  geom_bar(stat="identity") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  ggtitle("GBIF Record Types") +
-  xlab("") + ylab("Number of Records")
+# gbif_occ_types <- occ_count(type="basisOfRecord")
+# gbif_occ_types <- melt(gbif_occ_types, data.frame)
+# names(gbif_occ_types) <- c("numOfType", "Type")
+# ggplot(gbif_occ_types, aes(x=Type, y=numOfType)) + 
+#   geom_bar(stat="identity") +
+#   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+#   ggtitle("GBIF Record Types") +
+#   xlab("") + ylab("Number of Records")
 
 
+
+## Plot by principle investigator
 neotoma_PIs <- melt(neotoma_PIs, data.frame)
 neotoma_PIs <- table(neotoma_PIs)
 neotoma_PIs <- as.data.frame(neotoma_PIs)
@@ -300,30 +298,6 @@ ggplot(neotoma_PIs, aes( y=Freq, x=reorder(neotoma_PIs, Freq))) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size=2)) +
   ggtitle("Neotoma Principle Investigator") +
   xlab("") + ylab("Number of Datasets Contributed")
-
-
-latAcc <- vector()
-lngAcc <- vector()
-for (i in 1:length(neotoma_datasets)){
-  site <- neotoma_datasets[[1]]$site.data
-  latAcc[i] <- site$lat.acc
-  lngAcc[i] <- site$long.acc
-}
-
-
-
-slope.loess <-function(X, data){
-  # First your loess function:
-  my_loess <- loess(y~x, data=data, subset=data$group==X, degree=2)
-  # Then the first difference
-  first_diff <- diff(my_loess$fitted)
-  # Then the corresponding x and y values for the minima and maxima
-  res <- cbind(my_loess$x[c(which.min(first_diff), which.max(first_diff))], 
-               my_loess$fitted[c(which.min(first_diff), which.max(first_diff))])
-  colnames(res) <- c("x", "y")
-  rownames(res) <- c("min", "max")
-  res
-}
 
 
 
